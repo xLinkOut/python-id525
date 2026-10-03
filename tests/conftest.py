@@ -107,7 +107,10 @@ class FakeRouter:
         self.calls.append(f"page:{name}")
         session = self._session(request)
         if session is None or not session.logged_in:
-            return web.Response(text=REDIRECT_PAGE, content_type="text/html")
+            # the real router also hands out a fresh anonymous session here
+            resp = web.Response(text=REDIRECT_PAGE, content_type="text/html")
+            resp.set_cookie("QSESSIONID", self._new_session().sid)
+            return resp
         self._rotate(session)  # the real router invalidates the token on page loads
         return web.Response(text=load_fixture(f"{name}.html"), content_type="text/html")
 
@@ -126,6 +129,8 @@ class FakeRouter:
         if name == "login_query":
             return web.json_response({"result": True, "login": session.state})
         if name == "logout_req":
+            if not session.logged_in:
+                return self._unauthenticated()
             session.logged_in, session.state = False, 0
             return web.json_response({"result": True})
         if name == "login_req":
@@ -133,8 +138,7 @@ class FakeRouter:
 
         # authenticated read endpoints
         if not session.logged_in:
-            # the real firmware leaks a CGI header into the body, no content-type
-            return web.Response(body=b"Set-Cookie: QSESSIONID=deadbeef; path=/;\r\n\r\n")
+            return self._unauthenticated()
         sent = body.get("RequestVerifyToken") if isinstance(body, dict) else None
         if name == "req_smsReload":  # validated but not rotated by the firmware
             if sent != session.token:
@@ -157,6 +161,13 @@ class FakeRouter:
         data = json.loads(load_fixture(fixture))
         data["RequestVerifyToken"] = self._rotate(session)
         return web.json_response(data)
+
+    def _unauthenticated(self) -> web.Response:
+        # The real firmware leaks a CGI header into the body (no content-type) and
+        # rotates the session cookie.
+        resp = web.Response(body=b"Set-Cookie: QSESSIONID=deadbeef; path=/;\r\n\r\n")
+        resp.set_cookie("QSESSIONID", self._new_session().sid)
+        return resp
 
     def _login(self, session: FakeSession, body: Any) -> web.Response:
         if self.token_not_init:

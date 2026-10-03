@@ -193,6 +193,22 @@ async def test_kicked_session_is_not_retaken(
     assert router.count("login_req") == 2
 
 
+async def test_kicked_by_second_client_is_detected(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    """Regression (found live): A must not re-login and kick B back."""
+    a = await make_client()
+    b = await make_client()
+    await a.get_network_status()
+    await b.get_network_status()  # takes over the admin session
+    with pytest.raises(Id525SessionKickedError):
+        await a.get_network_status()
+    assert router.count("login_req") == 2
+    assert await b.get_login_state() is LoginState.LOGGED_IN
+    await a.close()  # logout of a dead session must be harmless
+    assert await b.get_login_state() is LoginState.LOGGED_IN
+
+
 async def test_page_redirect_triggers_relogin(
     make_client: ClientFactory, router: FakeRouter
 ) -> None:

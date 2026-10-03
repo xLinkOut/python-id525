@@ -187,7 +187,9 @@ class Id525Client:
         async with self._lock:
             try:
                 if self._session_id is not None:
-                    await self._post(Endpoint.LOGOUT, EMPTY_BODY)
+                    await self._post(Endpoint.LOGOUT, EMPTY_BODY, check=True)
+            except _NotAuthenticatedError:
+                _LOGGER.debug("Session was already gone at logout")
             finally:
                 self._logged_in = False
                 self._session_id = None
@@ -209,7 +211,9 @@ class Id525Client:
         self._logged_in = False
         self._session_id = None
         self._token = None
-        await self._get_text("/")  # obtain a session cookie, as the browser does
+        _, session_id = await self._get_text("/")  # get a session cookie, like a browser
+        if session_id:
+            self._session_id = session_id
         await self._post(Endpoint.TOKEN_QUERY, EMPTY_BODY)
         for _ in range(_MAX_TOKEN_NOT_INIT_RETRIES + 1):
             data = await self._post(
@@ -304,11 +308,13 @@ class Id525Client:
             if not self._logged_in:
                 await self._login_locked()
             for attempt in range(2):
-                html = await self._get_text(page.path)
+                html, session_id = await self._get_text(page.path)
                 # Serving a page makes the router issue a new CSRF token (embedded
                 # in the page, if at all): the one we hold is now invalid.
                 self._token = None
                 if not is_redirect_page(html):
+                    if session_id:
+                        self._session_id = session_id
                     return html
                 if attempt:
                     break
@@ -328,12 +334,18 @@ class Id525Client:
             headers["Cookie"] = f"{SESSION_COOKIE}={self._session_id}"
         return headers
 
-    def _store_cookie(self, response: aiohttp.ClientResponse) -> None:
-        cookie = response.cookies.get(SESSION_COOKIE)
-        if cookie is not None and cookie.value:
-            self._session_id = cookie.value
+    @staticmethod
+    def _session_cookie(response: aiohttp.ClientResponse) -> str | None:
+        """Return the session id set by a response, if any.
 
-    async def _get_text(self, path: str) -> str:
+        Callers adopt it only from *authenticated* answers: unauthenticated ones
+        hand out a fresh anonymous session, and adopting it would hide the fact
+        that our session was kicked (only the old session id reports KICKED).
+        """
+        cookie = response.cookies.get(SESSION_COOKIE)
+        return cookie.value if cookie is not None and cookie.value else None
+
+    async def _get_text(self, path: str) -> tuple[str, str | None]:
         try:
             async with self._http().get(
                 self._base_url + path,
@@ -342,13 +354,13 @@ class Id525Client:
                 timeout=self._timeout,
                 allow_redirects=False,
             ) as resp:
-                self._store_cookie(resp)
                 resp.raise_for_status()
                 raw = await resp.read()
+                session_id = self._session_cookie(resp)
         except (aiohttp.ClientError, TimeoutError) as err:
             msg = f"GET {path} failed: {err}"
             raise Id525ConnectionError(msg) from err
-        return raw.decode("utf-8", errors="replace")
+        return raw.decode("utf-8", errors="replace"), session_id
 
     async def _post(
         self, endpoint: Endpoint, body: object, *, check: bool = False
@@ -366,9 +378,9 @@ class Id525Client:
                 timeout=self._timeout,
                 allow_redirects=False,
             ) as resp:
-                self._store_cookie(resp)
                 resp.raise_for_status()
                 text = await resp.text(errors="replace")
+                session_id = self._session_cookie(resp)
         except (aiohttp.ClientError, TimeoutError) as err:
             msg = f"POST {endpoint.path} failed: {err}"
             raise Id525ConnectionError(msg) from err
@@ -384,6 +396,8 @@ class Id525Client:
         if not isinstance(data, dict):
             msg = f"unexpected JSON payload from {endpoint.path}"
             raise Id525ResponseError(msg)
+        if session_id:
+            self._session_id = session_id
 
         token = data.get(TOKEN_FIELD)
         fresh_token = isinstance(token, str) and bool(token)
