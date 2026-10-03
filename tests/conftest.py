@@ -108,6 +108,7 @@ class FakeRouter:
         session = self._session(request)
         if session is None or not session.logged_in:
             return web.Response(text=REDIRECT_PAGE, content_type="text/html")
+        self._rotate(session)  # the real router invalidates the token on page loads
         return web.Response(text=load_fixture(f"{name}.html"), content_type="text/html")
 
     async def api(self, request: web.Request) -> web.Response:

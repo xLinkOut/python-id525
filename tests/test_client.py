@@ -83,6 +83,30 @@ async def test_invalid_token_is_recovered(make_client: ClientFactory, router: Fa
     assert router.count("login_req") == 1
 
 
+async def test_page_load_invalidates_token(make_client: ClientFactory, router: FakeRouter) -> None:
+    """Verified live: any page GET invalidates the token held by the client."""
+    client = await make_client()
+    await client.get_network_status()
+    await client.get_cellular_info()
+    await client.get_network_status()
+    await client.get_device_info()
+    await client.get_sms()  # its error answers carry no token
+    assert router.count("net_status_retrieve") == 2  # never rejected
+    assert router.count("req_smsReload") == 1
+    assert router.count("token_query") == 3  # login + one after each page
+
+
+async def test_sms_invalid_token_without_new_token(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    client = await make_client()
+    await client.get_sms()
+    router.invalidate_tokens()
+    inbox = await client.get_sms()
+    assert inbox.unread_count == 1
+    assert router.count("req_smsReload") == 3
+
+
 async def test_concurrent_calls_are_serialised(
     make_client: ClientFactory, router: FakeRouter
 ) -> None:

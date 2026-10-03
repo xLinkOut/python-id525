@@ -282,11 +282,12 @@ class Id525Client:
                 await self._login_locked()
             recovered = False
             for attempt in range(3):
+                if with_token and self._token is None:
+                    await self._post(Endpoint.TOKEN_QUERY, EMPTY_BODY)
                 body: object = {TOKEN_FIELD: self._token} if with_token else EMPTY_BODY
                 try:
                     return await self._post(endpoint, body, check=True)
                 except _InvalidTokenError:
-                    # The error response already carried a fresh token: retry.
                     _LOGGER.debug("Token rejected by %s (attempt %d)", endpoint, attempt + 1)
                 except _NotAuthenticatedError:
                     if recovered:
@@ -304,6 +305,9 @@ class Id525Client:
                 await self._login_locked()
             for attempt in range(2):
                 html = await self._get_text(page.path)
+                # Serving a page makes the router issue a new CSRF token (embedded
+                # in the page, if at all): the one we hold is now invalid.
+                self._token = None
                 if not is_redirect_page(html):
                     return html
                 if attempt:
@@ -382,8 +386,11 @@ class Id525Client:
             raise Id525ResponseError(msg)
 
         token = data.get(TOKEN_FIELD)
-        if isinstance(token, str) and token:
+        fresh_token = isinstance(token, str) and bool(token)
+        if fresh_token:
             self._token = token
         if check and data.get("result") is False and data.get("error") == ERROR_INVALID_TOKEN:
+            if not fresh_token:  # e.g. req_smsReload: force a token_query on retry
+                self._token = None
             raise _InvalidTokenError
         return data
