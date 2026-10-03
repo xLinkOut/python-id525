@@ -106,7 +106,7 @@ class FakeRouter:
         name = request.match_info["page"]
         self.calls.append(f"page:{name}")
         session = self._session(request)
-        if session is not None and session.state == 3:
+        if session is not None and session.state in (2, 3):
             session.state = 0
         if session is None or not session.logged_in:
             # the real router also hands out a fresh anonymous session here
@@ -125,11 +125,11 @@ class FakeRouter:
         session = self._session(request)
         if session is None:
             return web.json_response({"result": False, "error": "no session"})
-        if session.state == 3:
-            # Verified live: the router reports KICKED to the first request only.
-            session.state = 0
+        if session.state in (2, 3):
+            # Verified live: EXPIRED / KICKED are reported to the first request only.
+            reported, session.state = session.state, 0
             if name == "login_query":
-                return web.json_response({"result": True, "login": 3})
+                return web.json_response({"result": True, "login": reported})
 
         if name == "token_query":
             return web.json_response({"result": True, "RequestVerifyToken": self._rotate(session)})
@@ -210,6 +210,9 @@ class FakeRouter:
                 }
             )
         self.kick_all()
+        for other in self.sessions.values():
+            if other.state == 2:  # verified live: a new login wipes expired sessions
+                other.state = 0
         session.logged_in, session.state = True, 1
         return web.json_response(
             {"result": True, "default_login": False, "RequestVerifyToken": self._rotate(session)}

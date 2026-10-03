@@ -230,6 +230,21 @@ async def test_ensure_session_paths(make_client: ClientFactory, router: FakeRout
     assert router.count("login_req") == 2
 
 
+async def test_ensure_session_login_after_expiry_counts_as_takeover(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    """Verified live: our session expired, then the web UI logged in -> state 0."""
+    a = await make_client()
+    b = await make_client()
+    await a.ensure_session()
+    router.expire_all()
+    await b.login()  # e.g. the user opens the web UI
+    with pytest.raises(Id525SessionKickedError) as exc_info:
+        await a.ensure_session()
+    assert exc_info.value.inferred
+    assert await b.get_login_state() is LoginState.LOGGED_IN  # not kicked back
+
+
 async def test_ensure_session_expired_without_auto_relogin(
     make_client: ClientFactory, router: FakeRouter
 ) -> None:

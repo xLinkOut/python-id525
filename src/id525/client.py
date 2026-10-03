@@ -203,14 +203,20 @@ class Id525Client:
     async def ensure_session(self) -> LoginState:
         """Validate the session before a batch of reads; log in if needed.
 
-        Call this at the start of every polling cycle. The router reports that
-        a session was taken over (``KICKED``) only once, to the *first* request
-        made with the old session; any other call would consume that notice and
-        make a kick indistinguishable from an expiry (verified live).
+        Call this at the start of every polling cycle. The router reports what
+        happened to a session only once, to the *first* request made with it
+        (verified live), so this must run before any other call:
+
+        * ``EXPIRED``: the session timed out and nobody else logged in since;
+          logging in again is safe.
+        * ``KICKED``: another admin login took the session over.
+        * ``NOT_LOGGED_IN`` although we held a session: someone logged in after
+          it expired (or the router restarted). Treated as a take-over too, so
+          a web UI user is not kicked out by an automatic re-login.
 
         Raises:
-            Id525SessionKickedError: another admin login took over the session.
-            Id525SessionExpiredError: the session ended and auto re-login is off.
+            Id525SessionKickedError: another admin login (probably) took over.
+            Id525SessionExpiredError: the session expired and auto re-login is off.
 
         """
         async with self._lock:
@@ -226,6 +232,9 @@ class Id525Client:
             if state is LoginState.KICKED:
                 msg = "another admin login took over the router session"
                 raise Id525SessionKickedError(msg)
+            if state is LoginState.NOT_LOGGED_IN:
+                msg = "router session vanished: likely another login (or a router restart)"
+                raise Id525SessionKickedError(msg, inferred=True)
             if not self._auto_relogin:
                 msg = f"router session ended (state={state.name})"
                 raise Id525SessionExpiredError(msg)

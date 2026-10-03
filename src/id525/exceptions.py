@@ -37,7 +37,16 @@ class Id525SessionError(Id525Error):
 
 
 class Id525SessionKickedError(Id525SessionError):
-    """Another admin login (e.g. the web UI) took over the single admin session."""
+    """Another admin login (e.g. the web UI) took over the single admin session.
+
+    ``inferred`` is True when the router did not say so explicitly but our
+    session vanished without expiring, which happens when someone logs in after
+    our session expired (or after a router restart).
+    """
+
+    def __init__(self, message: str, *, inferred: bool = False) -> None:
+        super().__init__(message)
+        self.inferred = inferred
 
 
 class Id525SessionExpiredError(Id525SessionError):
