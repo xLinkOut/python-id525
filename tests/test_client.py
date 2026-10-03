@@ -177,18 +177,16 @@ async def test_expired_session_without_auto_relogin(
     assert router.count("login_req") == 1
 
 
-async def test_kicked_session_is_not_retaken(
-    make_client: ClientFactory, router: FakeRouter
-) -> None:
+async def test_ensure_session_detects_kick(make_client: ClientFactory, router: FakeRouter) -> None:
     client = await make_client()
     await client.get_network_status()
     router.kick_all()  # e.g. somebody logged into the web UI
     with pytest.raises(Id525SessionKickedError):
-        await client.get_network_status()
+        await client.ensure_session()
     assert router.count("login_req") == 1
     assert not client.is_logged_in
     # the caller (e.g. HA after its back-off) decides when to take over again
-    await client.login()
+    assert await client.ensure_session() is LoginState.LOGGED_IN
     await client.get_network_status()
     assert router.count("login_req") == 2
 
@@ -202,11 +200,44 @@ async def test_kicked_by_second_client_is_detected(
     await a.get_network_status()
     await b.get_network_status()  # takes over the admin session
     with pytest.raises(Id525SessionKickedError):
-        await a.get_network_status()
+        await a.ensure_session()
     assert router.count("login_req") == 2
     assert await b.get_login_state() is LoginState.LOGGED_IN
     await a.close()  # logout of a dead session must be harmless
     assert await b.get_login_state() is LoginState.LOGGED_IN
+
+
+async def test_kick_without_preflight_is_indistinguishable_from_expiry(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    """Documented limitation: a read consumes the router's one-shot KICKED notice."""
+    client = await make_client()
+    await client.get_network_status()
+    router.kick_all()
+    await client.get_network_status()  # transparently re-logs in
+    assert router.count("login_req") == 2
+
+
+async def test_ensure_session_paths(make_client: ClientFactory, router: FakeRouter) -> None:
+    client = await make_client()
+    assert await client.ensure_session() is LoginState.LOGGED_IN  # logs in
+    assert await client.ensure_session() is LoginState.LOGGED_IN  # just checks
+    assert router.count("login_req") == 1
+    router.admin().state = 6  # type: ignore[union-attr]
+    assert await client.ensure_session() is LoginState.EXPIRING
+    router.expire_all()
+    assert await client.ensure_session() is LoginState.LOGGED_IN  # re-login
+    assert router.count("login_req") == 2
+
+
+async def test_ensure_session_expired_without_auto_relogin(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    client = await make_client(auto_relogin=False)
+    await client.login()
+    router.expire_all()
+    with pytest.raises(Id525SessionExpiredError):
+        await client.ensure_session()
 
 
 async def test_page_redirect_triggers_relogin(
@@ -221,11 +252,11 @@ async def test_page_redirect_triggers_relogin(
     assert router.count("login_req") == 2
 
 
-async def test_page_kicked(make_client: ClientFactory, router: FakeRouter) -> None:
-    client = await make_client()
+async def test_page_after_kick_relogs_in(make_client: ClientFactory, router: FakeRouter) -> None:
+    client = await make_client(auto_relogin=False)
     await client.get_device_info()
     router.kick_all()
-    with pytest.raises(Id525SessionKickedError):
+    with pytest.raises(Id525SessionExpiredError):
         await client.get_device_info()
 
 
@@ -235,6 +266,7 @@ async def test_get_login_state(make_client: ClientFactory, router: FakeRouter) -
     assert await client.get_login_state() is LoginState.LOGGED_IN
     router.kick_all()
     assert await client.get_login_state() is LoginState.KICKED
+    assert await client.get_login_state() is LoginState.NOT_LOGGED_IN  # one-shot
 
 
 async def test_keep_alive_refreshes_token(make_client: ClientFactory, router: FakeRouter) -> None:

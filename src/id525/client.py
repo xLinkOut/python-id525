@@ -200,6 +200,39 @@ class Id525Client:
         async with self._lock:
             return await self._login_state_locked()
 
+    async def ensure_session(self) -> LoginState:
+        """Validate the session before a batch of reads; log in if needed.
+
+        Call this at the start of every polling cycle. The router reports that
+        a session was taken over (``KICKED``) only once, to the *first* request
+        made with the old session; any other call would consume that notice and
+        make a kick indistinguishable from an expiry (verified live).
+
+        Raises:
+            Id525SessionKickedError: another admin login took over the session.
+            Id525SessionExpiredError: the session ended and auto re-login is off.
+
+        """
+        async with self._lock:
+            if not self._logged_in:
+                await self._login_locked()
+                return LoginState.LOGGED_IN
+            state = await self._login_state_locked()
+            if state is LoginState.EXPIRING:
+                await self._post(Endpoint.TOKEN_QUERY, EMPTY_BODY)  # the UI's "Extend"
+            if state in (LoginState.LOGGED_IN, LoginState.EXPIRING):
+                return state
+            self._logged_in = False
+            if state is LoginState.KICKED:
+                msg = "another admin login took over the router session"
+                raise Id525SessionKickedError(msg)
+            if not self._auto_relogin:
+                msg = f"router session ended (state={state.name})"
+                raise Id525SessionExpiredError(msg)
+            _LOGGER.debug("Session not valid (state=%s), logging in again", state.name)
+            await self._login_locked()
+            return LoginState.LOGGED_IN
+
     async def keep_alive(self) -> None:
         """Refresh the CSRF token; the web UI uses this call to extend the session."""
         await self._call(Endpoint.TOKEN_QUERY, with_token=False)

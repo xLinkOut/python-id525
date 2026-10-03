@@ -106,6 +106,8 @@ class FakeRouter:
         name = request.match_info["page"]
         self.calls.append(f"page:{name}")
         session = self._session(request)
+        if session is not None and session.state == 3:
+            session.state = 0
         if session is None or not session.logged_in:
             # the real router also hands out a fresh anonymous session here
             resp = web.Response(text=REDIRECT_PAGE, content_type="text/html")
@@ -123,6 +125,11 @@ class FakeRouter:
         session = self._session(request)
         if session is None:
             return web.json_response({"result": False, "error": "no session"})
+        if session.state == 3:
+            # Verified live: the router reports KICKED to the first request only.
+            session.state = 0
+            if name == "login_query":
+                return web.json_response({"result": True, "login": 3})
 
         if name == "token_query":
             return web.json_response({"result": True, "RequestVerifyToken": self._rotate(session)})
