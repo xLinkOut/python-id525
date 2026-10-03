@@ -38,6 +38,7 @@ uv add id525        # or: pip install id525
 import asyncio
 from id525 import Id525Client
 
+
 async def main() -> None:
     async with Id525Client("192.168.224.1", "admin", "password") as router:
         status = await router.get_network_status()
@@ -45,6 +46,7 @@ async def main() -> None:
         print(status.sim_state, status.operation_mode, status.signal_level)
         if (nr := cells.primary_5g) is not None:
             print(nr.band, nr.rsrp, nr.rsrq, nr.snr)
+
 
 asyncio.run(main())
 ```
