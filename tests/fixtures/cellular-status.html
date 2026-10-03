@@ -1,0 +1,430 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="cell_con_title">Cellular Connection</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- GM WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    
+    var cellInfo = '{ &quot;cellList&quot;: [ { &quot;cellType&quot;: &quot;PCell&quot;, &quot;networkType&quot;: &quot;5G&quot;, &quot;eci&quot;: &quot;12345671&quot;, &quot;pci&quot;: &quot;101&quot;, &quot;band&quot;: &quot;n78&quot;, &quot;bandwidth&quot;: &quot;80.0MHz&quot;, &quot;earfcn&quot;: &quot;600001&quot;, &quot;rsrp&quot;: &quot;-79.0dBm&quot;, &quot;rsrq&quot;: &quot;-11.0dB&quot;, &quot;snr&quot;: &quot;20.0dB&quot; }, { &quot;cellType&quot;: &quot;PCell&quot;, &quot;networkType&quot;: &quot;4G&quot;, &quot;eci&quot;: &quot;12345671&quot;, &quot;pci&quot;: &quot;102&quot;, &quot;band&quot;: &quot;B3&quot;, &quot;bandwidth&quot;: &quot;20.0MHz&quot;, &quot;earfcn&quot;: &quot;600002&quot;, &quot;rsrp&quot;: &quot;-74.0dBm&quot;, &quot;rsrq&quot;: &quot;-11.0dB&quot;, &quot;snr&quot;: &quot;21.0dB&quot; } ] }';
+    var cellJson = JSON.parse(cellInfo.replace(/&quot;/g,'"'));
+    var cellJsonList = [];
+	
+	function cfgCollapseAltSwitch(id, collapsed = false){
+		document.getElementById(id).addEventListener('hidden.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+		});
+		document.getElementById(id).addEventListener('shown.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		});
+		if(collapsed)
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		else
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+	}
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("cellular-status.html");
+        
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseCellsInfo');
+		cfgCollapseAltSwitch('collapseCellsInfo');
+
+		document.querySelectorAll('.modal-header > .btn-close').forEach((btn) => {
+			btn.setAttribute('aria-label', i18next.t('close'));
+		});
+		
+        cellJsonList = cellJson.cellList;
+        
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        initCellListTable(cellJsonList);
+    }
+    
+    function reload_signal(rsrp){
+        var rsrp_signal_level = 0;
+        if (0 <= rsrp) {
+          rsrp_signal_level = -1;
+        } else if (-98 <= rsrp) {
+          rsrp_signal_level = 4;
+        } else if (-108 <= rsrp) {
+          rsrp_signal_level = 3;
+        } else if (-118 <= rsrp) {
+          rsrp_signal_level = 2;
+        } else if (-128 <= rsrp) {
+          rsrp_signal_level = 1;
+        } else {
+          rsrp_signal_level = 0;
+        }
+        return rsrp_signal_level;
+    }
+    
+    function initCellListTable(cellArray){
+        var tbodyCellList = document.getElementById(platform + '-tbodyCellList');
+        var tbodyCellListCon = '';
+        var tbodyCellListAll = '';
+        var idx_main_cell = 0;
+        var signalLevel = 0;
+        var style = '';
+        var signalText = '';
+        
+        for(var i=0 ; i<cellArray.length ; i++){
+            if(cellArray[i].cellType == 'PCell' && cellArray[i].networkType == '4G')
+              idx_main_cell = i;
+            else if(cellArray[i].cellType == 'PCell' && cellArray[i].networkType == '5G'){
+              idx_main_cell = i;
+              break;
+            }
+        }
+        
+        tbodyCellList.innerHTML = '';
+        for(var i=0 ; i<cellArray.length ; i++)
+        {
+            if(i == idx_main_cell)
+              signalLevel = 4;
+            else
+              signalLevel = reload_signal(parseInt(cellArray[i].rsrp));
+              
+            if(signalLevel > 2)
+                signalText = i18next.t('cell_con_GOOD');
+            else if(signalLevel <= 2 && signalLevel > 1)
+                signalText = i18next.t('cell_con_FAIR');
+            else
+                signalText = i18next.t('cell_con_POOR');
+                
+            tbodyCellListCon = '<tr class="cardViewTableTR">';
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD""><label id="' + platform + '-cellType-' + i + '">' + cellArray[i].cellType    + '</label></td>';
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD"><label id="' + platform + '-networkType-' + i + '">' + cellArray[i].networkType + '</label></td>';
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD hiddenOnMobile"><label id="' + platform + '-eci-' + i + '">' + cellArray[i].eci + '</label></td>';
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD hiddenOnMobile"><label id="' + platform + '-pci-' + i + '">' + cellArray[i].pci + '</label></td>';
+            
+            var bandInfo = cellArray[i].band + '<br>' + cellArray[i].bandwidth;
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD hiddenOnMobile"><label id="' + platform + '-bandInfo-' + i + '">' + bandInfo + '</label></td>';
+            
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD hiddenOnMobile"><label id="' + platform + '-earfcn-' + i + '">' + cellArray[i].earfcn + '</label></td>';
+            
+            var signalInfo = cellArray[i].rsrp + '<br>' + cellArray[i].rsrq + '<br>' + cellArray[i].snr;
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD hiddenOnMobile"><label id="' + platform + '-signalInfo-' + i + '">' + signalInfo + '</label></td>';
+            
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD"><label id="' + platform + '-signalText-' + i + '">' + signalText + '</label></td>';
+            
+            var moreIcon = '<button class="btn" id="' + platform + '-moreBtn-' + i + '"><img src="/images/iconMore.svg"></button>';
+            tbodyCellListCon = tbodyCellListCon + '<td class="cardViewTableTD shownOnMobile"><label>' + moreIcon + '</label></td>';
+            
+            tbodyCellListAll += tbodyCellListCon;
+        }
+        tbodyCellList.innerHTML = tbodyCellListAll;
+        
+        for(var i=0 ; i<cellArray.length ; i++)
+        {
+            if(i == idx_main_cell)
+              signalLevel = 4;
+            else
+              signalLevel = reload_signal(parseInt(cellArray[i].rsrp));
+              
+            if(signalLevel > 2)
+                style = 'color: #00B54A; font-weight: bold;';
+            else if(signalLevel <= 2 && signalLevel > 1)
+			{
+				if("" == 'B01W036')
+					style = 'color: #00B54A; font-weight: bold;';
+				else
+					style = 'color: #ffb700; font-weight: bold;';
+			}
+            else
+			{
+				if("" == 'B01W036')
+					style = 'color: #00B54A; font-weight: bold;';
+				else
+					style = 'color: #B50000; font-weight: bold;';
+			}
+            
+            var idx = i;
+            document.getElementById(platform + '-cellType-' + idx).style = style;
+            document.getElementById(platform + '-networkType-' + idx).style = style;
+            document.getElementById(platform + '-eci-' + idx).style = style;
+            document.getElementById(platform + '-pci-' + idx).style = style;
+            document.getElementById(platform + '-bandInfo-' + idx).style = style;
+            document.getElementById(platform + '-earfcn-' + idx).style = style;
+            document.getElementById(platform + '-signalInfo-' + idx).style = style;
+            style += ' font-size: 150%;';
+            document.getElementById(platform + '-signalText-' + idx).style = style;
+            document.getElementById(platform + '-moreBtn-' + idx).onclick = function(){addrMore(idx);};
+            document.querySelector('#' + platform + '-moreBtn-' + idx + ' > img').alt = i18next.t('common_alt_more_info');
+        }
+    }
+    
+    function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function addrMore(i){
+        document.getElementById('_MoreInfo_modal_header').innerHTML = i18next.t('cell_con_details');
+        document.getElementById('_MoreInfoCellText').innerHTML = cellJsonList[i].cellType;
+        document.getElementById('_MoreInfoNetworkText').innerHTML = cellJsonList[i].networkType;
+        document.getElementById('_MoreInfoEciText').innerHTML = cellJsonList[i].eci;
+        document.getElementById('_MoreInfoPciText').innerHTML = cellJsonList[i].pci;
+        document.getElementById('_MoreInfoBandText').innerHTML = cellJsonList[i].band + '/' + cellJsonList[i].bandwidth;
+        document.getElementById('_MoreInfoEarfcnText').innerHTML = cellJsonList[i].earfcn;
+        document.getElementById('_MoreInfoRsrpText').innerHTML = cellJsonList[i].rsrp + '/' + cellJsonList[i].rsrq + '/' + cellJsonList[i].snr;
+        
+        var rsrp = parseInt( cellJsonList[i].rsrp );
+        var rsrq = parseInt( cellJsonList[i].rsrq );
+        var signal_L = 0;
+        signal_L = reload_signal(rsrp);
+        
+        if( signal_L == 3 || signal_L == 4 )
+          document.getElementById('_MoreInfoSignalText').innerHTML = i18next.t('cell_con_GOOD');
+        else if( signal_L <= 1 )
+          document.getElementById('_MoreInfoSignalText').innerHTML = i18next.t('cell_con_POOR');
+        else
+          document.getElementById('_MoreInfoSignalText').innerHTML = i18next.t('cell_con_FAIR');
+          
+        toggle_MoreInfo_modal();
+    }
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .cardViewTableFirstTD{
+      text-align: center; 
+    }
+    .cardViewTableFirstTD label{
+      text-align: center; 
+      padding-left:0px;
+    }
+    .cardViewTableTD{
+      text-align: center;
+    }
+    .cardViewTableTD label{
+      text-align: center;
+      padding-left:0px;
+    }
+    @media only screen and (min-width: 576px) {
+        .hiddenOnMobile {
+            display:'';
+        }
+        .shownOnMobile {
+            display:none;
+        }
+    }
+    @media only screen and (max-width: 576px) {
+        .hiddenOnMobile {
+            display:none;
+        }
+        .shownOnMobile {
+            display:'';
+        }
+    }
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="8" scope="col">
+                      <label class="cardViewTitle" data-i18n="cell_con_cells">Connect to Cells</label>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_cell">Cell</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_net">Network</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_e_nci">ECI/NCI</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_pci">PCI</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_band">Band/<br>Bandwidth</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_arfcn">EARFCN/<br>NR-ARFCN</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_rsrp">RSRP<br>RSRQ<br>SNR</label></th>
+                    <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_signal">Signal</label></th>
+                  </tr>
+                </thead>
+                <tbody id="xxl-tbodyCellList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="8" scope="col">
+                      <label class="cardViewTitle" data-i18n="cell_con_cells">Connect to Cells</label>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_cell">Cell</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_net">Network</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_e_nci">ECI/NCI</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_pci">PCI</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_band">Band/<br>Bandwidth</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_arfcn">EARFCN/<br>NR-ARFCN</label></th>
+                    <td class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_rsrp">RSRP<br>RSRQ<br>SNR</label></th>
+                    <th class="w-25 cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_signal">Signal</label></th>
+                  </tr>
+                </thead>
+                <tbody id="xl-tbodyCellList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseCellsInfo-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseCellsInfo">
+                        <span data-i18n="cell_con_cells">Connect to Cells</span>
+                        <img id="collapseCellsInfo-img" src="/images/iconOpenDown.svg">
+                        </a>
+                    </div>
+                    <div id="collapseCellsInfo" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+                              <tr class="cardViewTableFirstTR">
+                                <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_cell">Cell</label></th>
+                                <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_net">Network</label></th>
+                                <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_signal">Signal</label></th>
+                                <th class="cardViewTableFirstTD" scope="col"><label data-i18n="cell_con_details">Details</label></th>
+                              </tr>
+                            </thead>
+                            <tbody id="mobile-tbodyCellList">
+                            </tbody>
+                            </table>                
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+<!-- modal implementation: Start -->
+    <div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="cell_con_details">Details</label> 
+            <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+          </div>
+          <div class="modal-body text-center">
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_cell">Cell</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                <label class="inTable_modal_text" id="_MoreInfoCellText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_net">Network</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoNetworkText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_e_nci">ECI/NCI</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoEciText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_pci">PCI</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoPciText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_band">Band/Bandwidth</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoBandText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_arfcn">EARFCN/NR-ARFCN</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoEarfcnText"></label>
+              </div></div>
+    
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_rsrp">RSRP/RSRQ/SNR</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoRsrpText"></label>
+              </div></div>
+              
+              <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+              <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cell_con_signal">Signal</div>
+              <div class="p-2 w-50 flex-fill inModalTitle">
+                  <label class="inTable_modal_text" id="_MoreInfoSignalText"></label>
+              </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+<!-- modal implementation: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>   
+    </body>
+<script nonce="cdide4o6gf">
+    document.getElementById("Body").onload = function(){bodyLoad();};
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        bodyLoad();
+    });
+    i18next.on('languageChanged', function(lng) {
+        console.log("languageChanged: "+ JSON.stringify(lng));
+        document.getElementById("_mainContentTitle").innerHTML = i18next.t('cell_con_title');
+    });
+</script>
+</html>

@@ -1,0 +1,558 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="clients_title">Local Client List</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+        <style nonce="cdide4o6gf">
+            ._pin_error_text, ._puk_error_text{
+                margin-top: 4px;
+                padding-top: unset !important;
+                color: var(--errorColor);
+                text-align: left;
+                font: normal normal 500 12px/14px Roboto;
+            }
+            #_pin_area {padding: 24px 24px 0 12px;}
+            #_puk_modal_text {
+                color: var(--warningColor);
+            }
+            #_puk_Modal .modal-header {
+                padding-bottom: 0px !important;
+            }
+            #_puk_Modal .modal-content {
+                height: unset;
+            }
+            @media only screen and (min-width: 576px) {
+                .pin_text {padding-left: unset !important;}
+                #_puk_Modal .modal-content {
+                    height: 430px;
+                }
+            }
+			@keyframes blinkElement {
+				from {
+					opacity: 1;
+					background: rgba(0, 175, 170, 0);
+				}
+				to {
+					opacity: 0.1;
+					background: rgba(0, 175, 170, 0.3);
+				}
+			}
+			.updateValue {
+				animation: blinkElement 0.8s ease-in-out 2 alternate;
+			}            
+        </style>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+	var clients_info = '{ &quot;client_list&quot;: [ { &quot;hostName&quot;: &quot;host-01&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:01&quot;, &quot;ip&quot;: &quot;192.168.1.14&quot;, &quot;intf&quot;: &quot;Ethernet&quot; }, { &quot;hostName&quot;: &quot;host-02&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:02&quot;, &quot;ip&quot;: &quot;192.168.1.15&quot;, &quot;intf&quot;: &quot;WiFi 2.4G&quot; }, { &quot;hostName&quot;: &quot;host-03&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:03&quot;, &quot;ip&quot;: &quot;192.168.1.16&quot;, &quot;intf&quot;: &quot;WiFi 5G&quot; }, { &quot;hostName&quot;: &quot;host-04&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:04&quot;, &quot;ip&quot;: &quot;192.168.1.17&quot;, &quot;intf&quot;: &quot;WiFi 2.4G&quot; }, { &quot;hostName&quot;: &quot;N\/A&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:05&quot;, &quot;ip&quot;: &quot;192.168.1.18&quot;, &quot;intf&quot;: &quot;WiFi 5G&quot; }, { &quot;hostName&quot;: &quot;host-06&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:06&quot;, &quot;ip&quot;: &quot;192.168.1.19&quot;, &quot;intf&quot;: &quot;Ethernet&quot; } ] }';
+	console.log(clients_info.replace(/&quot;/g,'"'));
+    var http_gui_refresh = 10;
+	var clients_json = JSON.parse(clients_info.replace(/&quot;/g,'"'));
+	var client_list = [];
+	var delete_instance = "";
+	var current_device_mac = "00:00:00:00:00:00";
+
+	function update_content(data_json)
+	{
+		document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+		return data_json;
+	}
+    function initJS_function(pf){
+		document.getElementById(pf + "-sortNameBtn").onclick = function(){sortElement('hostName');};
+		document.getElementById(pf + "-sortMacBtn").onclick = function(){sortElement('mac');};
+		document.getElementById(pf + "-sortIPBtn").onclick = function(){sortElement('ip');};
+		document.getElementById(pf + "-sortIntfBtn").onclick = function(){sortElement('intf');};
+	}
+	function cfgCollapseAltSwitch(id, collapsed = false){
+		document.getElementById(id).addEventListener('hidden.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+		});
+		document.getElementById(id).addEventListener('shown.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		});
+		if(collapsed)
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		else
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+	}
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("client-status.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}')
+			.then(update_content)
+			<!-- .then(reload_macfilter) -->
+			.catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIAFL');
+		saveLoadingListener();
+		cfgCollapseAltSwitch('collapseIAFL');
+		document.getElementById('_loading_img1').alt = i18next.t('modal_loading');
+		document.querySelectorAll('.modal-header > .btn-close').forEach((btn) => {
+			btn.setAttribute('aria-label', i18next.t('close'));
+		});
+		document.querySelectorAll('.cardViewSortBtn').forEach((btn) => {
+			btn.setAttribute('aria-label', i18next.t('common_alt_sort'));
+		});
+		
+        document.getElementById("mobile-hostName-head").style.display = "none";
+        document.getElementById("mobile-MAC-head").style.display = "none";
+        document.getElementById("mobile-sortIntfBtn").style.display = "none";
+		client_list = clients_json.client_list;
+        onScreenWidthChange();//First time Init
+        trigger_retrieve();
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        initJS_function(platform);
+        re_sortElement();
+    }
+	function client_status_parsing(data_json){
+        //console.log("json = " + JSON.stringify(data_json));
+        client_list = data_json.client_list;
+        re_sortElement();
+		return data_json;
+	}
+    function trigger_retrieve(){
+		var refresh_time = parseInt(http_gui_refresh);
+        if((false == isNaN(refresh_time)) && (0 != refresh_time)){         
+            setTimeout(client_status_retrieve,refresh_time*1000);
+        }else {
+            console.log("http_gui_refresh is NaN or Zero.");
+        }
+	}
+    function client_status_retrieve(){
+    	const req = {}; //create javascript object;
+    	req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+    	do_fetch_api("POST", "/cgi-bin/cgi/client_status_retrieve.cgi", req)
+		.then(update_content)
+		.then(client_status_parsing)
+		.then(trigger_retrieve)
+    	.catch(response_print);
+    }
+	function initClientListTable(entries)
+	{
+		var tbodyRules = document.getElementById(platform + '-tbodyRules');
+        var tbodyRulesCon = '';
+        var tbodyRulesAll = '';
+        tbodyRules.innerHTML = '';
+		for(var i = 0; i < entries.length; i++)
+        {
+			var dev = entries[i].hostName;
+			var mac = entries[i].mac;
+			var ip = entries[i].ip;
+			var intf = entries[i].intf;
+			tbodyRulesCon = '<tr class="cardViewTableTR">';
+
+		    if(platform != 'mobile')
+			{
+				tbodyRulesCon = tbodyRulesCon + '<td class="w-30 cardViewTableTD"><label>' +dev+ '</label></td>';
+                tbodyRulesCon = tbodyRulesCon + '<td class="w-30 cardViewTableTD"><label>' +mac+ '</label></td>';
+			}
+            tbodyRulesCon = tbodyRulesCon + '<td class="w-30 cardViewTableTD"><label>' +ip+ '</label></td>';
+            if(platform != 'mobile')
+            {
+                tbodyRulesCon = tbodyRulesCon + '<td class="w-30 cardViewTableTD"><label>' +intf+ '</label></td>';
+            }else{
+                detailIcon = '<button class="btn" id="detail_' + i + '">';
+				detailIcon += '<img alt="' + i18next.t('common_alt_more_info') + '"src="/images/iconMore.svg">';
+				detailIcon += '</button>';
+                tbodyRulesCon = tbodyRulesCon + '<td class="w-30 cardViewTableTD"><label>' +detailIcon+ '</label></td>';
+            }
+
+            tbodyRulesCon += '</tr>';
+            tbodyRulesAll += tbodyRulesCon;
+		}
+        tbodyRules.innerHTML = tbodyRulesAll;
+        if(platform === 'mobile'){
+            for(var i = 0; i < entries.length; i++)(function(i){
+                document.getElementById("detail_"+i).onclick = function(){client_detail(i);};
+            })(i);
+        }
+	}
+    
+    function client_detail(index){
+        document.getElementById('_more_client_devname').innerHTML = client_list[index].hostName;
+		document.getElementById('_more_client_macaddr').innerHTML = client_list[index].mac;
+        document.getElementById('_more_client_ip').innerHTML = client_list[index].ip;
+        document.getElementById('_more_client_interface').innerHTML = client_list[index].intf;
+        toggle_MoreInfo_client_modal();
+    }
+
+	var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+    }
+
+    function toggle_MoreInfo_client_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_client_modal'));
+        _myModal.toggle();
+    }
+	var sortNameStatus = 0;
+	var sortMacStatus = 0;
+	var sortIPStatus = 0;
+	var sortIntfStatus = 0;
+    var element_name = 'hostName';
+	function sortElement(element)
+	{
+		var sortImg = '-sortNameImg';
+		var sortStatus = 0;
+        element_name = element;
+		if(element == 'hostName'){
+			sortImg = '-sortNameImg';
+			sortStatus = sortNameStatus%2;
+		}
+		else{
+			sortNameStatus = 1;
+			document.getElementById(platform + '-sortNameImg').src="/images/iconSort.svg";
+			document.getElementById(platform + '-sortNameImg').alt = i18next.t('common_alt_unsort');
+		}
+		if(element == 'mac'){
+			sortImg = '-sortMacImg';
+			sortStatus = sortMacStatus%2;
+		}
+		else{
+			sortMacStatus = 1;
+			document.getElementById(platform + '-sortMacImg').src="/images/iconSort.svg";
+			document.getElementById(platform + '-sortMacImg').alt = i18next.t('common_alt_unsort');
+		}
+		if(element == 'ip'){
+			sortImg = '-sortIPImg';
+			sortStatus = sortIPStatus%2;
+		}
+		else{
+			sortIPStatus = 1;
+			document.getElementById(platform + '-sortIPImg').src="/images/iconSort.svg";
+			document.getElementById(platform + '-sortIPImg').alt = i18next.t('common_alt_unsort');
+		}
+		if(element == 'intf'){
+			sortImg = '-sortIntfImg';
+			sortStatus = sortIntfStatus%2;
+		}
+		else{
+			sortIntfStatus = 1;
+			document.getElementById(platform + '-sortIntfImg').src="/images/iconSort.svg";
+			document.getElementById(platform + '-sortIntfImg').alt = i18next.t('common_alt_unsort');
+		}
+		switch(sortStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + sortImg).src="/images/iconA-Z.svg";
+				document.getElementById(platform + sortImg).alt = i18next.t('common_alt_ascending');
+				client_list.sort(function(a, b) {
+					if(a[element] < b[element]) { return -1; }
+					if(a[element] > b[element]) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + sortImg).src="/images/iconZ-A.svg";
+				document.getElementById(platform + sortImg).alt = i18next.t('common_alt_descending');
+				client_list.sort(function(a, b) {
+					if(a[element] > b[element]) { return -1; }
+					if(a[element] < b[element]) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initClientListTable(client_list);
+		if(element == 'hostName')
+			sortNameStatus = ++sortStatus;
+		if(element == 'mac')
+			sortMacStatus = ++sortStatus;
+		if(element == 'ip')
+			sortIPStatus = ++sortStatus;
+		if(element == 'intf')
+			sortIntfStatus = ++sortStatus;
+    }
+    function re_sortElement()
+	{
+		if(element_name == 'hostName')
+			sortNameStatus = ++sortNameStatus%2;
+		if(element_name == 'mac')
+			sortMacStatus = ++sortMacStatus%2;
+		if(element_name == 'ip')
+			sortIPStatus = ++sortIPStatus%2;
+		if(element_name == 'intf')
+			sortIntfStatus = ++sortIntfStatus%2;
+		
+		sortElement(element_name);
+    }
+
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc">
+        <div class="row me-0 ms-0 mt-2 justify-content-between" id="xxl-IPFilterList">
+			<div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+				<table class="table table-borderless cardViewTable">
+				<thead>
+				<tr>
+					<th colspan="4" scope="col">
+						<label class="cardViewTitle" data-i18n="clients_list">Connected Clients</label>
+                    </th>
+                 </tr>
+				 <tr class="cardViewTableFirstTR">
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_hostName">Host Name</label>
+						<button class="cardViewSortBtn" id="xxl-sortNameBtn"><img id="xxl-sortNameImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_macAddr">MAC Address</label>
+						<button class="cardViewSortBtn" id="xxl-sortMacBtn"><img id="xxl-sortMacImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_ipAddr">IP Address</label>
+						<button class="cardViewSortBtn" id="xxl-sortIPBtn"><img id="xxl-sortIPImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_interface">Interface</label>
+						<button class="cardViewSortBtn" id="xxl-sortIntfBtn"><img id="xxl-sortIntfImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+                  </tr>
+				</thead>
+				<tbody id="xxl-tbodyRules">
+                </tbody>
+				</table>
+			</div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl">
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xl-IPFilterList">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+					<th colspan="4" scope="col">
+						<label class="cardViewTitle" data-i18n="clients_list">Connected Clients</label>
+					</th>
+                 </tr>
+				 <tr class="cardViewTableFirstTR">
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_hostName">Host Name</label>
+						<button class="cardViewSortBtn" id="xl-sortNameBtn"><img id="xl-sortNameImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_macAddr">MAC Address</label>
+						<button class="cardViewSortBtn" id="xl-sortMacBtn"><img id="xl-sortMacImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_ipAddr">IP Address</label>
+						<button class="cardViewSortBtn" id="xl-sortIPBtn"><img id="xl-sortIPImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+					<th class="w-15 cardViewTableFirstTD" scope="col">
+						<label data-i18n="clients_interface">Interface</label>
+						<button class="cardViewSortBtn" id="xl-sortIntfBtn"><img id="xl-sortIntfImg" alt="" src="/images/iconSort.svg"></button>
+					</th>
+                  </tr>
+                </thead>
+				<tbody id="xl-tbodyRules">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile">
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-IPFilterList">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAFL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAFL">
+                        <span data-i18n="clients_list">Connected Clients</span>
+                        <img id="collapseIAFL-img" src="/images/iconOpenDown.svg">
+                        </a>
+                    </div>
+                    <div id="collapseIAFL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+							  <tr class="cardViewTableFirstTR">
+								<th class="cardViewTableFirstTD" scope="col" id="mobile-hostName-head">
+									<label data-i18n="clients_hostName">Host Name</label>
+									<button class="cardViewSortBtn" id="mobile-sortNameBtn"><img id="mobile-sortNameImg" alt="" src="/images/iconSort.svg"></button>
+								</th>
+								<th class="cardViewTableFirstTD" scope="col" id="mobile-MAC-head">
+									<label data-i18n="clients_macAddr">MAC Address</label>
+									<button class="cardViewSortBtn" id="mobile-sortMacBtn"><img id="mobile-sortMacImg" alt="" src="/images/iconSort.svg"></button>
+								</th>
+								<th class="w-50 cardViewTableFirstTD" scope="col">
+									<label data-i18n="clients_ipAddr">IP Address</label>
+									<button class="cardViewSortBtn" id="mobile-sortIPBtn"><img id="mobile-sortIPImg" alt="" src="/images/iconSort.svg"></button>
+								</th>
+								<th class="w-50 cardViewTableFirstTD" scope="col">
+									<label data-i18n="clients_actions">Actions</label>
+									<button class="cardViewSortBtn" id="mobile-sortIntfBtn"><img id="mobile-sortIntfImg" alt="" src="/images/iconSort.svg"></button>
+								</th>
+							  </tr>
+                            </thead>
+                            <tbody id="mobile-tbodyRules">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text" data-i18n="modal_loading">Loading, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_client_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="clients_detail">Client Detail</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="clients_hostName">Device Name</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_client_devname"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="clients_macAddr">MAC Address</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_client_macaddr"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="clients_ipAddr">IP Address</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_client_ip"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="clients_interface">Interface</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_client_interface"></label>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+    </div>
+    </body>
+	<script nonce="cdide4o6gf">
+        i18next.on('loaded', function(loaded) {
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+        });
+        i18next.on('languageChanged', function(lng) {
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_ClientList');
+        });
+	</script>
+</html>

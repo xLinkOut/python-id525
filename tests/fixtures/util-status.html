@@ -1,0 +1,497 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Utilization</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    
+    var http_gui_refresh = "";
+	function cfgCollapseAltSwitch(id, collapsed = false){
+		document.getElementById(id).addEventListener('hidden.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+		});
+		document.getElementById(id).addEventListener('shown.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		});
+		if(collapsed)
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		else
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+	}
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("util-status.html");
+        
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseSysInfo');
+        mobile_CollapsibleAddListener('collapseCpuUtil');
+        mobile_CollapsibleAddListener('collapseMemUtil');
+        mobile_CollapsibleAddListener('collapseUpSpd');
+        mobile_CollapsibleAddListener('collapseDownSpd');
+		cfgCollapseAltSwitch('collapseSysInfo');
+		cfgCollapseAltSwitch('collapseCpuUtil');
+		cfgCollapseAltSwitch('collapseMemUtil');
+		cfgCollapseAltSwitch('collapseUpSpd');
+		cfgCollapseAltSwitch('collapseDownSpd');
+		loadCardInfo();
+        /* Add your onload function call here: End */
+        var refresh_time = parseInt(http_gui_refresh);
+        if((false == isNaN(refresh_time)) && (0 != refresh_time)){      
+            setTimeout(function (){location.reload();},refresh_time*1000);
+        }else {
+            console.log("http_gui_refresh is NaN or Zero.");
+        }
+    }
+	
+/* Change object text when selected item(s) */
+    function setInnerHtmlByValue(className,text) {
+        var elements = document.getElementsByClassName(className);
+		
+		for(i=0; i < elements.length; i++) {
+			elements[i].innerHTML = text;
+		}
+    }
+	
+	function setProgress(className, rate) {
+		var normalColor = '#3F4042'; /*old: #8ECEF5*/
+		var dangerColor = '#B50000'; /*old: #FF4F60*/
+		var bars = document.getElementsByClassName(className);
+		
+		for(i=0; i < bars.length; i++) {
+			bars[i].style.width = rate+'%';
+			bars[i].style.background = (rate <= 80)? normalColor : dangerColor;
+		}
+	}
+	
+	function loadCardInfo() {
+		
+		var currCpuUsage = '30.60%';
+		var maxCpuUsage = '100.00%';
+		var minCpuUsage = '2.02%';
+		
+		var currMemUsage = '79.73%';
+		var maxMemUsage = '89.86%';
+		var minMemUsage = '71.99%';
+		
+		setInnerHtmlByValue('sysMonitoringDuration', '30 second(s)');
+		setInnerHtmlByValue('devUptime', '47 day(s), 01 Hr, 33 Min, 13 Sec.');
+		
+		setInnerHtmlByValue('currCpuUsageText', currCpuUsage);
+		setInnerHtmlByValue('maxCpuUsageText', maxCpuUsage);
+		setInnerHtmlByValue('minCpuUsageText', minCpuUsage);
+		setProgress('currCpuUsageBar', parseInt(currCpuUsage));
+		setProgress('maxCpuUsageBar', parseInt(maxCpuUsage));
+		setProgress('minCpuUsageBar', parseInt(minCpuUsage));
+		
+		setInnerHtmlByValue('currMemUsageText', currMemUsage);
+		setInnerHtmlByValue('maxMemUsageText', maxMemUsage);
+		setInnerHtmlByValue('minMemUsageText', minMemUsage);
+		setProgress('currMemUsageBar', parseInt(currMemUsage));
+		setProgress('maxMemUsageBar', parseInt(maxMemUsage));
+		setProgress('minMemUsageBar', parseInt(minMemUsage));
+		
+		setInnerHtmlByValue('upAvgDataRate', '17 Kbps');
+		setInnerHtmlByValue('upMaxDataRate', '77.19 Mbps');
+		setInnerHtmlByValue('upMinDataRate', '48 bps');
+		
+		setInnerHtmlByValue('downAvgDataRate', '44 Kbps');
+		setInnerHtmlByValue('downMaxDataRate', '436.89 Mbps');
+		setInnerHtmlByValue('downMinDataRate', '64 bps');
+	}
+    </script>
+    
+    <style nonce="cdide4o6gf">
+	@media only screen and (min-width: 576px) {
+		.fx_mobile {
+			display:none;
+		}
+		.fx_pc {
+			display:block;
+		}
+	}
+	.progressTd {
+		display: flex; 
+		align-items: center; 
+		justify-content: space-between;
+	}
+	.progress {
+		border-radius: 7px; 
+		height: 14px; 
+		Width: 60%
+	}
+	.progress-bar {
+		border-radius: 7px; 
+		height: 14px;
+		width: 0%; 
+		background: #00AFAA
+	}
+	</style>
+	
+    <body id="Body">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+    document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc">
+        <div class="row ms-0 me-0 mt-2">
+            <div class="bg-white fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" scope="col" data-i18n="util_sys_info">System Information</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd col-6 col-xxl-4" scope="row" data-i18n="util_sys_duration">System Monitoring Duration</th>
+                    <td class="cardViewText sysMonitoringDuration"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="util_dev_uptime">Device Uptime</th>
+                    <td class="cardViewText devUptime"></td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between">
+          <div class="col-xxl me-xxl-4 bg-white fxCardViewBorder">
+            <table class="table table-borderless">
+              <thead>
+                <tr>
+                  <th colspan="2" class="cardViewTitle" scope="col" data-i18n="util_cpu">CPU Utilization</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="cardViewTd w-50" scope="row" data-i18n="util_cpu_usage">Current Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="currCpuUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar currCpuUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_max_usage">Maximum Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="maxCpuUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar maxCpuUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_mini_usage">Minimum Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="minCpuUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar minCpuUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-xxl mt-4 mt-xxl-0 bg-white fxCardViewBorder">
+            <table class="table table-borderless">
+              <thead>
+                <tr>
+                  <th colspan="2" class="cardViewTitle" scope="col" data-i18n="util_mem">Memory Utilization</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="cardViewTd w-50" scope="row" data-i18n="util_mem_curUsage">Current Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="currMemUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar currMemUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_mem_max">Maximum Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="maxMemUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar maxMemUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_mem_mini">Minimum Usage</th>
+                  <td class="cardViewTitle progressTd">
+                    <span class="minMemUsageText"></span>
+                    <div class="progress">
+                      <div class="progress-bar minMemUsageBar" role="progressbar"></div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between">
+          <div class="col-xxl me-xl-4 bg-white fxCardViewBorder">
+            <table class="table table-borderless">
+              <thead>
+                <tr>
+                  <th colspan="2" class="cardViewTitle" scope="col" data-i18n="util_up_data_speed">Uplink Data Speed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="cardViewTd w-50" scope="row" data-i18n="util_up_curDataRate">Current Data Rate</th>
+                  <td class="cardViewText upAvgDataRate"></td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_up_maxDataRate">Maximum Data Rate</th>
+                  <td class="cardViewText upMaxDataRate"></td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_up_miniDataRate">Minimum Data Rate</th>
+                  <td class="cardViewText upMinDataRate"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-xxl mt-4 mt-xxl-0 bg-white fxCardViewBorder">
+            <table class="table table-borderless">
+              <thead>
+                <tr>
+                  <th colspan="2" class="cardViewTitle" scope="col" data-i18n="util_down_data_speed">Downlink Data Speed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="cardViewTd w-50" scope="row" data-i18n="util_down_curDataRate">Current Data Rate</th>
+                  <td class="cardViewText downAvgDataRate"></td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_down_maxDataRate">Maximum Data Rate</th>
+                  <td class="cardViewText downMaxDataRate"></td>
+                </tr>
+                <tr>
+                  <th class="cardViewTd" scope="row" data-i18n="util_down_miniDataRate">Minimum Data Rate</th>
+                  <td class="cardViewText downMinDataRate"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+		<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile">
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseSysInfo-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseSysInfo">
+					<span data-i18n="util_sys_info">System Information</span>
+					<img id="collapseSysInfo-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseSysInfo" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+							<tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_sys_duration">System Monitoring Duration</th></tr>
+							  <tr><td class="cardViewText pt-0 sysMonitoringDuration"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_dev_uptime">Device Uptime</th></tr>
+							  <tr><td class="cardViewText pt-0 devUptime"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseCpuUtil-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseCpuUtil">
+					<span data-i18n="util_cpu">CPU Utilization</span>
+					<img id="collapseCpuUtil-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseCpuUtil" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_cpu_usage">Current Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="currCpuUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar currCpuUsageBar" role="progressbar"></div>
+								</div>
+							  </td></tr>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_max_usage">Maximum Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="maxCpuUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar maxCpuUsageBar" role="progressbar"></div>
+								</div>
+							  </td></tr>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_mini_usage">Minimum Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="minCpuUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar minCpuUsageBar" role="progressbar"></div>
+								</div>
+							  </td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseMemUtil-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseMemUtil">
+					<span data-i18n="util_mem">Memory Utilization</span>
+					<img id="collapseMemUtil-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseMemUtil" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_mem_curUsage">Current Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="currMemUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar currMemUsageBar" role="progressbar"></div>
+								</div>
+                </td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_mem_max">Maximum Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="maxMemUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar maxMemUsageBar" role="progressbar"></div>
+								</div>
+                </td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_mem_mini">Minimum Usage</th></tr>
+							  <tr><td class="cardViewText pt-0 progressTd">
+								<span class="minMemUsageText"></span>
+								<div class="progress">
+								<div class="progress-bar minMemUsageBar" role="progressbar"></div>
+								</div>
+                </td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseUpSpd-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseUpSpd">
+					<span data-i18n="util_up_data_speed">Uplink Data Speed</span>
+					<img id="collapseUpSpd-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseUpSpd" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_up_curDataRate">Current Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 upAvgDataRate"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_up_maxDataRate">Maximum Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 upMaxDataRate"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_up_miniDataRate">Minimum Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 upMinDataRate"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseDownSpd-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseDownSpd">
+					<span data-i18n="util_down_data_speed">Uplink Data Speed</span>
+					<img id="collapseDownSpd-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseDownSpd" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_down_curDataRate">Current Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 downAvgDataRate"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_down_maxDataRate">Maximum Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 downMaxDataRate"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="util_down_miniDataRate">Minimum Data Rate</th></tr>
+							  <tr><td class="cardViewText pt-0 downMinDataRate"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        </div>
+		<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+    
+    </body>
+<script nonce="cdide4o6gf">
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        bodyLoad();
+    });
+    i18next.on('languageChanged', function(lng) {
+        console.log("languageChanged: "+ JSON.stringify(lng));
+        document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_Utilization');
+    });
+</script>
+</html>

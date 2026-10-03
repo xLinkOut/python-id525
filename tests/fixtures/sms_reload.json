@@ -1,0 +1,27 @@
+{
+  "result": true,
+  "sms_update_time": "1759480000",
+  "message": [
+    {
+      "index": 3,
+      "phone_number": "+390000000001",
+      "time": "2026/10/01 08:15:00",
+      "context": "Hai consumato il 50% del traffico.",
+      "read_status": 0
+    },
+    {
+      "index": 2,
+      "phone_number": "+390000000002",
+      "time": "2026/09/30 19:02:11",
+      "context": "Messaggio letto",
+      "read_status": 1
+    },
+    {
+      "index": 1,
+      "phone_number": "+390000000003",
+      "time": "2026/10/02 10:00:00",
+      "context": "Inviato dal router",
+      "read_status": 6
+    }
+  ]
+}

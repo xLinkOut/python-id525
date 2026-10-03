@@ -1,0 +1,1046 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="net_status_title">Network Status</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+        <style nonce="cdide4o6gf">
+            ._pin_error_text, ._puk_error_text{
+                margin-top: 4px;
+                padding-top: unset !important;
+                color: var(--errorColor);
+                text-align: left;
+                font: normal normal 500 12px/14px Roboto;
+            }
+            #_pin_area {padding: 24px 24px 0 12px;}
+            #_puk_modal_text {
+                color: var(--warningColor);
+            }
+            #_puk_Modal .modal-header {
+                padding-bottom: 0px !important;
+            }
+            #_puk_Modal .modal-content {
+                height: unset;
+            }
+			#_puk_Modal #confirmPIN_div{
+				padding-top: 24px;
+			}
+            @media only screen and (min-width: 576px) {
+                .pin_text {padding-left: unset !important;}
+                #_puk_Modal .modal-content {
+                    height: 430px;
+                }
+            }
+			@keyframes blinkElement {
+				from {
+					opacity: 1;
+					background: rgba(0, 175, 170, 0);
+				}
+				to {
+					opacity: 0.1;
+					background: rgba(0, 175, 170, 0.3);
+				}
+			}
+			.updateValue {
+				animation: blinkElement 0.8s ease-in-out 2 alternate;
+			}
+			.signalStrengthImg{
+				position: relative;
+				top: -14px;
+				width: 56px;
+				height: auto;
+			}
+        </style>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+	var net_info = '{ &quot;sim_card_state&quot;: &quot;Connected&quot;, &quot;signalLevel&quot;: &quot;4&quot;, &quot;operation_mode&quot;: &quot;5G I TIM&quot;, &quot;plmn&quot;: &quot;22201&quot;, &quot;connection_time&quot;: &quot;37,10:39:33&quot;, &quot;data_tx&quot;: &quot;300.75 GB&quot;, &quot;data_rx&quot;: &quot;4176.89 GB&quot;, &quot;duration_from_last_reset&quot;: &quot;408,15:45:12&quot;, &quot;statistic_reset_day&quot;: &quot;2025-08-20&quot;, &quot;ipv4_addr&quot;: &quot;192.168.1.10&quot;, &quot;ipv4_mask&quot;: &quot;255.255.255.240&quot;, &quot;ipv4_gw&quot;: &quot;192.168.1.11&quot;, &quot;ipv4_dns&quot;: &quot;203.0.113.12&quot;, &quot;ipv6_addr&quot;: &quot;&quot;, &quot;ipv6_dns&quot;: &quot;&quot;, &quot;ipv6_prefix&quot;: &quot;&quot;, &quot;ipv6_gw&quot;: &quot;&quot;, &quot;hostIPAddr&quot;: &quot;192.168.1.13&quot;, &quot;wifiStatus&quot;: true, &quot;ssid_2g&quot;: &quot;TestNet%2D24&quot;, &quot;ssid_5g&quot;: &quot;TestNet%2D24&quot;, &quot;clientNum_2g&quot;: 2, &quot;clientNum_5g&quot;: 2, &quot;clientNum_usb&quot;: 0, &quot;speed_eth1&quot;: &quot;1000 Mbps&quot;, &quot;speed_eth2&quot;: &quot;1000 Mbps&quot;, &quot;fqdn&quot;: &quot;router.example&quot; }';
+	// console.log(net_info.replace(/&quot;/g,'"'));
+	var net_json = JSON.parse(net_info.replace(/&quot;/g,'"'));
+	
+	var _sim_card_state = '';
+	var pin_setting = "0";
+	var pukTryCount = "10";
+	var pinTryCount = "3";
+	var http_gui_refresh = 10;
+	var _signalLevel = '';
+	var _plmn = '';
+	var _data_tx = '';
+	var _data_rx = '';
+	// var _data_drop = '';
+	var _connection_time = '00,00:00:00';
+	var _ipv4_addr = '';
+	var _ipv4_mask = '';
+	var _ipv4_gw = '';
+	var _ipv4_dns = '';
+	var _ipv6_addr = '';
+	var _ipv6_prefix = '';
+	var _ipv6_gw = '';
+	var _ipv6_dns = '';
+	var isBodyOnload = 1;
+	var _operation_mode = '';
+	var _duration_from_last_reset = '00,00:00:00';
+	var _statistic_reset_day = '';
+	var _hostIPAddr = '';
+	var _fqdn = '';
+	var _wifiStatus = false;
+	var _ssid_2g = '';
+	var _ssid_5g = '';
+	var _clientNum_2g = 0;
+	var _clientNum_5g = 0;
+	// var _clientNum_usb = 0;
+	var _speed_eth1 = '';
+	var _speed_eth2 = '';
+	var _speed_eth3 = '';
+
+	function var_initialize(){
+		_sim_card_state = '';
+		_signalLevel = 'NA';
+		_plmn = 'NA';
+		_data_tx = 'NA';
+		_data_rx = 'NA';
+		// _data_drop = 'NA';
+		_ipv4_addr = '';
+		_ipv4_mask = '';
+		_ipv4_gw = '';
+		_ipv4_dns = '';		
+		_ipv6_addr = '';
+		_ipv6_prefix = '';
+		_ipv6_gw = '';
+		_ipv6_dns = '';
+		_operation_mode = 'NA';
+		_statistic_reset_day = 'NA';
+		_hostIPAddr = 'NA';
+		_speed_eth1 = 'NA';
+		_speed_eth2 = 'NA';
+		_speed_eth3 = 'NA';
+		_fqdn = 'NA';
+	}
+
+    function puk_redirect(response){
+        var page = "/";
+        var redirect = 0;
+        if(false == response.result){
+            pukTryCount = response.PUK_RETRY_CNT;
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            if(response.error_text == "Incorrect PUK"){
+                document.getElementById("_puk_error_text").innerText = i18next.t('net_status_puk_error2', {pukCount: pukTryCount});
+            }else if(response.error_text == "PUK Blocked"){
+                document.getElementById("_pin_error_text").innerText = i18next.t('net_status_puk_error3');
+                redirect = 1;
+                page = "/cgi-bin/cm/puk_blocked.html";
+            }
+        }else{
+            redirect = 1;
+        }
+        document.getElementById('RequestVerifyToken').value = response.RequestVerifyToken;
+        if(1 == redirect){
+            setTimeout(redirect_top,1000,page);
+            var _mySesModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_puk_Modal'));
+            _mySesModal.hide();
+        }
+    }
+
+    function unlock_puk(){
+        var puk = document.getElementById("_puk_input");
+        var new_pin = document.getElementById("_new_pin");
+        var cfm_pin = document.getElementById("_cfm_pin");
+
+        if (checkEmpty(puk)) {
+            document.getElementById("_puk_error_text").innerHTML = i18next.t('net_status_puk_error1');
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            puk.focus();
+            return false;
+        }
+        if (!checkPIN(puk)) {
+            document.getElementById("_puk_error_text").innerHTML = i18next.t('net_status_pin_error5');
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            puk.focus();
+            return false;
+        }
+        if (checkEmpty(new_pin) || checkEmpty(cfm_pin)) {
+            document.getElementById("_puk_error_text").innerHTML = i18next.t('net_status_pin_error4');
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            new_pin.focus();
+            return false;
+        }
+        if (!checkPIN(new_pin) || !checkPIN(cfm_pin)) {
+            document.getElementById("_puk_error_text").innerHTML = i18next.t('net_status_pin_error1');
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            new_pin.focus();
+            return false;
+        }
+        if(new_pin.value != cfm_pin.value) {
+            document.getElementById("_puk_error_text").innerHTML = i18next.t('net_status_pin_error3');
+            document.getElementById("_puk_error_text").classList.remove('invisible');
+            new_pin.focus();
+            return false;
+        }
+        document.getElementById("_puk_error_text").classList.add('invisible');
+        document.getElementById('_puk_footerBtnText').innerHTML = i18next.t('net_status_processing');   
+        document.getElementById('_puk_footerBtnText').style.backgroundColor = "var(--disabledText)";
+        document.getElementById('_puk_footerBtnText').style.cursor = "wait";
+        document.getElementById('_puk_footerBtnText').disabled = true;
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.puk = puk.value;
+        req.new_pin = new_pin.value;
+        do_fetch_api("POST", "/cgi-bin/cgi/puk_enter.cgi", req)
+        .then(response => {setTimeout(puk_redirect,800, response);}).catch(response_print).finally(setTimeout(revertModal, 2000, '_puk_footerBtnText'));
+    }
+    
+    function displayPukModal(){
+        var _mySesModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_puk_Modal'));
+        _mySesModal.show();
+    }
+
+    function pin_redirect(response){
+        var redirect = 0;
+        var _mySesModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_genericModal'));
+        if(false == response.result){
+            pinTryCount = response.PIN_RETRY_CNT;
+            document.getElementById("_pin_error_text").classList.remove('invisible');
+            if(response.error_text == "Incorrect PIN"){
+                document.getElementById("_pin_error_text").innerText = i18next.t('net_status_pin_error6', {pinCount: pinTryCount});
+            }else if(response.error_text == "PUK Locked"){
+                document.getElementById("_pin_error_text").innerText = i18next.t('net_status_pin_error7');
+                document.getElementById('_genericModal').addEventListener('hidden.bs.modal', displayPukModal);
+                document.getElementById("_puk_footerBtnText").onclick = function(){unlock_puk();};
+                _mySesModal.hide();
+            }
+        }else{
+            redirect = 1;
+        }
+        document.getElementById('RequestVerifyToken').value = response.RequestVerifyToken;
+        if(1 == redirect){
+            setTimeout(redirect_top,1000,"/");            
+            _mySesModal.hide();
+        }
+    }
+
+    function displayGenericModal(){
+        var _mySesModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_genericModal'));
+        _mySesModal.show();
+    }
+
+    function revertModal(id){
+        document.getElementById(id).innerHTML = i18next.t('ok');
+        document.getElementById(id).style.backgroundColor = "var(--buttonColor)";
+        document.getElementById(id).style.cursor = "pointer";
+        document.getElementById(id).disabled = false;
+    }
+
+    function unlock_pin(){
+        var pin = document.getElementById("_pin_input");
+
+        if (checkEmpty(pin)) {
+            document.getElementById("_pin_error_text").innerHTML = i18next.t('net_status_pin_error2');
+            document.getElementById("_pin_error_text").classList.remove('invisible');
+            pin.focus();
+            return false;
+        }
+        if (!checkPIN(pin)) {
+            document.getElementById("_pin_error_text").innerHTML = i18next.t('net_status_pin_error1');
+            document.getElementById("_pin_error_text").classList.remove('invisible');
+            pin.focus();
+            return false;
+        }
+        document.getElementById("_pin_error_text").classList.add('invisible');
+        document.getElementById('_footerBtnText').innerHTML = i18next.t('net_status_processing');  
+        document.getElementById('_footerBtnText').style.backgroundColor = "var(--disabledText)";
+        document.getElementById('_footerBtnText').style.cursor = "wait";
+        document.getElementById('_footerBtnText').disabled = true;
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.pin = pin.value;
+        do_fetch_api("POST", "/cgi-bin/cgi/pin_enter.cgi", req)
+        .then(response => {setTimeout(pin_redirect,800, response);}).catch(response_print).finally(setTimeout(revertModal, 2000, '_footerBtnText'));
+    }
+
+    function simStateHandler(sim_state){
+        if(sim_state == "No SIM"){
+            revise_generic_modal_content(i18next.t('net_status_no_sim'),Boolean(0),0,i18next.t('net_status_no_sim_des'), i18next.t('ok'));
+            displayGenericModal();
+        }
+        else if(sim_state == "Enter PIN"){
+            revise_generic_modal_content(i18next.t('net_status_sim_pin'),Boolean(1),0,i18next.t('net_status_sim_pin_des'), i18next.t('ok'),Boolean(1));
+            document.getElementById('_footerBtnText').removeAttribute("data-bs-dismiss");
+            document.getElementById('_footerBtnText').onclick = function() {unlock_pin()};
+            displayGenericModal();
+        }
+        else if(sim_state == "PIN Locked"){
+			document.getElementById("_puk_footerBtnText").onclick = function(){unlock_puk();};
+            displayPukModal();
+        }
+        else if(sim_state.indexOf("Invalid SIM") != -1 ){
+            revise_generic_modal_content(i18next.t('net_status_invalid_sim'),Boolean(0),0,i18next.t('net_status_invalid_sim_des'), i18next.t('ok'));
+            displayGenericModal();
+        }        
+    }
+
+    function net_status_parsing(data_json){
+		// console.log("json = " + JSON.stringify(data_json));
+		let v_name = "";
+		var w_name = "";
+		var_initialize();
+		for (const v_name in data_json){
+			w_name = "_"+v_name;
+			if(undefined != window[w_name]){
+				window[w_name] = data_json[v_name];
+			}
+		}
+		printCardInfo();
+    }
+	
+	function trigger_retrieve(){
+		var refresh_time = parseInt(http_gui_refresh);
+        if((false == isNaN(refresh_time)) && (0 != refresh_time)){         
+            setTimeout(net_status_retrieve,refresh_time*1000);
+        }else {
+            console.log("http_gui_refresh is NaN or Zero.");
+        }
+	}
+
+    function net_status_retrieve(){
+		isBodyOnload = 0;
+    	const req = {}; //create javascript object;
+    	req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+    	do_fetch_api("POST", "/cgi-bin/cgi/net_status_retrieve.cgi", req)
+		.then(update_token)
+    	.then(net_status_parsing)
+		.then(trigger_retrieve)
+    	.catch(response_print);
+    }
+	
+	function cfgCollapseAltSwitch(id, collapsed = false){
+		document.getElementById(id).addEventListener('hidden.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+		});
+		document.getElementById(id).addEventListener('shown.bs.collapse', function () {
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		});
+		if(collapsed)
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_collapse');
+		else
+			document.getElementById(id+"-img").alt = i18next.t('common_alt_expand');
+	}
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("net-status.html");
+        console.log("bodyLoad i18next.language: "+ i18next.language);
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}')
+		.then(update_token)
+		.catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseDevCon');
+        mobile_CollapsibleAddListener('collapseDevData');
+        mobile_CollapsibleAddListener('collapseIpv4');
+        mobile_CollapsibleAddListener('collapseIpv6');
+        mobile_CollapsibleAddListener('collapseLanStatus'); 
+		
+		cfgCollapseAltSwitch('collapseDevCon');
+		cfgCollapseAltSwitch('collapseDevData');
+		cfgCollapseAltSwitch('collapseIpv4');
+		cfgCollapseAltSwitch('collapseIpv6');
+		cfgCollapseAltSwitch('collapseLanStatus');
+		
+		document.getElementById('_puk_headerCloseBtn').setAttribute('aria-label', i18next.t('close'));
+		document.getElementById('_puk_footerBtnText').setAttribute('aria-label', i18next.t('ok'));
+		
+		document.getElementById("_puk_input").title = i18next.t('net_status_puk');
+		document.getElementById("_new_pin").title = i18next.t('net_status_new_pin');
+		document.getElementById("_cfm_pin").title = i18next.t('net_status_confirm_pin');
+		
+		net_status_parsing(net_json);
+        /* Add your onload function call here: End */
+        simStateHandler(_sim_card_state);
+		trigger_retrieve();
+    }
+
+    function update_token(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+		return data_json;
+    }
+
+    function response_print(response){
+        console.log("ok: "+response.ok);
+        console.log("result: "+response.result);
+        console.log("statusText: "+response.statusText);
+    }
+
+	async function fetch_api_response(url, req) {
+		// Get token
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		
+		let response = await do_fetch_api("POST", url, req)
+		.catch((err) => {
+			console.log("Response GET ERROR!!!");
+			response_print(err);
+			throw err;
+		});
+			
+		// Update token
+		update_token(response);
+		
+		return response;
+	}
+
+    function setClassInnerHtml(className,innerHTML) {
+        var elements = document.getElementsByClassName(className);
+        for(i=0; i < elements.length; i++) {/*
+        	if( (0 == isBodyOnload) && (innerHTML != elements[i].innerHTML) ){
+        		elements[i].addEventListener("animationend", function (e) {this.classList.remove("updateValue");});
+        		elements[i].addEventListener("animationiteration", function (e) {this.innerHTML = innerHTML;});
+        		elements[i].classList.toggle("updateValue");
+        	}else{
+            	elements[i].innerHTML = innerHTML;
+        	}*/
+			elements[i].innerText = decodeURIComponent(innerHTML);
+        }
+    }
+
+    function setClassSrc(className,src) {
+        var elements = document.getElementsByClassName(className);
+        for(i=0; i < elements.length; i++) 
+            elements[i].src = src;
+    }
+	
+    function setClassDisplay(className,display) {
+        var elements = document.getElementsByClassName(className);
+        for(i=0; i < elements.length; i++) 
+            elements[i].style.display = display;
+    }
+	
+    function setClassAlt(className,alt) {
+        var elements = document.getElementsByClassName(className);
+        for(i=0; i < elements.length; i++) 
+            elements[i].alt = alt;
+    }
+	
+	function resetDevDataStatusCardInfo() {
+	
+        //prepare json data
+        const req = {}; //create javascript object;
+		req.operation = 'reset';
+		
+		fetch_api_response('/cgi-bin/cgi/data_status.cgi', req)
+		.then((info) => {
+			if(info.result) {
+				setClassInnerHtml('data_tx',		'0.00 GB');
+				setClassInnerHtml('data_rx',		'0.00 GB');
+				// setClassInnerHtml('data_drop',	'0 / 0 Bytes');
+			}
+			else {
+				console.log("resetDevDataStatusCardInfo() fail");
+			}
+		})
+		.catch((err) => {
+			console.log("resetDevDataStatusCardInfo() GET ERROR!!!");
+		});
+	}
+/*
+	function setSignalStrengthAndImg(textClassName, imgClassName, rsrp) {
+        
+		if( (_sim_card_state == 'Roaming' || _sim_card_state == 'Attached') && !isNaN(rsrp) ) {
+			if( rsrp >= -65 ) {
+				setClassInnerHtml(textClassName, 'Excellent');
+				setClassSrc(imgClassName, "/images/iconWiFi-4.svg");
+			}
+			else if( -65 > rsrp && rsrp >= -80) {
+				setClassInnerHtml(textClassName, 'Very Good');
+				setClassSrc(imgClassName, "/images/iconWiFi-3.svg");
+			}
+			else if( -80 > rsrp && rsrp >= -100) {
+				setClassInnerHtml(textClassName, 'Good');
+				setClassSrc(imgClassName, "/images/iconWiFi-2.svg");
+			}
+			else {
+				setClassInnerHtml(textClassName, 'Poor');
+				setClassSrc(imgClassName, "/images/iconWiFi-1.svg");
+			}
+		}
+		else {
+        setClassInnerHtml(textClassName, 'No Network');
+				setClassSrc(imgClassName, "/images/iconWiFi-0.svg");
+		}
+	}
+*/
+	function setSignalStrengthAndImg(textClassName, imgClassName, signalLevel) {
+        
+		if( (_sim_card_state == 'Connected (Roaming)' || _sim_card_state == 'Connected') && !isNaN(signalLevel) ) {
+			if( signalLevel == 4 ) {
+				setClassInnerHtml(textClassName, i18next.t('net_status_signal_4'));
+				setClassSrc(imgClassName, "/images/iconWiFi-4.svg");
+				setClassAlt(imgClassName, i18next.t('net_status_signal_4'));
+			}
+			else if( signalLevel == 3 ) {
+				setClassInnerHtml(textClassName, i18next.t('net_status_signal_3'));
+				setClassSrc(imgClassName, "/images/iconWiFi-3.svg");
+				setClassAlt(imgClassName, i18next.t('net_status_signal_3'));
+			}
+			else if( signalLevel == 2 ) {
+				setClassInnerHtml(textClassName, i18next.t('net_status_signal_2'));
+				setClassSrc(imgClassName, "/images/iconWiFi-2.svg");
+				setClassAlt(imgClassName, i18next.t('net_status_signal_2'));
+			}
+			else {
+				setClassInnerHtml(textClassName, i18next.t('net_status_signal_1'));
+				setClassSrc(imgClassName, "/images/iconWiFi-1.svg");
+				setClassAlt(imgClassName, i18next.t('net_status_signal_1'));
+			}
+		}
+		else {
+			setClassInnerHtml(textClassName, i18next.t('net_status_signal_0'));
+			setClassSrc(imgClassName, "/images/iconWiFi-0.svg");
+			setClassAlt(imgClassName, i18next.t('net_status_signal_0'));
+		}
+	}
+
+	function printCardInfo() {
+		var connection_time_list = _connection_time.split(/,|:/);
+		var duration_list = _duration_from_last_reset.split(",");
+		
+		setSignalStrengthAndImg('signalStrength',	'signalStrengthImg',      parseInt(_signalLevel));
+
+		if(_sim_card_state == 'No SIM')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_1'));
+		else if(_sim_card_state == 'Inserted')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_2'));
+		else if(_sim_card_state == 'Invalid SIM')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_3'));
+		else if(_sim_card_state == 'Enter PIN')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_4'));
+		else if(_sim_card_state == 'PIN Locked')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_5'));
+		else if(_sim_card_state == 'PUK Locked')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_6'));
+		else if(_sim_card_state == 'SIM Locked')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_7'));
+		else if(_sim_card_state == 'Connected')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_8'));
+		else if(_sim_card_state == 'Connected (Roaming)')
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_9'));
+		else
+			setClassInnerHtml('simStatus',	i18next.t('net_status_sim_0'));
+			
+		setClassInnerHtml('operation_mode',	_operation_mode);
+		setClassInnerHtml('plmn',				_plmn);
+		setClassInnerHtml('connection_time',	connection_time_list[0] + " Day(s), " + connection_time_list[1] + " Hr, " + connection_time_list[2] + " Min, " + connection_time_list[3] + " Sec.");
+
+		setClassInnerHtml('data_tx',		_data_tx);
+		setClassInnerHtml('data_rx',		_data_rx);
+		// setClassInnerHtml('data_drop',	_data_drop);
+		setClassInnerHtml('duration',		duration_list[0] + " day(s) " + duration_list[1]);
+		if(_statistic_reset_day.includes('1980'))
+			_statistic_reset_day = 'NA';
+		setClassInnerHtml('reset_date',   _statistic_reset_day);
+
+		setClassInnerHtml('ipv4Addr',       _ipv4_addr);
+		setClassInnerHtml('ipv4Mask',       _ipv4_mask);
+		setClassInnerHtml('ipv4DefGateway', _ipv4_gw);
+		setClassInnerHtml('ipv4Dns',        _ipv4_dns);
+
+		setClassInnerHtml('ipv6Addr',       _ipv6_addr);
+		setClassInnerHtml('ipv6Prefix',     _ipv6_prefix);
+		setClassInnerHtml('ipv6DefGateway', _ipv6_gw);
+		setClassInnerHtml('ipv6Dns',        _ipv6_dns);
+		
+		setClassInnerHtml('hostIPAddr',		_hostIPAddr);
+		setClassInnerHtml('wifiStatus',		(_wifiStatus? 'On':'Off'));
+		setClassInnerHtml('ssid_2g',			_ssid_2g);
+		setClassInnerHtml('ssid_5g',			_ssid_5g);
+		setClassInnerHtml('clientNum_2g',		_clientNum_2g);
+		setClassInnerHtml('clientNum_5g',		_clientNum_5g);
+		//setClassInnerHtml('clientNum_usb',	_clientNum_usb);
+		setClassInnerHtml('speed_eth1',		_speed_eth1);
+		setClassInnerHtml('speed_eth2',		_speed_eth2);
+		setClassInnerHtml('speed_eth3',		_speed_eth3);
+		setClassInnerHtml('fqdn',		_fqdn);
+		
+		if("B01W036" == 'B01W036'){
+			setClassDisplay('B01W036_hidden', 'none');
+			setClassInnerHtml('title_speed_eth1', i18next.t('net_status_eth_linkRate1',{max_rate:'(1G)'}));
+		}
+		else{
+			setClassInnerHtml('title_speed_eth1', i18next.t('net_status_eth_linkRate1',{max_rate:'(2.5G)'}));
+		}
+		setClassInnerHtml('title_speed_eth2', i18next.t('net_status_eth_linkRate2',{max_rate:'(1G)'}));
+		setClassInnerHtml('title_speed_eth3', i18next.t('net_status_eth_linkRate3',{max_rate:'(1G)'}));
+	}
+    </script>
+    
+    <style nonce="cdide4o6gf">
+	@media only screen and (min-width: 576px) {
+		.fx_mobile {
+			display:none;
+		}
+		.fx_pc {
+			display:block;
+		}
+	}
+	</style>
+	
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+	
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+	<div class="modal fade dialog_modal" id="_puk_Modal" tableindex="-1" aria-labelledby="pukModalLabel" aria-hidden="true">
+	    <div class="modal-dialog modal-dialog-centered">
+	        <div class="modal-content">
+	        <div class="modal-header">
+	            <label class="modal-title dialog_modal_header" id="_puk_headerText" data-i18n="net_status_puk_e">PUK Entry</label>
+	            <button id="_puk_headerCloseBtn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	        </div>
+	        <div class="modal-body text-center">
+	            <label class="dialog_modal_text" id="_puk_modal_text" data-i18n="net_status_des1">
+	                After 3 attemps of incorret PIN code, your SIM card is locked.<br>Please contact <b>"Customer Care"</b> to get the PUK for unlocking your SIM card.
+	            </label>            
+	            <div class="container" id="_puk_area">
+	                <div class="row">
+	                    <div class="col-sm text-start pin_text" data-i18n="net_status_puk">PUK</div>
+	                    <div class="col-sm text-start"><input class="w-100 border-0 border-bottom" id="_puk_input" maxLength="8"></div>
+	                </div>
+	                <div class="row">
+	                    <div class="col-sm pin_text"></div>
+	                    <div class="col-sm"><div class="_puk_error_text invisible" id="_puk_error_text" data-i18n="net_status_des2">Incorrect PUK (9 Attempts Left)</div></div>
+	                </div>
+	                <div class="row">
+	                    <div class="col-sm text-start pin_text" data-i18n="net_status_new_pin">New PIN</div>
+	                    <div class="col-sm text-start"><input class="w-100 border-0 border-bottom" id="_new_pin" maxLength="8"></div>
+	                </div>
+	                <div class="row" id="confirmPIN_div">
+	                    <div class="col-sm text-start pin_text" data-i18n="net_status_confirm_pin">Confirm New PIN</div>
+	                    <div class="col-sm text-start"><input class="w-100 border-0 border-bottom" id="_cfm_pin" maxLength="8"></div>
+	                </div>
+	            </div>
+	            <button id="_puk_footerBtnText" type="button" class="inModal_Btn" data-i18n="ok">Ok</button>
+	        </div>
+	        </div>
+	    </div>
+	</div>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl me-xxl-4 bg-white fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" scope="col" data-i18n="net_status_connect">Connection Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-50" scope="row" data-i18n="net_status_cellular">Cellular Connection Status</th>
+                    <td class="cardViewText simStatus"></td>
+                  </tr>
+				  <tr>
+				    <th class="cardViewTd" scope="row" data-i18n="net_status_signal">Cellular Signal Strength</th>
+				    <td class="cardViewText">
+				      <span class="signalStrength"></span>
+				      <span>
+				        <img id="signal_img" class="signalStrengthImg" src="">
+				      </span>
+				    </td>
+				  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_connected">Connected Network</th>
+                    <td class="cardViewText operation_mode"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_PLMN">PLMN</th>
+                    <td class="cardViewText plmn"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_con_duration">Connection Duration</th>
+                    <td class="cardViewText connection_time"></td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+            <div class="col-xxl mt-4 mt-xxl-0 bg-white fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" scope="col" data-i18n="net_status_data_usage">
+                      Data Usage
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-50" scope="row" data-i18n="net_status_data_up">Uplink Data (Data Sent)</th>
+                    <td class="cardViewText data_tx"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_data_down">Downlink Data (Data Received)</th>
+                    <td class="cardViewText data_rx"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_data_duration">Duration</th>
+                    <td class="cardViewText duration"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_data_lastReset">Last Reset Date</th>
+                    <td class="cardViewText reset_date"></td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between">
+            <div class="col-xxl me-xxl-4 bg-white fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" scope="col" data-i18n="net_status_ipv4_status">WAN IPv4 Network Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-50" scope="row" data-i18n="net_status_ipv4_addr">IPv4 Address</th>
+                    <td class="cardViewText ipv4Addr"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv4_subnet">Subnet Mask</th>
+                    <td class="cardViewText ipv4Mask"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv4_gsteway">Default Gateway</th>
+                    <td class="cardViewText ipv4DefGateway"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv4_dns">DNS Server</th>
+                    <td class="cardViewText ipv4Dns"></td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+            <div class="col-xxl mt-4 mt-xxl-0 bg-white fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" scope="col" data-i18n="net_status_ipv6_status">WAN IPv6 Network Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-50" scope="row" data-i18n="net_status_ipv6_addr">IPv6 Address</th>
+                    <td class="cardViewText ipv6Addr"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv6_prefix">IPv6 Prefix</th>
+                    <td class="cardViewText ipv6Prefix"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv6_gateway">Default Gateway</th>
+                    <td class="cardViewText ipv6DefGateway"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd" scope="row" data-i18n="net_status_ipv6_dns">DNS Server</th>
+                    <td class="cardViewText ipv6Dns"></td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+        </div>
+
+        <div class="row ms-0 me-0 mt-4 justify-content-between">
+            <div class="col-xxl mt-4 mt-xxl-0 bg-white fxCardViewBorder">
+                <div class="cardViewTitle" data-i18n="net_status_lan">LAN Status</div>
+                <div class="row">
+                <div class="col-xxl me-xxl-4"><table class="table table-borderless mb-0">
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_hostIP">Host IP Address</th>
+                    <td class="cardViewText w-25 hostIPAddr"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_wifi">Wi-Fi Status</th>
+                    <td class="cardViewText w-25 wifiStatus"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_ssid2">SSID 2.4G</th>
+                    <td class="cardViewText w-25 ssid_2g"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_wifi_clients">Number of Wi-Fi Clients Attached</th>
+                    <td class="cardViewText w-25 clientNum_2g"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_ssid5">SSID 5G</th>
+                    <td class="cardViewText w-25 ssid_5g"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_wifi_clients">Number of Wi-Fi Clients Attached</th>
+                    <td class="cardViewText w-25 clientNum_5g"></td>
+                  </tr>
+                </tbody>
+                </table></div>
+                <div class="col-xxl"><table class="table table-borderless mb-0">
+                <tbody>
+                  <tr>
+                    <th class="cardViewTd w-25 title_speed_eth1" scope="row">Link Rate of Ethernet Port 1 (2.5G)</th>
+                    <td class="cardViewText w-25 speed_eth1"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25 title_speed_eth2" scope="row">Link Rate of Ethernet Port 2 (1G)</th>
+                    <td class="cardViewText w-25 speed_eth2"></td>
+                  </tr>
+                  <tr class="B01W036_hidden">
+                    <th class="cardViewTd w-25 title_speed_eth3" scope="row">Link Rate of Ethernet Port 3 (1G)</th>
+                    <td class="cardViewText w-25 speed_eth3"></td>
+                  </tr>
+                  <tr>
+                    <th class="cardViewTd w-25" scope="row" data-i18n="net_status_dev_fqdn">Device FQDN</th>
+                    <td class="cardViewText w-25 fqdn"></td>
+                  </tr>
+                </tbody>
+                </table></div>
+				</div>
+            </div>
+        </div>		
+
+        </div>
+		<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile">
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseDevCon-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseDevCon" >
+					<span data-i18n="net_status_connect">Connection Status</span>
+					<img id="collapseDevCon-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseDevCon" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_cellular">Cellular Connection Status</th></tr>
+							  <tr><td class="cardViewText pt-0 simStatus"></td></tr>
+
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_signal">Cellular Signal Strength</th></tr>
+							  <tr>
+								<td class="cardViewText">
+								  <span class="signalStrength"></span>
+								  <span>
+									<img id="mobile_signal_img" class="signalStrengthImg" src="">
+								  </span>
+								</td>
+							  </tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_connected">Connected Network</th></tr>
+							  <tr><td class="cardViewText pt-0 operation_mode"></td></tr>
+
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_PLMN">PLMN</th></tr>
+							  <tr><td class="cardViewText pt-0 plmn"></td></tr>
+
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_con_duration">Connection Duration</th></tr>
+							  <tr><td class="cardViewText pt-0 connection_time"></td></tr>
+
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseDevData-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseDevData">
+					<span data-i18n="net_status_data_usage">Data Usage</span>
+					<img id="collapseDevData-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseDevData" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_data_up">Uplink Data (Data Sent)</th></tr>
+							  <tr><td class="cardViewText pt-0 data_tx"></td></tr>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_data_down">Downlink Data (Data Received)</th></tr>
+							  <tr><td class="cardViewText pt-0 data_rx"></td></tr>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_data_duration">Duration</th></tr>
+							  <tr><td class="cardViewText pt-0 duration"></td></tr>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_data_lastReset">Last Reset Date</th></tr>
+							  <tr><td class="cardViewText pt-0 reset_date"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseIpv4-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseIpv4">
+					<span data-i18n="net_status_ipv4_status">WAN IPv4 Network Status</span>
+					<img id="collapseIpv4-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseIpv4" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv4_addr">IPv4 Address</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv4Addr"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv4_subnet">Subnet Mask</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv4Mask"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv4_gsteway">Default Gateway</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv4DefGateway"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv4_dns">DNS Server</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv4Dns"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseIpv6-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseIpv6">
+					<span data-i18n="net_status_ipv6_status">WAN IPv6 Network Status</span>
+					<img id="collapseIpv6-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseIpv6" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+                            <tbody>
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv6_addr">IPv6 Address</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv6Addr"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv6_prefix">IPv6 Prefix</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv6Prefix"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv6_gateway">Default Gateway</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv6DefGateway"></td></tr>
+							  
+							  <tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ipv6_dns">DNS Server</th></tr>
+							  <tr><td class="cardViewText pt-0 ipv6Dns"></td></tr>
+
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+
+        <div class="row ms-0 me-0 mt-4">
+			<div class="bg-white fxCardViewBorder mobile_cardView">
+			<div class="card">
+				<div class="card-header" id="collapseLanStatus-header">
+					<a class="btn" data-bs-toggle="collapse" href="#collapseLanStatus">
+					<span data-i18n="net_status_lan">LAN Status</span>
+					<img id="collapseLanStatus-img" src="/images/iconOpenDown.svg">
+					</a>
+				</div>
+				<div id="collapseLanStatus" class="collapse">
+					<div class="card-body pt-0 pb-0">
+						<table class="table table-borderless mb-0">
+							<tbody>
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_hostIP">Host IP Address</th></tr>
+								<tr><td class="cardViewText pt-0 hostIPAddr"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_wifi">Wi-Fi Status</th></tr>
+								<tr><td class="cardViewText pt-0 wifiStatus"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ssid2">SSID 2.4G</th></tr>
+								<tr><td class="cardViewText pt-0 ssid_2g"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_wifi_clients">Number of Wi-Fi Clients Attached</th></tr>
+								<tr><td class="cardViewText pt-0 clientNum_2g"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_ssid5">SSID 5G</th></tr>
+								<tr><td class="cardViewText pt-0 ssid_5g"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_wifi_clients">Number of Wi-Fi Clients Attached</th></tr>
+								<tr><td class="cardViewText pt-0 clientNum_5g"></td></tr>
+
+								<tr><th class="cardViewTd pb-1 title_speed_eth1" scope="row">Link Rate of Ethernet Port 1 (2.5G)</th></tr>
+								<tr><td class="cardViewText pt-0 speed_eth1"></td></tr>
+
+								<tr><th class="cardViewTd pb-1 title_speed_eth2" scope="row">Link Rate of Ethernet Port 2 (1G)</th></tr>
+								<tr><td class="cardViewText pt-0 speed_eth2"></td></tr>
+
+								<tr class="B01W036_hidden"><th class="cardViewTd pb-1 title_speed_eth3" scope="row">Link Rate of Ethernet Port 3 (1G)</th></tr>
+								<tr class="B01W036_hidden"><td class="cardViewText pt-0 speed_eth3"></td></tr>
+
+								<tr><th class="cardViewTd pb-1" scope="row" data-i18n="net_status_dev_fqdn">Device FQDN</th></tr>
+								<tr><td class="cardViewText pt-0 fqdn"></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			</div>
+        </div>
+
+        </div>
+		<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+    </body>
+	<script nonce="cdide4o6gf" type="module">
+        i18next.on('loaded', function(loaded) {
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('net_status_title');
+        });
+        i18next.on('languageChanged', function(lng) {
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('net_status_title');
+			
+			if("B01W036" == 'B01W036'){
+				setClassDisplay('B01W036_hidden', 'none');
+				setClassInnerHtml('title_speed_eth1', i18next.t('net_status_eth_linkRate1',{max_rate:'(1G)'}));
+			}
+			else{
+				setClassInnerHtml('title_speed_eth1', i18next.t('net_status_eth_linkRate1',{max_rate:'(2.5G)'}));
+			}
+			setClassInnerHtml('title_speed_eth2', i18next.t('net_status_eth_linkRate2',{max_rate:'(1G)'}));
+			setClassInnerHtml('title_speed_eth3', i18next.t('net_status_eth_linkRate3',{max_rate:'(1G)'}));
+        });
+	</script>
+</html>
