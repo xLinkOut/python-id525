@@ -107,7 +107,7 @@ def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
         if kind is bool and param.default is None:  # tri-state: unset / --x / --no-x
             parser.add_argument(flag, dest=name, action=argparse.BooleanOptionalAction)
         elif kind is bool:
-            parser.add_argument(flag, dest=name, action="store_true", default=param.default)
+            parser.add_argument(flag, dest=name, action="store_true", default=param.default is True)
         elif isinstance(kind, type) and issubclass(kind, enum.Enum):
             parser.add_argument(
                 flag,

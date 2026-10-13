@@ -86,6 +86,18 @@ def classify(recorded: list[Recorded]) -> tuple[list[Recorded], list[str]]:
     return mutating, other
 
 
+async def settle(mock: MockRouter, quiet: float = 0.5, limit: float = 5.0) -> None:
+    """Wait until the page made no request for ``quiet`` seconds."""
+    started = time.monotonic()
+    seen, since = len(mock.requests), time.monotonic()
+    while time.monotonic() - started < limit:
+        await asyncio.sleep(0.05)
+        if len(mock.requests) != seen:
+            seen, since = len(mock.requests), time.monotonic()
+        elif time.monotonic() - since >= quiet:
+            return
+
+
 async def collect(mock: MockRouter, mark: int, *, refused: bool) -> list[Recorded]:
     """Wait for the flow to finish and return the requests it made."""
     started = time.monotonic()
@@ -121,6 +133,9 @@ async def run_scenario(
             "() => (document.getElementById('RequestVerifyToken') || {}).value"
             f"?.startsWith('{TOKEN_PREFIX}')"
         )
+        # Let the page finish its own load-time calls (e.g. fw-ddns reads its
+        # config right after the token arrives) before the flow is recorded.
+        await settle(mock)
         mark = len(mock.requests)
         await scenario.drive(page, scenario.inputs)
         flow = await collect(mock, mark, refused=scenario.refused)
