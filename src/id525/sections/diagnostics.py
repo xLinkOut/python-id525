@@ -27,6 +27,9 @@ SELF_TEST_PING_HOST = "www.google.com"
 SELF_TEST_PING_COUNT = 1
 SELF_TEST_PING_SIZE = 8
 
+TRACEROUTE_TIMEOUT = 600.0
+"""Seconds a traceroute may run (the UI gives up warning after 5 minutes)."""
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class PingDefaults:
@@ -186,12 +189,13 @@ class DiagnosticsApi(Section):
         return PingReport(host=host, count=count, size=size, lines=tuple(lines), completed=True)
 
     @uses(Page.TRACEROUTE, Endpoint.TRACEROUTE)
-    async def traceroute(self, host: str | None = None) -> TracerouteReport:
+    async def traceroute(
+        self, host: str | None = None, *, request_timeout: float = TRACEROUTE_TIMEOUT
+    ) -> TracerouteReport:
         """Run a traceroute from the router (the page default target if omitted).
 
         The router answers only when the trace is over, which can take minutes
-        (the UI warns after 2 and 5): create the client with a large enough
-        ``request_timeout``.
+        (the UI warns after 2 and 5): ``request_timeout`` bounds this call only.
         """
         if host is None:
             host = parse_traceroute_page(await self._client._page(Page.TRACEROUTE)) or ""
@@ -203,9 +207,9 @@ class DiagnosticsApi(Section):
         def body(token: str | None) -> dict[str, Any]:
             return {TOKEN_FIELD: token, "traceHost": host, "traceRouteID": trace_id}
 
-        data = await self._client._call(Endpoint.TRACEROUTE, body)
+        data = await self._client._call(Endpoint.TRACEROUTE, body, request_timeout=request_timeout)
         # The UI does not trust this answer's token: it calls token_query next.
-        self._client._token = None
+        self._client._drop_token()
         if not data.get("result"):
             return TracerouteReport(host=host, output=None, completed=False)
         if parse_int(data.get("traceRouteID")) != trace_id:  # a stale run: the UI ignores it

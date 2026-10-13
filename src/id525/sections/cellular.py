@@ -31,6 +31,9 @@ _APN_VARS = ("defaultApnInfo", "user1ApnInfo", "user2ApnInfo", "user3ApnInfo", "
 _NO_SIM_STATES = ("SIM Locked", "No SIM")
 _NO_NETWORKS = "No Avaiable Networks"  # sic, as compared by the UI
 
+SCAN_TIMEOUT = 300.0
+"""Seconds an operator scan may take before the call gives up."""
+
 
 class NetworkMode(StrEnum):
     """Radio access modes offered by the UI (``mode_list_str``)."""
@@ -350,7 +353,7 @@ class CellularApi(Section):
             raise Id525CommandError(Endpoint.OPERATION_MODE, data.get("error"))
 
     async def _scan(self) -> tuple[Operator, ...]:
-        data = await self._client._call(Endpoint.SEARCH_OPERATORS)
+        data = await self._client._call(Endpoint.SEARCH_OPERATORS, request_timeout=SCAN_TIMEOUT)
         if data.get("result") is False:
             raise Id525CommandError(Endpoint.SEARCH_OPERATORS, data.get("error"))
         return parse_scan_result(data.get("scan_network"))
@@ -360,7 +363,7 @@ class CellularApi(Section):
         """Scan for mobile networks (manual selection).
 
         Warning: the scan can take minutes and may disrupt the cellular link;
-        the UI reloads the page after 60 s. Use a long ``request_timeout``.
+        the UI reloads the page after 60 s. The call waits up to ``SCAN_TIMEOUT``.
         """
         return await self._scan()
 
