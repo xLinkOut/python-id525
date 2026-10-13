@@ -1,0 +1,16 @@
+{
+  "scenario": "reboot",
+  "page": "adm-backup",
+  "endpoint": "reboot",
+  "ui_ref": "adm-backup.html:186",
+  "call": "system.reboot",
+  "inputs": {},
+  "call_kwargs": {
+    "confirm": true
+  },
+  "refused": false,
+  "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}",
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "62db1f1ce7492eed87bc7434f6f415a648e979cf268b1828de0c5cf626f785b6"
+}

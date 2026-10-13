@@ -1,0 +1,17 @@
+{
+  "scenario": "dhcp_modify_refused_duplicate_ip",
+  "page": "lan-settings",
+  "endpoint": "req_LanStaticAddrModify",
+  "ui_ref": "lan-settings.html:677",
+  "call": "lan.modify_dhcp_reservation",
+  "inputs": {
+    "index": 1,
+    "ip": "192.168.224.20"
+  },
+  "call_kwargs": {},
+  "refused": true,
+  "body": null,
+  "ui_message": "The IP already existed.",
+  "notes": "",
+  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+}

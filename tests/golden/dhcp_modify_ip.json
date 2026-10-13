@@ -1,0 +1,17 @@
+{
+  "scenario": "dhcp_modify_ip",
+  "page": "lan-settings",
+  "endpoint": "req_LanStaticAddrModify",
+  "ui_ref": "lan-settings.html:677",
+  "call": "lan.modify_dhcp_reservation",
+  "inputs": {
+    "index": 2,
+    "ip": "192.168.224.21"
+  },
+  "call_kwargs": {},
+  "refused": false,
+  "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"deviceName\":\"0\",\"Static_IP\":\"192.168.224.21\",\"editMAC\":\"0\",\"instance\":2,\"interface_index\":1}",
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+}

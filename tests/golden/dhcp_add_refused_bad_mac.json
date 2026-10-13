@@ -1,0 +1,18 @@
+{
+  "scenario": "dhcp_add_refused_bad_mac",
+  "page": "lan-settings",
+  "endpoint": "req_LanStaticAddrAdd",
+  "ui_ref": "lan-settings.html:826",
+  "call": "lan.add_dhcp_reservation",
+  "inputs": {
+    "name": "nas",
+    "ip": "192.168.224.60",
+    "mac": "02-00-5e-00-00-ac"
+  },
+  "call_kwargs": {},
+  "refused": true,
+  "body": null,
+  "ui_message": "Please input valid MAC address.",
+  "notes": "",
+  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+}

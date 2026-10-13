@@ -20,8 +20,15 @@ from aiohttp import web
 from aiohttp.test_utils import TestServer
 
 from id525 import Id525Client
+from id525.endpoints import Endpoint
+
+from . import netguard
+
+# Installed at import time, before any test (or fixture) can open a socket.
+netguard.install()
 
 FIXTURES = Path(__file__).parent / "fixtures"
+MUTATING = {e.value for e in Endpoint if e.info.kind.mutating}
 USERNAME = "admin"
 PASSWORD = "correct-horse"
 REDIRECT_PAGE = (
@@ -53,6 +60,10 @@ class FakeRouter:
     failed_logins: int = 0
     lock_after: int = 3
     token_not_init: int = 0  # how many login attempts answer "Token not init."
+    answers: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """Canned answers for mutating endpoints (default: success)."""
+    drop: set[str] = field(default_factory=set)
+    """Endpoints that drop the connection instead of answering (e.g. reboot)."""
 
     def admin(self) -> FakeSession | None:
         return next((s for s in self.sessions.values() if s.logged_in), None)
@@ -121,6 +132,9 @@ class FakeRouter:
         raw = await request.read()
         self.calls.append(name)
         self.bodies.append((name, raw))
+        if name in self.drop and request.transport is not None:
+            request.transport.close()
+            return web.Response()
         body: Any = json.loads(raw) if raw else None
         session = self._session(request)
         if session is None:
@@ -164,6 +178,9 @@ class FakeRouter:
             "client_status_retrieve": "client_status.json",
         }.get(name)
         if fixture is None:
+            if name in MUTATING:  # accept writes like a healthy router
+                answer = {"result": True, **self.answers.get(name, {})}
+                return web.json_response({**answer, "RequestVerifyToken": self._rotate(session)})
             return web.Response(status=404)
         data = json.loads(load_fixture(fixture))
         data["RequestVerifyToken"] = self._rotate(session)

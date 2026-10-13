@@ -33,6 +33,7 @@ Issues = "https://github.com/xLinkOut/python-id525/issues"
 [dependency-groups]
 dev = [
     "mypy>=1.13",
+    "playwright>=1.63.0",
     "pytest>=8.3",
     "pytest-aiohttp>=1.0.5",
     "pytest-asyncio>=0.24",
@@ -63,17 +64,22 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "S", "PLR", "FBT", "ARG", "TC", "C901", "PLC0415"]
 "src/id525/const.py" = ["S105"]  # token *field names*, not secrets
+"src/id525/endpoints.py" = ["S105"]  # endpoint names such as "token_query"
+"tools/uicapture/scenarios/**" = ["D103"]  # UI drivers: the Scenario declaration documents them
+"tools/**" = ["T201"]  # command-line tools print
 
 [tool.mypy]
 strict = true
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "--strict-markers --cov=id525 --cov-report=term-missing"
 testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["browser: runs headless Chromium (tools/uicapture); needs `playwright install chromium`"]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]

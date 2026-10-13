@@ -1,15 +1,20 @@
-"""Async, read-only client for the General Mobile ID525 5G FWA router."""
+"""Async client for the General Mobile ID525 5G FWA router (read-only by default)."""
 
 from .client import Id525Client
+from .endpoints import Endpoint, Kind, Page, Status
 from .exceptions import (
     Id525AuthenticationError,
+    Id525CommandError,
+    Id525ConfirmationRequiredError,
     Id525ConnectionError,
     Id525Error,
     Id525LoginLockedError,
+    Id525ReadOnlyError,
     Id525ResponseError,
     Id525SessionError,
     Id525SessionExpiredError,
     Id525SessionKickedError,
+    Id525ValidationError,
 )
 from .models import (
     Cell,
@@ -26,6 +31,7 @@ from .models import (
     SmsMessage,
     Utilization,
 )
+from .sections import DhcpReservation, LanSettings
 
 __all__ = [
     "Cell",
@@ -33,21 +39,31 @@ __all__ = [
     "ClientInterface",
     "ConnectedClient",
     "DeviceInfo",
+    "DhcpReservation",
+    "Endpoint",
     "Id525AuthenticationError",
     "Id525Client",
+    "Id525CommandError",
+    "Id525ConfirmationRequiredError",
     "Id525ConnectionError",
     "Id525Error",
     "Id525LoginLockedError",
+    "Id525ReadOnlyError",
     "Id525ResponseError",
     "Id525SessionError",
     "Id525SessionExpiredError",
     "Id525SessionKickedError",
+    "Id525ValidationError",
     "IpConfig",
+    "Kind",
+    "LanSettings",
     "LoginState",
     "NetworkStatus",
+    "Page",
     "RateStats",
     "SimState",
     "SmsInbox",
     "SmsMessage",
+    "Status",
     "Utilization",
 ]

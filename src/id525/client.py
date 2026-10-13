@@ -11,8 +11,12 @@ Protocol summary (verified against firmware ``ID525_REL_1.0.09.17``):
 * Repeated login failures make the router refuse logins for a while, so this
   client never retries a rejected login on its own.
 
-The client is **read-only by design**: it can only reach the endpoints and
-pages allow-listed in :mod:`id525.const`.
+Safety model: the client can only reach the endpoints and pages registered in
+:mod:`id525.endpoints`. It is **read-only by default**; anything that changes
+the router (actions, writes) needs ``read_only=False``, destructive operations
+additionally need an explicit ``confirm=True`` on the call, and endpoints that
+are deliberately unsupported raise :class:`NotImplementedError`. These checks
+run before any byte is sent.
 """
 
 from __future__ import annotations
@@ -34,14 +38,16 @@ from .const import (
     ERROR_TOKEN_NOT_INIT,
     SESSION_COOKIE,
     TOKEN_FIELD,
-    Endpoint,
-    Page,
 )
+from .endpoints import Endpoint, Kind, Page, uses
 from .exceptions import (
     Id525AuthenticationError,
+    Id525CommandError,
+    Id525ConfirmationRequiredError,
     Id525ConnectionError,
     Id525Error,
     Id525LoginLockedError,
+    Id525ReadOnlyError,
     Id525ResponseError,
     Id525SessionExpiredError,
     Id525SessionKickedError,
@@ -57,9 +63,11 @@ from .parsers import (
     parse_sms,
     parse_utilization_page,
 )
+from .sections import CellularApi, LanApi, SoftwareApi, SystemApi
 
 if TYPE_CHECKING:
     import ssl
+    from collections.abc import Callable
     from types import TracebackType
 
     from .models import (
@@ -75,6 +83,22 @@ _LOGGER = logging.getLogger(__name__)
 
 _MAX_TOKEN_NOT_INIT_RETRIES = 2
 
+type BodyBuilder = Callable[[str | None], object]
+"""Builds a request body from the current CSRF token, in the UI's key order."""
+
+
+def encode_body(body: object) -> bytes:
+    r"""Serialise a body exactly like the web UI's ``JSON.stringify``.
+
+    Compact separators, UTF-8 instead of ``\uXXXX`` escapes, insertion order:
+    the router only ever received what a browser sends, so send nothing else.
+    """
+    return json.dumps(body, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def _token_only(token: str | None) -> dict[str, Any]:
+    return {TOKEN_FIELD: token}
+
 
 class _NotAuthenticatedError(Exception):
     """Internal: the router answered as if no session existed."""
@@ -85,11 +109,13 @@ class _InvalidTokenError(Exception):
 
 
 class Id525Client:
-    """Read-only async client for one ID525 router.
+    """Async client for one ID525 router (read-only unless asked otherwise).
 
     Use as an async context manager, or call :meth:`login` / :meth:`close`.
     If you pass your own ``aiohttp.ClientSession``, give it an
     ``aiohttp.DummyCookieJar()``: the client manages the session cookie itself.
+
+    Configuration areas are grouped by UI page: ``client.lan``, ``client.system``...
     """
 
     def __init__(
@@ -103,6 +129,7 @@ class Id525Client:
         scheme: Literal["https", "http"] = "https",
         request_timeout: float = DEFAULT_TIMEOUT,
         auto_relogin: bool = True,
+        read_only: bool = True,
     ) -> None:
         """Initialise the client.
 
@@ -119,6 +146,8 @@ class Id525Client:
             auto_relogin: transparently log in again when the session expired.
                 Never applies after being kicked by another admin login, nor
                 after a rejected login.
+            read_only: refuse every call that would change the router (actions,
+                writes, destructive operations). Pass ``False`` to enable them.
 
         """
         self._base_url = f"{scheme}://{host}"
@@ -134,6 +163,15 @@ class Id525Client:
         self._token: str | None = None
         self._logged_in = False
         self._auth_failed = False
+        self._read_only = read_only
+        self.cellular = CellularApi(self)
+        """Cellular settings and SIM (``cellular-settings`` page)."""
+        self.lan = LanApi(self)
+        """LAN / DHCP settings (``lan-settings`` page)."""
+        self.software = SoftwareApi(self)
+        """Firmware update (``adm-sw`` page)."""
+        self.system = SystemApi(self)
+        """Reboot, backup and reset (``adm-backup`` page)."""
 
     async def __aenter__(self) -> Self:
         await self.login()
@@ -153,6 +191,11 @@ class Id525Client:
         return self._base_url
 
     @property
+    def read_only(self) -> bool:
+        """Return True if calls that change the router are refused."""
+        return self._read_only
+
+    @property
     def is_logged_in(self) -> bool:
         """Return True if the client believes it holds a valid session."""
         return self._logged_in
@@ -169,6 +212,7 @@ class Id525Client:
                 await self._session.close()
                 self._session = None
 
+    @uses(Endpoint.TOKEN_QUERY, Endpoint.LOGIN)
     async def login(self) -> None:
         """Log in, taking over the router's single admin session.
 
@@ -182,6 +226,7 @@ class Id525Client:
             self._auth_failed = False  # an explicit login is a deliberate retry
             await self._login_locked()
 
+    @uses(Endpoint.LOGOUT)
     async def logout(self) -> None:
         """Log out, freeing the admin session for the web UI."""
         async with self._lock:
@@ -195,11 +240,13 @@ class Id525Client:
                 self._session_id = None
                 self._token = None
 
+    @uses(Endpoint.LOGIN_QUERY)
     async def get_login_state(self) -> LoginState:
         """Return the router's view of the current session (no login attempted)."""
         async with self._lock:
             return await self._login_state_locked()
 
+    @uses(Endpoint.LOGIN_QUERY, Endpoint.LOGIN)
     async def ensure_session(self) -> LoginState:
         """Validate the session before a batch of reads; log in if needed.
 
@@ -242,9 +289,16 @@ class Id525Client:
             await self._login_locked()
             return LoginState.LOGGED_IN
 
+    @uses(Endpoint.TOKEN_QUERY)
     async def keep_alive(self) -> None:
         """Refresh the CSRF token; the web UI uses this call to extend the session."""
         await self._call(Endpoint.TOKEN_QUERY, with_token=False)
+
+    def _forget_session(self) -> None:
+        """Drop all session state (e.g. after a reboot) without contacting the router."""
+        self._logged_in = False
+        self._session_id = None
+        self._token = None
 
     async def _login_locked(self) -> None:
         if self._auth_failed:
@@ -297,32 +351,91 @@ class Id525Client:
         _LOGGER.debug("Session not valid (state=%s), logging in again", state.name)
         await self._login_locked()
 
+    @uses(Endpoint.NET_STATUS)
     async def get_network_status(self) -> NetworkStatus:
         """Return the main status dashboard (SIM, signal, WAN, data usage, Wi-Fi)."""
         return parse_network_status(await self._call(Endpoint.NET_STATUS))
 
+    @uses(Endpoint.CLIENT_STATUS)
     async def get_clients(self) -> tuple[ConnectedClient, ...]:
         """Return the LAN client list."""
         return parse_clients(await self._call(Endpoint.CLIENT_STATUS))
 
+    @uses(Endpoint.SMS_LIST)
     async def get_sms(self) -> SmsInbox:
         """Return the SMS store. Read-only: messages are never marked as read."""
         return parse_sms(await self._call(Endpoint.SMS_LIST))
 
+    @uses(Page.CELLULAR_STATUS)
     async def get_cellular_info(self) -> CellularInfo:
         """Return serving-cell radio details (RSRP/RSRQ/SNR, band, PCI...)."""
         return parse_cellular_page(await self._page(Page.CELLULAR_STATUS))
 
+    @uses(Page.UTILIZATION)
     async def get_utilization(self) -> Utilization:
         """Return CPU / memory / throughput statistics and uptime."""
         return parse_utilization_page(await self._page(Page.UTILIZATION))
 
+    @uses(Page.ABOUT)
     async def get_device_info(self) -> DeviceInfo:
         """Return model, versions and identifiers (IMEI, IMSI, ...)."""
         return parse_about_page(await self._page(Page.ABOUT))
 
-    async def _call(self, endpoint: Endpoint, *, with_token: bool = True) -> dict[str, Any]:
-        """Call an allow-listed endpoint with session and token recovery."""
+    def check_allowed(self, endpoint: Endpoint, *, confirmed: bool = False) -> None:
+        """Raise if calling ``endpoint`` is not allowed; never touches the network.
+
+        Raises:
+            TypeError: not a registered endpoint.
+            NotImplementedError: deliberately unsupported endpoint.
+            Id525ReadOnlyError: the endpoint changes the router and the client
+                is read-only.
+            Id525ConfirmationRequiredError: destructive endpoint without
+                ``confirmed=True``.
+
+        """
+        if not isinstance(endpoint, Endpoint):  # defence in depth: allow-list only
+            msg = f"endpoint {endpoint!r} is not allow-listed"
+            raise TypeError(msg)
+        info = endpoint.info
+        if not info.status.implemented:
+            msg = f"{endpoint} is not supported ({info.status}): {info.summary}"
+            raise NotImplementedError(msg)
+        if info.kind.mutating and self._read_only:
+            msg = f"{endpoint} changes the router; create the client with read_only=False"
+            raise Id525ReadOnlyError(msg)
+        if info.kind is Kind.DESTRUCTIVE and not confirmed:
+            msg = f"{endpoint} is destructive ({info.summary}); pass confirm=True"
+            raise Id525ConfirmationRequiredError(msg)
+
+    async def _command(
+        self,
+        endpoint: Endpoint,
+        body: BodyBuilder,
+        *,
+        confirmed: bool = False,
+    ) -> dict[str, Any]:
+        """Call a mutating endpoint; raise if the router answers ``result: false``."""
+        data = await self._call(endpoint, body, confirmed=confirmed)
+        if data.get("result") is False:
+            raise Id525CommandError(endpoint, data.get("error"))
+        return data
+
+    async def _call(
+        self,
+        endpoint: Endpoint,
+        body: BodyBuilder | None = None,
+        *,
+        with_token: bool = True,
+        confirmed: bool = False,
+        tolerate_disconnect: bool = False,
+    ) -> dict[str, Any]:
+        """Call an allow-listed endpoint with session and token recovery.
+
+        ``tolerate_disconnect``: the call itself may drop the connection (e.g.
+        reboot); a transport error *on that call* then returns ``{}``.
+        """
+        self.check_allowed(endpoint, confirmed=confirmed)
+        build = body or _token_only
         async with self._lock:
             if not self._logged_in:
                 await self._login_locked()
@@ -330,9 +443,14 @@ class Id525Client:
             for attempt in range(3):
                 if with_token and self._token is None:
                     await self._post(Endpoint.TOKEN_QUERY, EMPTY_BODY)
-                body: object = {TOKEN_FIELD: self._token} if with_token else EMPTY_BODY
+                payload = build(self._token) if with_token else EMPTY_BODY
                 try:
-                    return await self._post(endpoint, body, check=True)
+                    return await self._post(endpoint, payload, check=True, confirmed=confirmed)
+                except Id525ConnectionError:
+                    if not tolerate_disconnect:
+                        raise
+                    _LOGGER.debug("%s dropped the connection, as it may", endpoint)
+                    return {}
                 except _InvalidTokenError:
                     _LOGGER.debug("Token rejected by %s (attempt %d)", endpoint, attempt + 1)
                 except _NotAuthenticatedError:
@@ -346,6 +464,9 @@ class Id525Client:
 
     async def _page(self, page: Page) -> str:
         """GET an allow-listed UI page with session recovery."""
+        if not isinstance(page, Page):  # defence in depth: allow-list only
+            msg = f"page {page!r} is not allow-listed"
+            raise TypeError(msg)
         async with self._lock:
             if not self._logged_in:
                 await self._login_locked()
@@ -405,16 +526,14 @@ class Id525Client:
         return raw.decode("utf-8", errors="replace"), session_id
 
     async def _post(
-        self, endpoint: Endpoint, body: object, *, check: bool = False
+        self, endpoint: Endpoint, body: object, *, check: bool = False, confirmed: bool = False
     ) -> dict[str, Any]:
         """POST to an endpoint, rotate the token, detect session/token errors."""
-        if not isinstance(endpoint, Endpoint):  # defence in depth: allow-list only
-            msg = f"endpoint {endpoint!r} is not allow-listed"
-            raise TypeError(msg)
+        self.check_allowed(endpoint, confirmed=confirmed)
         try:
             async with self._http().post(
                 self._base_url + endpoint.path,
-                data=json.dumps(body),
+                data=encode_body(body),
                 headers=self._headers({"Content-Type": "application/json"}),
                 ssl=self._ssl,
                 timeout=self._timeout,
