@@ -1,0 +1,26 @@
+{
+  "scenario": "ipfilter_edit_ip",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_edit",
+  "ui_ref": "fw-ipfilter.html:490",
+  "call": "ip_filter.edit_rule",
+  "inputs": {
+    "instance": 8,
+    "ip": "2001:db8::77"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-ipfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "ipfilter_edit",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"edit_instance\":8,\"ipf_wanipAddr\":\"2001:db8::77\",\"ipf_iptype\":\"IPv6\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "c0a0ff19963bcaced724bccfd3327194456b4d78b1bdea9f44b0df03b8bd924e"
+}

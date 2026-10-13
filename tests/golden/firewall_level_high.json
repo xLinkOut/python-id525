@@ -1,0 +1,25 @@
+{
+  "scenario": "firewall_level_high",
+  "page": "fw-adv",
+  "endpoint": "fw_adv_apply",
+  "ui_ref": "fw-adv.html:137",
+  "call": "firewall.set_level",
+  "inputs": {
+    "level": "high"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-adv",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "fw_adv_apply",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"fw_lv\":3}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "6aee87336c54c54a0cbcb40265d4a8afabd9435a07f1639b92a2d39bde59a147"
+}

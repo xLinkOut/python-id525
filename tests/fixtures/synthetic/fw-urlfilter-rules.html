@@ -1,0 +1,1207 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="urlFilter_title">URL Filter</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+	var platform = "";
+	var parent_control_profile_get = "3,example.com;5,ads.example.net;9,http://tracker.example.org/x~y#z;";
+	var parent_control_profile_enabled = "1";
+	var isAllow = "1";
+	var url_array = [];
+	var g_rule_list = "";
+
+    function bodyLoad()
+	{
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("fw-urlfilter.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIAF');
+        mobile_CollapsibleAddListener('collapseIAFL');
+		saveLoadingListener();
+		saveAddListener();
+		saveDialogListener();
+		var rule_list = parent_control_profile_get.split(";");
+		for(var i = 0; i < rule_list.length-1; i++)
+        {
+			console.log("rule_list[i] = "+rule_list[i])
+			var instance = rule_list[i].split(",")[0];
+			var rule = rule_list[i].split(",")[1];
+			var createJosn = {};
+			createJosn.instance = instance;
+			createJosn.web_index = i+1;
+			createJosn.url = rule;
+			url_array.push(createJosn);
+		}
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+	function initJS_function(pf){
+		document.getElementById(pf + "-urlfilter_switch").onchange = function(){switch_status();};
+		document.getElementById(pf + "-url_filter_List").style = 'display: none;';
+		document.getElementById(pf + "-filterMode_white").onclick = function(){selectObj(pf + '-filterMode', i18next.t('urlFilter_mode_whitelist'));};
+		document.getElementById(pf + "-filterMode_black").onclick = function(){selectObj(pf + '-filterMode', i18next.t('urlFilter_mode_blacklist'));};
+		document.getElementById(pf + "-modal_alertBtn").onclick = function(){modal_alert();};
+		document.getElementById(pf + "-addNewBtn").onclick = function(){toggle_add_modal();};
+		if(pf != "mobile")
+		{
+			document.getElementById(pf + "-MaxLimtLabel").style = 'float: right; padding: 5px 15px;';
+			document.getElementById(pf + "-sortNumberBtn").onclick = function(){sortNumber();};
+			document.getElementById(pf + "-sortURLBtn").onclick = function(){sortURL();};
+		}
+		document.getElementById("add_urlfilterBtn").onclick = function(){add_urlfilter();};
+		document.getElementById("edit_urlfilterBtn").onclick = function(){edit_rule_save();};
+		document.getElementById("_dialog_modal_warningBtn").onclick = function(){toggle_dialog_modal();};
+		document.getElementById("confirm_deleteBtn").onclick = function(){confirm_delete();};
+		document.getElementById("alertSaveIPBtn").onclick = function(){btnOKClicked();};
+		
+		dropdownItemKeyboardNavigation(pf + "-filterMode_white");
+		dropdownItemKeyboardNavigation(pf + "-filterMode_black");
+	}
+	function update_content(data_json)
+	{
+		document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+	}
+	function onScreenWidthChange()
+	{
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+		if(parent_control_profile_enabled == 0)
+		{
+			document.getElementById(platform + "-url_filter_List").style.display = "none";
+			document.getElementById(platform + "-urlfilter_switch").checked = false;
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+		}
+        else
+		{
+			document.getElementById(platform + "-url_filter_List").style.display = "block";
+			document.getElementById(platform + "-urlfilter_switch").checked = true;
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+		}
+
+        selectObj_init(platform);
+
+		var rule_list = parent_control_profile_get.split(";");
+		if(rule_list.length >= 11)
+		{
+			document.getElementById(platform + "-addNewBtn").style = "color: var(--disabledText);";
+			document.getElementById(platform + "-addNewBtn").disabled = true;
+			document.getElementById(platform + '-addNewImg').src="/images/iconAddNewDisable.svg";
+			document.getElementById(platform + "-MaxLimtLabel").style = "float: right; padding: 5px 15px;; color: var(--errorColor);";
+		}
+		initAddrListTable(url_array);
+    }
+    function selectObj_init(platform) {
+		if(isAllow == 1)
+		{
+			selectObj(platform + '-filterMode', i18next.t('urlFilter_mode_whitelist'));
+		}
+		else if(isAllow == 0)
+		{
+			selectObj(platform + '-filterMode', i18next.t('urlFilter_mode_blacklist'));
+		}
+    }
+	function switch_status()
+	{
+        if(document.getElementById(platform + "-urlfilter_switch").checked)
+		{
+			document.getElementById(platform + "-url_filter_List").style.display = "block";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+		}
+        else
+		{
+			document.getElementById(platform + "-url_filter_List").style.display = "none";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+		}
+    }
+	function initAddrListTable(entries)
+	{
+		<!-- var rule_list = parent_control_profile_get.split(";"); -->
+        var tbodystaticAddrList = document.getElementById(platform + '-tbodystaticUrlList');
+        var tbodystaticAddrListCon = '';
+        var tbodystaticAddrListAll = '';
+        var deleteIcon = '';
+        tbodystaticAddrList.innerHTML = '';
+
+		for(var i = 0; i < entries.length; i++)
+		{
+			var idx = entries[i].web_index;
+			var url = entries[i].url;
+			tbodystaticAddrListCon = '<tr class="cardViewTableTR">';
+			if(platform != 'mobile')
+			{
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +idx+ '</label></td>';
+			}
+            tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD urlText"><label>' +url+ '</label></td>';
+			if(platform == 'mobile')
+			{
+				<!-- detailInfo = '<button class="btn" id="more_info_' + idx + '"><img src="/images/iconMore.svg"></button>'; -->
+				editIcon = '<button class="btn" id="edit_rule_' + idx + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('urlFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + i + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('urlFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + idx + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + i + '"><img src="/images/ic_delete.svg"></button>';
+				<!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + detailInfo + editIcon + deleteIcon + '</label></td>'; -->
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+			else
+			{
+				editIcon = '<button class="btn" id="edit_rule_' + idx + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('urlFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + i + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('urlFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + idx + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + i + '"><img src="/images/ic_delete.svg"></button>';
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}			
+            tbodystaticAddrListCon += '</tr>';
+            tbodystaticAddrListAll += tbodystaticAddrListCon;
+		}
+        tbodystaticAddrList.innerHTML = tbodystaticAddrListAll;
+		for(var i = 0; i < entries.length; i++)(function(i){
+			var idx = entries[i].web_index;
+            document.getElementById("edit_rule_"+idx).onclick = function(){edit_rule(idx);};
+            document.getElementById("deleteItem_"+i).onclick = function(){deleteItem(i);};
+        })(i);
+    }
+	function more_info(i)
+	{
+		document.getElementById('_more_item').innerHTML = url_array[i-1].web_index;
+		document.getElementById('_more_url').innerHTML = url_array[i-1].url;
+
+        toggle_MoreInfo_modal();
+    }
+	function edit_rule(idx)
+	{
+		var rule_list = parent_control_profile_get.split(";");
+		var instance = rule_list[idx-1].split(",")[0];
+		var rule = rule_list[idx-1].split(",")[1];
+		document.getElementById('edit_url_Addr').value = rule;
+        toggle_edit_modal();
+
+		g_handler = instance;
+    }
+	function edit_rule_save()
+	{
+		resetInputStyle();
+		var url_Addr = document.getElementById("edit_url_Addr");
+		if(checkEmpty(url_Addr))
+		{
+			document.getElementById("edit_url_title").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_url_error').style.display = 'block';
+			document.getElementById('edit_url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes');
+			document.getElementById("edit_url_Addr").focus();
+			return;
+		}
+		if(url_Addr.value.length >= 128 )
+		{
+			document.getElementById("edit_url_title").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_url_error').style.display = 'block';
+			document.getElementById('edit_url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes2');
+			document.getElementById("edit_url_Addr").focus();
+			return;
+		}
+		if(!validateURL(url_Addr.value))
+		{
+			document.getElementById("edit_url_title").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_url_error').style.display = 'block';
+			document.getElementById('edit_url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes3');
+			document.getElementById("edit_url_Addr").focus();
+			return;
+		}
+		if(isValidURLStr(url_Addr.value) == false )
+		{
+			document.getElementById("edit_url_title").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("edit_url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_url_error').style.display = 'block';
+			document.getElementById('edit_url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes4');
+			document.getElementById("edit_url_Addr").focus();
+			return;
+		}
+		for(var i = 0; i < url_array.length; i++)
+		{
+			var url = url_array[i].url;
+			if(url == url_Addr.value)
+			{
+				document.getElementById("edit_url_title").style = "color: var(--errorColor);";
+				document.getElementById("edit_url_Addr").style = "color: var(--errorColor);";
+				document.getElementById("edit_url_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById('edit_url_error').style.display = 'block';
+				document.getElementById('edit_url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes5');
+				document.getElementById("edit_url_Addr").focus();
+				return;
+			}
+		}
+
+		<!-- var rule_list = parent_control_profile_get.split(";"); -->
+		<!-- var rule = rule_list[g_handler-1]; -->
+		<!-- ori_url_addr = rule; -->
+
+		toggle_edit_modal();
+		document.getElementById('modal_AddURLfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('urlFilter_save_loading');
+		toggle_modal();
+
+		<!-- //prepare json data -->
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		<!-- req.ori_url_addr = ori_url_addr; -->
+		<!-- req.new_url_addr = document.getElementById('edit_url_Addr').value; -->
+		req.edit_instance = g_handler;
+		req.new_url_addr = document.getElementById('edit_url_Addr').value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/urlfilter_edit.cgi", req)
+            .then(response_add_urlfilter).catch(response_print);
+	}
+	function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img()
+	{
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener()
+	{
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_add_ipfilter(data_json)
+	{
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-urlfilter.html";}, 1000);
+    }
+	function response_print(response)
+	{
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);
+    }
+	function modal_alert()
+	{
+		if(document.getElementById(platform + "-filterMode").innerHTML == "Allow" && parent_control_profile_get == "" && document.getElementById(platform + "-urlfilter_switch").checked)
+		{
+			document.getElementById('_alert_modal_title').style = "color: var(--warningColor);";
+			document.getElementById('_alert_modal_text').innerHTML = i18next.t('urlFilter_dialog_des1');
+			toggle_alert_modal()
+		}
+		else
+		{
+			btnOKClicked()
+		}
+	}
+	function btnOKClicked()
+	{
+		if(document.getElementById(platform + "-urlfilter_switch").checked)
+		{
+			var enable = 1;
+		}
+		else
+		{
+			var enable = 0;
+		}
+		if(document.getElementById(platform + "-filterMode").innerHTML == i18next.t('urlFilter_mode_blacklist'))
+		{
+			isAllow = 0
+		}
+		else
+		{
+			isAllow = 1
+		}
+		if(document.getElementById(platform + "-filterMode").innerHTML == "Allow" && parent_control_profile_get == "" && document.getElementById(platform + "-urlfilter_switch").checked)
+		{
+			toggle_alert_modal()
+		}
+
+		document.getElementById('modal_AddURLfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('urlFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.state = enable;
+		req.mode = isAllow;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/urlfilter_status_save.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function resetInputStyle()
+	{
+		document.getElementById("url_title").style = "color: var(--headingText);";
+		document.getElementById("url_Addr").style = "color: var(--headingText);";
+		document.getElementById("url_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById('url_error').style.display = 'none';
+		document.getElementById('url_error').innerHTML = '';
+	}
+	function add_urlfilter()
+	{
+		resetInputStyle();
+		var url_Addr = document.getElementById("url_Addr");
+		if(checkEmpty(url_Addr))
+		{
+			document.getElementById("url_title").style = "color: var(--errorColor);";
+			document.getElementById("url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('url_error').style.display = 'block';
+			document.getElementById('url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes');
+			document.getElementById("url_Addr").focus();
+			return;
+		}
+		if(url_Addr.value.length >= 128 )
+		{
+			document.getElementById("url_title").style = "color: var(--errorColor);";
+			document.getElementById("url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('url_error').style.display = 'block';
+			document.getElementById('url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes2');
+			document.getElementById("url_Addr").focus();
+			return;
+		}
+		if(!validateURL(url_Addr.value))
+		{
+			document.getElementById("url_title").style = "color: var(--errorColor);";
+			document.getElementById("url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('url_error').style.display = 'block';
+			document.getElementById('url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes3');
+			document.getElementById("url_Addr").focus();
+			return;
+		}
+		if(isValidURLStr(url_Addr.value) == false )
+		{
+			document.getElementById("url_title").style = "color: var(--errorColor);";
+			document.getElementById("url_Addr").style = "color: var(--errorColor);";
+			document.getElementById("url_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('url_error').style.display = 'block';
+			document.getElementById('url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes4');
+			document.getElementById("url_Addr").focus();
+			return;
+		}
+		
+		for(var i = 0; i < url_array.length; i++)
+        {
+			var url = url_array[i].url;
+			if(url == url_Addr.value)
+			{
+				document.getElementById("url_title").style = "color: var(--errorColor);";
+				document.getElementById("url_Addr").style = "color: var(--errorColor);";
+				document.getElementById("url_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById('url_error').style.display = 'block';
+				document.getElementById('url_error').innerHTML = i18next.t('urlFilter_dialog_edit_errDes5');
+				return;
+			}
+		}
+
+		toggle_add_modal();
+		document.getElementById('modal_AddURLfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('urlFilter_save_loading');
+		toggle_modal();
+
+		<!-- //prepare json data -->
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.url_addr = document.getElementById('url_Addr').value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/urlfilter_add_save.cgi", req)
+            .then(response_add_urlfilter).catch(response_print);
+	}
+	function response_add_urlfilter(data_json)
+	{
+		//console.log("res: " + JSON.stringify(data_json));
+		if(!data_json.result)
+		{
+			document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+			setTimeout(toggle_modal,1000);
+			<!-- toggle_modal(); -->
+			setTimeout(show_url_error,1000);
+        }
+		else
+		{
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-urlfilter.html";}, 1000);
+        }
+    }
+	function show_url_error()
+	{
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('urlFilter_dialog_errDes');
+        toggle_dialog_modal();
+    }
+	function deleteItem(index)
+	{
+		toggle_check_modal()
+		<!-- g_rule_list = url_array[index].url; -->
+		g_rule_list = url_array[index].instance;
+	}
+	function confirm_delete()
+	{
+		toggle_check_modal()
+		document.getElementById('modal_AddURLfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('urlFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.del_instance = g_rule_list;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/urlfilter_delete_save.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function toggle_check_modal(){
+		resetInputStyle();
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('check_modal'));
+        _myModal.toggle();
+    }
+	function saveCheckListener() {
+        var myModalEl = document.getElementById('check_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_add_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_AddURLfilter'));
+        _myModal.toggle();
+    }
+	function saveAddListener() {
+        var myModalEl = document.getElementById('modal_AddURLfilter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_alert_modal(){
+		resetInputStyle();
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('alert_modal'));
+        _myModal.toggle();
+    }
+	function saveCheckListener() {
+        var myModalEl = document.getElementById('alert_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_edit_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_edit_URLfilter'));
+        _myModal.toggle();
+    }
+	function saveEditListener() {
+        var myModalEl = document.getElementById('modal_edit_URLfilter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfo_Listener() {
+        var myModalEl = document.getElementById('_MoreInfo_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	var sortURLStatus = 1;
+	var sortNumberStatus = 1;
+	function sortNumber()
+	{
+        sortNumberStatus = sortNumberStatus%2;
+        pageIdx = 0;
+        sortURLStatus = 1;
+        document.getElementById(platform + '-sortURLImg').src="/images/iconSort.svg";
+		switch(sortNumberStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortNumberImg').src="/images/iconA-Z.svg";
+				url_array.sort(function(a, b) {
+					if(a.index < b.index) { return -1; }
+					if(a.index > b.index) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortNumberImg').src="/images/iconZ-A.svg";
+				url_array.sort(function(a, b) {
+					if(a.index > b.index) { return -1; }
+					if(a.index < b.index) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(url_array);
+        sortNumberStatus++;
+    }
+	function sortURL()
+	{
+        sortURLStatus = sortURLStatus%2;
+        pageIdx = 0;
+        sortNumberStatus = 1;
+        document.getElementById(platform + '-sortNumberImg').src="/images/iconSort.svg";
+		switch(sortURLStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortURLImg').src="/images/iconA-Z.svg";
+				url_array.sort(function(a, b) {
+					if(a.url < b.url) { return -1; }
+					if(a.url > b.url) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortURLImg').src="/images/iconZ-A.svg";
+				url_array.sort(function(a, b) {
+					if(a.url > b.url) { return -1; }
+					if(a.url < b.url) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(url_array);
+        sortURLStatus++;
+    }
+	function selectObj(id, text) {
+        var selectItem = document.getElementById(id);
+        selectItem.innerHTML = text;
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.urlText{
+		max-width: 150px;
+		width: 50%;
+		overflow-x: scroll;
+		white-space: norwrap;
+		padding-left: 0px;
+		text-align: left;
+		font: normal normal 300 18px/21px Roboto;
+		color: var(--inputtext);
+	}
+	.model_width{
+		width:100%;
+	}
+	<!-- .box{white-spacing: pre-wrap;} -->
+@media only screen and (min-width: 1200px) {
+	.urlText{
+		max-width: 500px;
+		overflow: scroll;
+		white-space: norwrap;
+		padding-left: 0px;
+		text-align: left;
+		font: normal normal 300 18px/21px Roboto;
+		color: var(--inputtext);
+	}
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.modalTitle{
+        text-align: left;
+		font: normal normal 300 32px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalText{
+		font: normal normal 300 24px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalInputLabel{
+		font: normal normal 300 18px/21px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.urlText{
+		max-width: 500px;
+		overflow: scroll;
+		white-space: norwrap;
+		padding-left: 0px;
+		text-align: left;
+		font: normal normal 300 18px/21px Roboto;
+		color: var(--inputtext);
+	}
+	.model_width{
+		width:50%;
+	}
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="urlFilter_func">URL Filter Function</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="urlFilter_func">URL Filter Function</td>
+                    <td class="w-25">
+					  <input class="switch_check" type="checkbox" id="xxl-urlfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					<td class="w-25 cardViewTd" id="xxl-filterMode_title" data-i18n="urlFilter_mode">Filter Mode</td>
+					<td class="w-25">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-filterMode">Whitelist</button>
+                        <button id="xxl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+							<li><a class="dropdown-item" href="#" id="xxl-filterMode_white" data-i18n="urlFilter_mode_whitelist">Whitelist</a></li>
+							<li><a class="dropdown-item" href="#" id="xxl-filterMode_black" data-i18n="urlFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xxl-modal_alertBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xxl-url_filter_List">
+			<div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+				<table class="table table-borderless cardViewTable">
+				<thead>
+					<tr>
+						<th colspan="3" scope="row" class="">
+						  <label class="cardViewTitle" data-i18n="urlFilter_list">URL Filter List</label>
+							<button class="cardViewTitleBtn" id="xxl-addNewBtn">
+								<img src="/images/iconAddNew.svg" id="xxl-addNewImg" data-i18n-img-alt="urlFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+							</button>
+						  <label class="cardViewTd" id="xxl-MaxLimtLabel" data-i18n="urlFilter_maxLimit">Max Limit: 10</label>
+						</th>
+					 </tr>
+					<tr class="cardViewTableFirstTR">
+						<td class="w-10 cardViewTableFirstTD">
+							<label data-i18n="urlFilter_list_Item">Item</label>
+							<button class="cardViewSortBtn" id="xxl-sortNumberBtn"><img id="xxl-sortNumberImg" src="/images/iconSort.svg" data-i18n-img-alt="urlFilter_set_sortNum"></button>
+						</td>
+						<td class="w-50 cardViewTableFirstTD">
+							<label data-i18n="urlFilter_list_url">URL</label>
+							<button class="cardViewSortBtn" id="xxl-sortURLBtn"><img id="xxl-sortURLImg" src="/images/iconSort.svg" data-i18n-img-alt="urlFilter_set_sortUrl"></button>
+						</td>
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="urlFilter_list_actions">Actions</label></td>
+					</tr>
+				</thead>
+				<tbody id="xxl-tbodystaticUrlList">
+                </tbody>
+				</table>
+			</div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="urlFilter_func">URL Filter Function</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" data-i18n="urlFilter_func">URL Filter Function</td>
+                    <td class="w-50">
+                      <input class="switch_check" type="checkbox" id="xl-urlfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					</tr>
+					<tr>
+					<td class="w-50 cardViewTd" id="xl-filterMode_title" data-i18n="urlFilter_mode">Filter Mode</td>
+					<td class="w-50">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-filterMode">Whitelist</button>
+                        <button id="xl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+							<ul class="dropdown-menu dropdown-menu-lg-end">
+							<li><a class="dropdown-item" href="#" id="xl-filterMode_white" data-i18n="urlFilter_mode_whitelist">Whitelist</a></li>
+							<li><a class="dropdown-item" href="#" id="xl-filterMode_black" data-i18n="urlFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xl-modal_alertBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xl-url_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+					<tr>
+						<th colspan="3" scope="row" class="">
+							<label class="cardViewTitle" data-i18n="urlFilter_list">URL Filter List</label>
+							<button class="cardViewTitleBtn" id="xl-addNewBtn">
+								<img src="/images/iconAddNew.svg" id="xl-addNewImg" data-i18n-img-alt="urlFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+							</button>
+							<label class="cardViewTd" id="xl-MaxLimtLabel" data-i18n="urlFilter_maxLimit">Max Limit: 10</label>
+						</th>
+					</tr>
+					<tr class="cardViewTableFirstTR">
+						<td class="w-30 cardViewTableFirstTD">
+							<label data-i18n="urlFilter_list_Item">Item</label>
+							<button class="cardViewSortBtn" id="xl-sortNumberBtn"><img id="xl-sortNumberImg" src="/images/iconSort.svg" data-i18n-img-alt="urlFilter_set_sortNum"></button>
+						</td>
+						<td class="w-30 cardViewTableFirstTD">
+							<label data-i18n="urlFilter_list_url">URL</label>
+							<button class="cardViewSortBtn" id="xl-sortURLBtn"><img id="xl-sortURLImg" src="/images/iconSort.svg" data-i18n-img-alt="urlFilter_set_sortUrl"></button>
+						</td>
+						<td class="w-30 cardViewTableFirstTD"><label data-i18n="urlFilter_list_actions">Actions</label></td>
+					</tr>
+                </thead>
+                <tbody id="xl-tbodystaticUrlList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAF-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAF">
+                        <span data-i18n="urlFilter_func">URL Filter Function</span>
+                        <img id="collapseIAF-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAF" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="w-25 cardViewTd" data-i18n="urlFilter_func">URL Filter Function</td>
+							</tr>
+							<tr>
+								<td>
+									<input class="switch_check" type="checkbox" id="mobile-urlfilter_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+							<tr>
+								<td class="w-25 cardViewTd" id="mobile-filterMode_title" data-i18n="urlFilter_mode">Filter Mode</td>
+							</tr>
+							<tr>
+								<td>
+									<div class="cardViewSelect">
+										<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-filterMode">Whitelist</button>
+										<button id="mobile-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+											<span class="visually-hidden"></span>
+										</button>
+										<ul class="dropdown-menu dropdown-menu-lg-end">
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_white" data-i18n="urlFilter_mode_whitelist">Whitelist</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_black" data-i18n="urlFilter_mode_blacklist">Blacklist</a></li>
+										</ul>
+									</div>
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-modal_alertBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-url_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAFL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAFL">
+                        <span data-i18n="urlFilter_list">URL Filter List</span>
+                        <img id="collapseIAFL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAFL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+								<tr>
+									<th colspan="2" scope="row" class="">
+										<button class="cardViewTitleBtn" id="mobile-addNewBtn">
+											<img src="/images/iconAddNew.svg" id="mobile-addNewImg" data-i18n-img-alt="urlFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+										</button>
+										<label class="cardViewTd" id="mobile-MaxLimtLabel" data-i18n="urlFilter_maxLimit">Max Limit: 10</label>
+									</th>
+								</tr>
+								<tr class="cardViewTableFirstTR">
+									<td class="w-50 cardViewTableFirstTD">
+										<label data-i18n="urlFilter_list_url">URL</label>
+									</td>
+									<td class="w-50 cardViewTableFirstTD"><label data-i18n="urlFilter_list_actions">Actions</label></td>
+								</tr>
+                            </thead>
+                            <tbody id="mobile-tbodystaticUrlList">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade dialog_modal" id="modal_AddURLfilter">
+		<div class="modal-dialog modal-dialog-centered modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="urlFilter_dialog_addTitle">Add New URL Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="url_title" data-i18n="urlFilter_list_url">URL</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="url_div">
+                            <input class="cardViewInputText" id="url_Addr" data-i18n-aria-label="urlFilter_list_url"></input>
+                        </div>
+                    </div>
+					<div>
+						<label class="p-2 cardViewInputErrorText" id="url_error" data-i18n="urlFilter_dialog_edit_errDes">URL cannot be empty.</label>
+					</div>
+					<button class="inModal_Btn" id="add_urlfilterBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_edit_URLfilter">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="urlFilter_dialog_editTitle">Modify URL Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_url_title" data-i18n="urlFilter_list_url">URL</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_url_div">
+                            <input class="cardViewInputText" id="edit_url_Addr" data-i18n-aria-label="urlFilter_list_url"></input>
+                        </div>
+                    </div>
+					<div>
+						<label class="p-2 cardViewInputErrorText" id="edit_url_error" data-i18n="urlFilter_dialog_edit_errDes">URL cannot be empty.</label>
+					</div>
+					<button class="inModal_Btn" id="edit_urlfilterBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_modal_warningBtn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="check_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="urlFilter_dialog_deleteTitle">Delete URL Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="urlFilter_dialog_deleteDes">Are you sure you want to delete "URL Filter" rule?</label>
+					<button class="inModal_Btn" id="confirm_deleteBtn" data-i18n="delete">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="alert_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_alert_modal_title">Alert!</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_alert_modal_text"></label>
+					<button class="inModal_Btn" id="alertSaveIPBtn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="urlFilter_list">URL Filter List</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="urlFilter_list_Item">Item</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_item"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="urlFilter_list_url">URL</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_url"></label>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("modal_AddURLfilter");
+            set_EAA_ToItem("modal_edit_URLfilter");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("alert_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_URL_Filter');
+            selectObj_init(platform);
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("modal_AddURLfilter");
+            set_EAA_ToItem("modal_edit_URLfilter");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("alert_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,23 @@
+{
+  "scenario": "ipfilter_save_unchanged",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_save",
+  "ui_ref": "fw-ipfilter.html:511",
+  "call": "ip_filter.set_filter",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-ipfilter",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "ipfilter_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"apply\":\"apply\",\"ipfilter_enable\":\"0\",\"pkts_blocklist_mode\":\"0\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "387f47e9685d940d5be541fa63dec39be3b8a12fce6c12e45ecd4af56bcd93ee"
+}

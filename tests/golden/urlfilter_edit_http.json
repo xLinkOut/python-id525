@@ -1,0 +1,26 @@
+{
+  "scenario": "urlfilter_edit_http",
+  "page": "fw-urlfilter",
+  "endpoint": "urlfilter_edit",
+  "ui_ref": "fw-urlfilter.html:311",
+  "call": "url_filter.edit_url",
+  "inputs": {
+    "instance": "9",
+    "url": "http://tracker.example.org/new"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-urlfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "urlfilter_edit",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"edit_instance\":\"9\",\"new_url_addr\":\"http://tracker.example.org/new\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "4d60b0e5d49382cbd4abfa4d31ee935b5b3083a9c9a4d15ebc310620216cc2d1"
+}

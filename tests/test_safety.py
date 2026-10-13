@@ -41,8 +41,8 @@ DUMMY_ARGS = {
 def call_args(func: object) -> dict[str, object]:
     """Plausible arguments for an operation (confirmed, if it asks for it)."""
     params = inspect.signature(func).parameters  # type: ignore[arg-type]
-    args: dict[str, object] = {
-        name: DUMMY_ARGS[name]
+    args: dict[str, object] = {  # values are never used: refusal comes first
+        name: DUMMY_ARGS.get(name, "x")
         for name, p in params.items()
         if name != "self" and p.default is inspect.Parameter.empty
     }

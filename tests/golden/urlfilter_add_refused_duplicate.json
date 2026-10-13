@@ -1,0 +1,20 @@
+{
+  "scenario": "urlfilter_add_refused_duplicate",
+  "page": "fw-urlfilter",
+  "endpoint": "urlfilter_add_save",
+  "ui_ref": "fw-urlfilter.html:477",
+  "call": "url_filter.add_url",
+  "inputs": {
+    "url": "ads.example.net"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/fw-urlfilter-rules",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "4d60b0e5d49382cbd4abfa4d31ee935b5b3083a9c9a4d15ebc310620216cc2d1"
+}

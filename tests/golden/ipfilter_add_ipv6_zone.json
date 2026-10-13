@@ -1,0 +1,26 @@
+{
+  "scenario": "ipfilter_add_ipv6_zone",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_add",
+  "ui_ref": "fw-ipfilter.html:315",
+  "call": "ip_filter.add_rule",
+  "inputs": {
+    "ip": "fe80::1%eth0",
+    "ip_type": "IPv6"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-ipfilter",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "ipfilter_add",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"is_edit\":\"0\",\"edit_instance\":\"\",\"ipf_lanipAddr\":\"\",\"ipf_lan_port\":\"\",\"ipf_wanipAddr\":\"fe80::1%eth0\",\"ipf_wan_port\":\"\",\"ipf_protocol\":\"\",\"ipf_iptype\":\"IPv6\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "387f47e9685d940d5be541fa63dec39be3b8a12fce6c12e45ecd4af56bcd93ee"
+}

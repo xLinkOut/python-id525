@@ -1,0 +1,25 @@
+{
+  "scenario": "ipfilter_disable_keep_mode",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_save",
+  "ui_ref": "fw-ipfilter.html:511",
+  "call": "ip_filter.set_filter",
+  "inputs": {
+    "enabled": false
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-ipfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "ipfilter_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"apply\":\"apply\",\"ipfilter_enable\":\"0\",\"pkts_blocklist_mode\":\"1\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "page has the filter on in whitelist mode",
+  "fixture_sha256": "c0a0ff19963bcaced724bccfd3327194456b4d78b1bdea9f44b0df03b8bd924e"
+}
