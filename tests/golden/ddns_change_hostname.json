@@ -26,9 +26,7 @@
       "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"DDNS_Status\":\"1\",\"DDNS_Hostname\":\"casa-2.example.net\",\"DDNS_Login\":\"user.name_1\",\"DDNS_Auth\":\"s3cr3t!pw\",\"DDNS_Server\":\"dyndns.org\"}"
     }
   ],
-  "other_calls": [
-    "get_ddns_config"
-  ],
+  "other_calls": [],
   "ui_message": "",
   "notes": "",
   "fixture_sha256": "c20cb8109c105cd6d372607891d90ea7c5fe63c8843e9f69ec16108a0eea2274"
