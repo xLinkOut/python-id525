@@ -32,7 +32,7 @@ def call_args(func: object) -> dict[str, object]:
     """Plausible arguments for an operation (confirmed, if it asks for it)."""
     params = inspect.signature(func).parameters  # type: ignore[arg-type]
     args: dict[str, object] = {
-        name: DUMMY_ARGS[name]
+        name: DUMMY_ARGS.get(name, "1")  # refused before use: any value binds
         for name, p in params.items()
         if name != "self" and p.default is inspect.Parameter.empty
     }

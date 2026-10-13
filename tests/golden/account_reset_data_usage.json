@@ -1,0 +1,25 @@
+{
+  "scenario": "account_reset_data_usage",
+  "page": "adm-user",
+  "endpoint": "reset_data",
+  "ui_ref": "adm-user.html:518",
+  "call": "account.reset_data_usage",
+  "inputs": {},
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "adm-user",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "reset_data",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "no input: one scenario covers it; the UI asks no confirmation",
+  "fixture_sha256": "751f40ffb32c25bf496da1c8b26a943134a775934f53dd2caa13e223e9cb4382"
+}

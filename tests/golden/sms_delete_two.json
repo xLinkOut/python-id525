@@ -1,0 +1,87 @@
+{
+  "scenario": "sms_delete_two",
+  "page": "adm-sms",
+  "endpoint": "req_smsDelete",
+  "ui_ref": "adm-sms.html:658",
+  "call": "sms.delete_conversations",
+  "inputs": {
+    "phone_numbers": [
+      "+390000000001",
+      "+390000000003"
+    ]
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_smsReload": {
+      "sms_update_time": "1759480000",
+      "message": [
+        {
+          "index": 3,
+          "phone_number": "+390000000001",
+          "time": "2026/10/01 08:15:00",
+          "context": "Hai consumato il 50% del traffico.",
+          "read_status": 0
+        },
+        {
+          "index": 2,
+          "phone_number": "+390000000002",
+          "time": "2026/09/30 19:02:11",
+          "context": "Messaggio letto",
+          "read_status": 1
+        },
+        {
+          "index": 1,
+          "phone_number": "+390000000003",
+          "time": "2026/10/02 10:00:00",
+          "context": "Inviato dal router",
+          "read_status": 6
+        }
+      ]
+    }
+  },
+  "refused": false,
+  "fixture": "adm-sms",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_smsDelete",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"DeleteSMS_List\":[{\"index\":1,\"phone_number\":\"+390000000003\",\"time\":\"2026/10/02 10:00:00\",\"context\":\"Inviato dal router\",\"read_status\":6,\"unread_num\":0,\"Class\":\"+390000000003\",\"onCheck\":true},{\"index\":3,\"phone_number\":\"+390000000001\",\"time\":\"2026/10/01 08:15:00\",\"context\":\"Hai consumato il 50% del traffico.\",\"read_status\":0,\"unread_num\":1,\"Class\":\"+390000000001\",\"onCheck\":true}]}"
+    }
+  ],
+  "other_calls": [
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload"
+  ],
+  "ui_message": "",
+  "notes": "conversations are sent in the UI's display order, not the selection order",
+  "fixture_sha256": "6eb7a5f71ee1850e6c9b086828dcd5d271ede1344c6eaae560509119e5cc82ff"
+}

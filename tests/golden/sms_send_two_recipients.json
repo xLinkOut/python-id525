@@ -1,0 +1,62 @@
+{
+  "scenario": "sms_send_two_recipients",
+  "page": "adm-sms",
+  "endpoint": "req_smsCompose",
+  "ui_ref": "adm-sms.html:702",
+  "call": "sms.send",
+  "inputs": {
+    "recipients": "+390000000008, 3330000000",
+    "text": "two lines\nsecond"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_smsReload": {
+      "sms_update_time": "1",
+      "message": []
+    }
+  },
+  "refused": false,
+  "fixture": "adm-sms",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_smsCompose",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"Recipients\":\"+390000000008,3330000000\",\"RecipientsNum\":2,\"SMScontext\":\"two lines\\nsecond\"}"
+    }
+  ],
+  "other_calls": [
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload"
+  ],
+  "ui_message": "",
+  "notes": "the UI splits the recipients box on ', ' and re-joins with ','",
+  "fixture_sha256": "6eb7a5f71ee1850e6c9b086828dcd5d271ede1344c6eaae560509119e5cc82ff"
+}
