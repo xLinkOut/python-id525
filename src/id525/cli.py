@@ -104,7 +104,9 @@ def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
         flag = f"--{name.replace('_', '-')}"
         kind = _base_type(hints.get(name, str))
         required = param.default is inspect.Parameter.empty
-        if kind is bool:
+        if kind is bool and param.default is None:  # tri-state: unset / --x / --no-x
+            parser.add_argument(flag, dest=name, action=argparse.BooleanOptionalAction)
+        elif kind is bool:
             parser.add_argument(flag, dest=name, action="store_true", default=param.default)
         elif isinstance(kind, type) and issubclass(kind, enum.Enum):
             parser.add_argument(

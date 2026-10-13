@@ -260,6 +260,7 @@ _LIVE, _CAPT, _STATIC, _TODO = (
     Status.STATIC,
     Status.PLANNED,
 )
+_SYNTH = Status.UI_CAPTURED_SYNTHETIC
 _UNSAFE, _POLICY, _UNKNOWN, _DEAD = (
     Status.STUB_UNSAFE,
     Status.STUB_POLICY,
