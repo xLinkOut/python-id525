@@ -1,0 +1,25 @@
+{
+  "scenario": "cellular_apn_delete_encoded",
+  "page": "cellular-settings",
+  "endpoint": "req_deleteUserApn",
+  "ui_ref": "cellular-settings.html:1650",
+  "call": "cellular.delete_apn",
+  "inputs": {
+    "instance": 3
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/cellular-settings-5-apns",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_deleteUserApn",
+      "body": "{\"active\":0,\"profile_handle\":3,\"instance\":3,\"name\":\"ims%20profile\",\"apn\":\"ims\",\"IPType\":1,\"auth\":\"PAP\",\"user\":\"user%40example\",\"passwd\":\"p%26ss\",\"disable\":1,\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "delete sends the stored entry as-is (still URI-encoded)",
+  "fixture_sha256": "1403a5af3192a1daad3c69e15ae048dd163fe1a955ba2915ae9becea47d878ed"
+}

@@ -1,0 +1,27 @@
+{
+  "scenario": "cellular_search_operators",
+  "page": "cellular-settings",
+  "endpoint": "req_SearchOperators",
+  "ui_ref": "cellular-settings.html:840",
+  "call": "cellular.search_operators",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "req_SearchOperators": {
+      "scan_network": "222,1,97,TIM,12,0;222,10,34,vodafone IT,8,0;222,88,18,WINDTRE,8,0;"
+    }
+  },
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_SearchOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "scan_network format inferred from the UI parser (insert_operators_data)",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

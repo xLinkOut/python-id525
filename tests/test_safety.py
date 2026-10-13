@@ -25,6 +25,12 @@ DUMMY_ARGS = {
     "ip": "192.168.224.50",
     "mac": "02:00:5e:00:00:99",
     "index": 1,
+    # cellular
+    "mode": "4G",
+    "mcc": "222",
+    "mnc": "10",
+    "apn": "web",
+    "instance": 2,
 }
 
 

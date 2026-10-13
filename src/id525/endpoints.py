@@ -325,7 +325,7 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "adm-user", _R, _DEAD, "adm-user.html:261", "Admin password (never called)"
     ),
     _E.CELLULAR_MODE: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:949", "Network mode"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:949", "Network mode"
     ),
     _E.CHANGE_PIN: EndpointInfo(
         "cellular-settings", _W, _POLICY, "cellular-settings.html:897", "Change PIN"
@@ -334,31 +334,31 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "cellular-settings", _W, _POLICY, "cellular-settings.html:527", "PIN lock"
     ),
     _E.ROAMING: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:863", "Roaming"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:863", "Roaming"
     ),
     _E.OPERATION_MODE: EndpointInfo(
-        "cellular-settings", _D, _TODO, "cellular-settings.html:996", "Router / bridge mode"
+        "cellular-settings", _D, _CAPT, "cellular-settings.html:996", "Router / bridge mode"
     ),
     _E.REGISTER_OPERATOR: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:586", "Select operator"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:586", "Select operator"
     ),
     _E.SEARCH_OPERATORS: EndpointInfo(
-        "cellular-settings", _A, _TODO, "cellular-settings.html:840", "Scan operators"
+        "cellular-settings", _A, _CAPT, "cellular-settings.html:840", "Scan operators"
     ),
     _E.APN_ADD: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:1462", "Add APN"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:1462", "Add APN"
     ),
     _E.APN_EDIT: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:1610", "Edit APN"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:1610", "Edit APN"
     ),
     _E.APN_DELETE: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:1650", "Delete APN"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:1650", "Delete APN"
     ),
     _E.APN_DEFAULT_SAVE: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:467", "Select default APN"
+        "cellular-settings", _W, _CAPT, "cellular-settings.html:467", "Select default APN"
     ),
     _E.APN_DEFAULT_RESET: EndpointInfo(
-        "cellular-settings", _D, _TODO, "cellular-settings.html:493", "Reset APNs"
+        "cellular-settings", _D, _DEAD, "cellular-settings.html:272", "Reset APNs (button unbound)"
     ),
     _E.LAN_SAVE: EndpointInfo("lan-settings", _D, _TODO, "lan-settings.html:563", "LAN / DHCP"),
     _E.ETH_WAN: EndpointInfo(
@@ -439,7 +439,7 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.SOFTWARE: PageInfo("Software update", _TODO),
     _P.SMS: PageInfo("SMS", _TODO),
     _P.BACKUP: PageInfo("Backup & reboot", _TODO),
-    _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _TODO),
+    _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),
     _P.LAN_SETTINGS: PageInfo("LAN settings", _STATIC),
     _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _TODO),
     _P.VOIP_SETTINGS: PageInfo("VoIP settings", _TODO),

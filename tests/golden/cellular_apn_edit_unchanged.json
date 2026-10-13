@@ -1,0 +1,25 @@
+{
+  "scenario": "cellular_apn_edit_unchanged",
+  "page": "cellular-settings",
+  "endpoint": "req_editUserApn",
+  "ui_ref": "cellular-settings.html:1610",
+  "call": "cellular.edit_apn",
+  "inputs": {
+    "instance": 2
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_editUserApn",
+      "body": "{\"active\":0,\"profile_handle\":2,\"instance\":2,\"name\":\"Default\",\"apn\":\"fwavoip.tim.it\",\"IPType\":2,\"auth\":\"NONE\",\"user\":\"\",\"passwd\":\"\",\"disable\":0,\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

@@ -1,0 +1,34 @@
+{
+  "scenario": "cellular_register_operator_3digit_mnc",
+  "page": "cellular-settings",
+  "endpoint": "req_RegistingOperators",
+  "ui_ref": "cellular-settings.html:586",
+  "call": "cellular.register_operator",
+  "inputs": {
+    "mcc": "310",
+    "mnc": "410"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_SearchOperators": {
+      "scan_network": "222,1,97,TIM,12,0;310,410,34,AT&T US,12,1;"
+    }
+  },
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_SearchOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    },
+    {
+      "endpoint": "req_RegistingOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"mcc\":\"310\",\"mnc\":\"410\",\"type\":\"12\",\"mnc_includes_pcs_digit\":\"1\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

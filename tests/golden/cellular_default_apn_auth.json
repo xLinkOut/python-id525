@@ -1,0 +1,28 @@
+{
+  "scenario": "cellular_default_apn_auth",
+  "page": "cellular-settings",
+  "endpoint": "req_defaultApnSave",
+  "ui_ref": "cellular-settings.html:467",
+  "call": "cellular.set_default_apn",
+  "inputs": {
+    "auth": "PAPCHAP",
+    "ip_type": "ipv6",
+    "username": "a",
+    "password": "b"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_defaultApnSave",
+      "body": "{\"active\":1,\"profile_handle\":1,\"instance\":1,\"name\":\"profile1\",\"apn\":\"fwanat.tim.it\",\"IPType\":1,\"auth\":\"PAPCHAP\",\"user\":\"a\",\"passwd\":\"b\",\"disable\":0,\"RequestVerifyToken\":\"<TOKEN>\",\"DefaultApnMode\":\"Manual\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "untouched text fields are sent decoded",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

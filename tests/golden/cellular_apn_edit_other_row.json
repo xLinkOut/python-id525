@@ -1,0 +1,27 @@
+{
+  "scenario": "cellular_apn_edit_other_row",
+  "page": "cellular-settings",
+  "endpoint": "req_editUserApn",
+  "ui_ref": "cellular-settings.html:1610",
+  "call": "cellular.edit_apn",
+  "inputs": {
+    "instance": 5,
+    "ip_type": "ipv4v6",
+    "enabled": false
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/cellular-settings-5-apns",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_editUserApn",
+      "body": "{\"active\":0,\"profile_handle\":4,\"instance\":5,\"name\":\"mms\",\"apn\":\"mms.example.it\",\"IPType\":2,\"auth\":\"CHAP\",\"user\":\"mms\",\"passwd\":\"secret\",\"disable\":1,\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "1403a5af3192a1daad3c69e15ae048dd163fe1a955ba2915ae9becea47d878ed"
+}
