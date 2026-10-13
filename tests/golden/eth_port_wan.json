@@ -1,0 +1,27 @@
+{
+  "scenario": "eth_port_wan",
+  "page": "lan-settings",
+  "endpoint": "req_ethWanEnabled",
+  "ui_ref": "lan-settings.html:600",
+  "call": "lan.set_ethernet_port_role",
+  "inputs": {
+    "role": "wan"
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_ethWanEnabled",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"ethWanEnabled\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "sent even when unchanged; applied after a reboot",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

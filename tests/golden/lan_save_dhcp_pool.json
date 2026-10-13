@@ -1,0 +1,29 @@
+{
+  "scenario": "lan_save_dhcp_pool",
+  "page": "lan-settings",
+  "endpoint": "req_LanInternetProtoSave",
+  "ui_ref": "lan-settings.html:563",
+  "call": "lan.update_settings",
+  "inputs": {
+    "dhcp_start": "192.168.224.30",
+    "dhcp_end": "192.168.224.200",
+    "lease_time": 1440
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanInternetProtoSave",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"ipClass\":\"0\",\"subnetMaskClass\":\"0\",\"hostIP\":\"192.168.224.1\",\"subnetMask\":\"255.255.255.0\",\"leaseTime\":\"1440\",\"startIP\":\"192.168.224.30\",\"endIP\":\"192.168.224.200\",\"dhcp_enable\":true}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

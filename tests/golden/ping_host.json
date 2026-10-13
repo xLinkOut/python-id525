@@ -1,0 +1,49 @@
+{
+  "scenario": "ping_host",
+  "page": "self-ping",
+  "endpoint": "req_pingTest",
+  "ui_ref": "self-ping.html:166",
+  "call": "diagnostics.ping",
+  "inputs": {
+    "host": "www.example.com",
+    "count": 2,
+    "size": 56
+  },
+  "call_kwargs": {
+    "interval": 0
+  },
+  "answers": {
+    "req_pingTest": [
+      {
+        "ping_result": "64 bytes from 192.0.2.7: icmp_seq=1 ttl=56 time=11.2 ms"
+      },
+      {
+        "ping_result": "64 bytes from 192.0.2.7: icmp_seq=2 ttl=56 time=12.2 ms"
+      },
+      {
+        "ping_result": "64 bytes from 192.0.2.7: icmp_seq=3 ttl=56 time=13.2 ms"
+      }
+    ]
+  },
+  "refused": false,
+  "fixture": "self-ping",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_pingTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"pingCount\":2,\"pingHost\":\"www.example.com\",\"pingSize\":56}"
+    },
+    {
+      "endpoint": "req_pingTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"pingCount\":2,\"pingHost\":\"www.example.com\",\"pingSize\":56}"
+    },
+    {
+      "endpoint": "req_pingTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"pingCount\":2,\"pingHost\":\"www.example.com\",\"pingSize\":56}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "count + 1 requests; the answer to the last one is discarded by the UI",
+  "fixture_sha256": "f2ab515e4c8d0426f583b32edf2ce0087934f6ecdf0599b6ab9a04314086fb33"
+}

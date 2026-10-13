@@ -1,0 +1,45 @@
+{
+  "scenario": "self_test_fail",
+  "page": "self-diag",
+  "endpoint": "req_pingTest",
+  "ui_ref": "self-ping.html:166",
+  "call": "diagnostics.run_self_test",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "req_DiagnosticConnectedTest": {
+      "ethConnected": 0,
+      "wifiConnected": 0,
+      "usbConnected": 0,
+      "cellularConnected": "Disconnected",
+      "ethWanConnected": 1
+    },
+    "req_pingTest": {
+      "result": false
+    },
+    "req_cpuUsageTest": {
+      "result": false
+    }
+  },
+  "refused": false,
+  "fixture": "self-diag",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_DiagnosticConnectedTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    },
+    {
+      "endpoint": "req_pingTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"pingCount\":1,\"pingHost\":\"www.google.com\",\"pingSize\":8}"
+    },
+    {
+      "endpoint": "req_cpuUsageTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "failed steps do not stop the sequence",
+  "fixture_sha256": "afacf9e510e45683050d4d562f10ce9341e1c74dd3f93984954ff8f10afaf6ef"
+}

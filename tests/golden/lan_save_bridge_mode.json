@@ -1,0 +1,27 @@
+{
+  "scenario": "lan_save_bridge_mode",
+  "page": "lan-settings",
+  "endpoint": "req_LanInternetProtoSave",
+  "ui_ref": "lan-settings.html:563",
+  "call": "lan.update_settings",
+  "inputs": {
+    "ip": "192.168.50.1"
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/lan-settings-bridge",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_LanInternetProtoSave",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"ipClass\":\"0\",\"subnetMaskClass\":\"0\",\"hostIP\":\"192.168.50.1\",\"subnetMask\":\"255.255.255.0\",\"leaseTime\":\"720\",\"startIP\":\"192.168.50.200\",\"endIP\":\"192.168.50.240\",\"dhcp_enable\":true}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "bridge mode: the UI moves the DHCP range to .200-.240 of the new subnet",
+  "fixture_sha256": "504ecac479a99456b175f5a5a82a6096631724135025591dc45be57d099a08aa"
+}
