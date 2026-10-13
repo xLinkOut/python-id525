@@ -1,0 +1,25 @@
+{
+  "scenario": "portfwd_delete",
+  "page": "fw-portfwd",
+  "endpoint": "portforward_delete",
+  "ui_ref": "fw-portfwd.html:1036",
+  "call": "port_forwarding.delete_rule",
+  "inputs": {
+    "instance": 5
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-portfwd-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "portforward_delete",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"del_instance\":5}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "05711f0fd5a9b3773e3ec72441f4a6066f9ec8897e86f3f650d7684c8643b1de"
+}

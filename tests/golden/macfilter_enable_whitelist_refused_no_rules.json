@@ -1,0 +1,20 @@
+{
+  "scenario": "macfilter_enable_whitelist_refused_no_rules",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_save",
+  "ui_ref": "fw-macfilter.html:463",
+  "call": "mac_filter.enable",
+  "inputs": {
+    "mode": "whitelist"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "fw-macfilter",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "No rules have been established.Please establish at least one rule.",
+  "notes": "a whitelist without rules would lock every device out",
+  "fixture_sha256": "2c2679c1211bc5ff250c215d898d26cce75271d56da2062c07f65154b2330430"
+}

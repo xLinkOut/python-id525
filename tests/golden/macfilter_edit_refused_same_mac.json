@@ -1,0 +1,21 @@
+{
+  "scenario": "macfilter_edit_refused_same_mac",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_edit",
+  "ui_ref": "fw-macfilter.html:712",
+  "call": "mac_filter.modify_rule",
+  "inputs": {
+    "instance": 2,
+    "name": "tablet-3"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "The MAC Address has already existed.",
+  "notes": "UI quirk: the edited rule's own MAC counts as a duplicate",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

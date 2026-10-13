@@ -1,0 +1,25 @@
+{
+  "scenario": "macfilter_enable_whitelist",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_save",
+  "ui_ref": "fw-macfilter.html:463",
+  "call": "mac_filter.enable",
+  "inputs": {
+    "mode": "whitelist"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "macfilter_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"mf_value\":\"1\",\"mode\":\"1\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

@@ -1,0 +1,25 @@
+{
+  "scenario": "macfilter_delete",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_delete",
+  "ui_ref": "fw-macfilter.html:734",
+  "call": "mac_filter.delete_rule",
+  "inputs": {
+    "instance": 6
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "macfilter_delete",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"del_instance\":6}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

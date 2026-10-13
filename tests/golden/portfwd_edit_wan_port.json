@@ -1,0 +1,26 @@
+{
+  "scenario": "portfwd_edit_wan_port",
+  "page": "fw-portfwd",
+  "endpoint": "portforward_edit",
+  "ui_ref": "fw-portfwd.html:741",
+  "call": "port_forwarding.modify_rule",
+  "inputs": {
+    "instance": 3,
+    "wan_port": 8081
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-portfwd-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "portforward_edit",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"edit_instance\":3,\"global_port\":8081,\"global_port_range\":0,\"private_port\":80,\"ipAddr\":\"192.168.224.50\",\"protocol\":\"0\",\"isEnabled\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "every field is resent, unchanged ones from the rule",
+  "fixture_sha256": "05711f0fd5a9b3773e3ec72441f4a6066f9ec8897e86f3f650d7684c8643b1de"
+}

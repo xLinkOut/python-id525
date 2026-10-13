@@ -1,0 +1,21 @@
+{
+  "scenario": "macfilter_add_refused_name_charset",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_add",
+  "ui_ref": "fw-macfilter.html:389",
+  "call": "mac_filter.add_rule",
+  "inputs": {
+    "mac": "02:00:5e:00:02:ac",
+    "name": "tv salotto"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "fw-macfilter",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Description is invalid. Only letters, numbers, and the characters hyphen (-) and period (.) can be used.",
+  "notes": "only letters, digits, '-' and '.' (no spaces, no '_')",
+  "fixture_sha256": "2c2679c1211bc5ff250c215d898d26cce75271d56da2062c07f65154b2330430"
+}

@@ -1,0 +1,23 @@
+{
+  "scenario": "portfwd_disable",
+  "page": "fw-portfwd",
+  "endpoint": "set_portforward_status",
+  "ui_ref": "fw-portfwd.html:295",
+  "call": "port_forwarding.disable",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-portfwd-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "set_portforward_status",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"isPFEnable\":\"0\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "05711f0fd5a9b3773e3ec72441f4a6066f9ec8897e86f3f650d7684c8643b1de"
+}
