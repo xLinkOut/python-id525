@@ -1,0 +1,22 @@
+{
+  "scenario": "lan_save_refused_bad_start",
+  "page": "lan-settings",
+  "endpoint": "req_LanInternetProtoSave",
+  "ui_ref": "lan-settings.html:563",
+  "call": "lan.update_settings",
+  "inputs": {
+    "dhcp_start": "192.168.224"
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": true,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Please input valid starting IP Address.",
+  "notes": "",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

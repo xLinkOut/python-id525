@@ -1,0 +1,31 @@
+{
+  "scenario": "lan_save_class_a",
+  "page": "lan-settings",
+  "endpoint": "req_LanInternetProtoSave",
+  "ui_ref": "lan-settings.html:563",
+  "call": "lan.update_settings",
+  "inputs": {
+    "ip": "10.0.0.1",
+    "subnet_mask": "255.0.0.0",
+    "dhcp_start": "10.0.0.20",
+    "dhcp_end": "10.0.255.250",
+    "lease_time": 43200
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanInternetProtoSave",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"ipClass\":\"2\",\"subnetMaskClass\":\"2\",\"hostIP\":\"10.0.0.1\",\"subnetMask\":\"255.0.0.0\",\"leaseTime\":\"43200\",\"startIP\":\"10.0.0.20\",\"endIP\":\"10.0.255.250\",\"dhcp_enable\":true}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

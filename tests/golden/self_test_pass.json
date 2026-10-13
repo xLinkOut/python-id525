@@ -1,0 +1,45 @@
+{
+  "scenario": "self_test_pass",
+  "page": "self-diag",
+  "endpoint": "req_cpuUsageTest",
+  "ui_ref": "self-diag.html:276",
+  "call": "diagnostics.run_self_test",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "req_DiagnosticConnectedTest": {
+      "ethConnected": 1,
+      "wifiConnected": 1,
+      "usbConnected": 0,
+      "cellularConnected": "Connected",
+      "ethWanConnected": 0
+    },
+    "req_pingTest": {
+      "ping_result": "64 bytes from 142.250.0.1: seq=0 ttl=117"
+    },
+    "req_cpuUsageTest": {
+      "CPU_Usage": "12%"
+    }
+  },
+  "refused": false,
+  "fixture": "self-diag",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_DiagnosticConnectedTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    },
+    {
+      "endpoint": "req_pingTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"pingCount\":1,\"pingHost\":\"www.google.com\",\"pingSize\":8}"
+    },
+    {
+      "endpoint": "req_cpuUsageTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "connected test, then a fixed ping (www.google.com, 1 x 8 bytes), then CPU",
+  "fixture_sha256": "afacf9e510e45683050d4d562f10ce9341e1c74dd3f93984954ff8f10afaf6ef"
+}

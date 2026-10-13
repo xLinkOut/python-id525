@@ -30,6 +30,7 @@ DUMMY_ARGS = {
     "wan_port": 8080,
     "lan_ip": "192.168.224.50",
     "lan_port": 80,
+    "role": "wan",
 }
 
 

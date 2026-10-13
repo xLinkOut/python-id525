@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
+from urllib.parse import unquote
 
 from ..const import TOKEN_FIELD
 from ..endpoints import Endpoint, Page, uses
+from ..exceptions import Id525CommandError, Id525ResponseError
 from ..models import _raw
-from ..parsers import clean_str, extract_entity_json, extract_js_values, parse_int
+from ..parsers import clean_str, extract_js_values, parse_int
 from .base import Section, invalid, ip_cmp, is_device_name, is_ipv4, is_mac
 
 if TYPE_CHECKING:
@@ -19,6 +23,15 @@ MAX_DHCP_RESERVATIONS = 20
 MAX_DEVICE_NAME_LENGTH = 32
 _UNCHANGED = "0"  # req_LanStaticAddrModify sentinel for "keep the current value"
 _NUMERIC_VAR_RE = re.compile(r"\bvar\s+(\w+)\s*=\s*(-?\d+)\s*;")
+_RESERVATIONS_RE = re.compile(r"\bvar\s+staticAddrList_str\s*=\s*'(.*?)'\s*;", re.S)
+MIN_LEASE_TIME, MAX_LEASE_TIME = 2, 43200
+
+
+class EthernetPortRole(StrEnum):
+    """What the configurable Ethernet port does (``req_ethWanEnabled``)."""
+
+    WAN = "wan"
+    LAN = "lan"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -53,9 +66,28 @@ class LanSettings:
     domain_name: str | None
     mtu: int | None
     operation_mode: str | None
-    """``Router`` or ``Bridge``."""
+    """``Router``, ``Bridge`` or ``Eogre``, as the UI derives it."""
+    ethernet_port_role: EthernetPortRole | None
+    """Role of the configurable Ethernet port (applied after a reboot)."""
+    ethernet_port: int | None
+    """Number of the configurable Ethernet port."""
     reservations: tuple[DhcpReservation, ...]
     raw: Mapping[str, Any] = _raw()
+
+
+def _reservation_list(html: str) -> list[dict[str, Any]]:
+    """Decode ``staticAddrList_str`` like the UI: ``decodeURIComponent``, then entities."""
+    match = _RESERVATIONS_RE.search(html)
+    if not match:
+        msg = "embedded variable 'staticAddrList_str' not found in page"
+        raise Id525ResponseError(msg)
+    try:
+        data = json.loads(unquote(match.group(1)).replace("&quot;", '"'))
+    except json.JSONDecodeError as err:
+        msg = "embedded variable 'staticAddrList_str' is not valid JSON"
+        raise Id525ResponseError(msg) from err
+    entries: list[dict[str, Any]] = data.get("dhcp_reservation_list", [])
+    return entries
 
 
 def parse_lan_page(html: str) -> LanSettings:
@@ -74,10 +106,16 @@ def parse_lan_page(html: str) -> LanSettings:
             active=parse_int(entry.get("reservationStatus")) == 1,
             raw=entry,
         )
-        for entry in extract_entity_json(html, "staticAddrList_str").get(
-            "dhcp_reservation_list", []
-        )
+        for entry in _reservation_list(html)
     )
+    # bodyLoad(): the mode comes from the numeric flags, not from modeSelectType
+    if numbers.get("modeEoGRE") == 1:
+        mode: str | None = "Eogre"
+    elif "modeSelectType_CFG" in numbers:
+        mode = "Router" if numbers["modeSelectType_CFG"] == 0 else "Bridge"
+    else:
+        mode = clean_str(values.get("modeSelectType"))
+    port_select = values.get("ethPortSelect")
     return LanSettings(
         ip=clean_str(values.get("hostIP")),
         subnet_mask=clean_str(values.get("subnetMask")),
@@ -89,10 +127,147 @@ def parse_lan_page(html: str) -> LanSettings:
         dns_secondary=clean_str(values.get("sec_dns")),
         domain_name=clean_str(values.get("domainName")),
         mtu=parse_int(values.get("lan_mtu")) or None,
-        operation_mode=clean_str(values.get("modeSelectType")),
+        operation_mode=mode,
+        ethernet_port_role=(
+            None
+            if port_select is None
+            else EthernetPortRole.WAN
+            if port_select == "WAN Port"
+            else EthernetPortRole.LAN
+        ),
+        ethernet_port=parse_int(values.get("ethWanPortIdx")),
         reservations=reservations,
         raw={**values, **numbers},
     )
+
+
+_SEGMENTS = {128: 128, 192: 64, 224: 32, 240: 16, 248: 8, 252: 4, 254: 2, 255: 1}
+"""UI ``cal_networkSegments``: addresses per subnet for a mask octet."""
+
+
+def network_range(ip: str, mask: str, ip_class: int) -> tuple[str, str] | None:
+    """UI ``get_network_brosdcast_IP_class{C,B,A}``: (network, broadcast) or None.
+
+    Ported verbatim, quirks included: only the class's variable octet is
+    considered, and the leading octets keep their original spelling.
+    """
+    host, net = ip.split("."), mask.split(".")
+    octet = 3 - ip_class  # C: 4th octet, B: 3rd, A: 2nd
+    if int(net[octet]) == 0:
+        low, high = 0, 255
+    else:
+        size = _SEGMENTS.get(int(net[octet]), 0)
+        if size == 0:
+            return None
+        low = int(host[octet]) // size * size
+        high = low + size - 1
+    head = ".".join(host[:octet])
+    tail_low, tail_high = [".0"] * (3 - octet), [".255"] * (3 - octet)
+    return (
+        f"{head}.{low}{''.join(tail_low)}",
+        f"{head}.{high}{''.join(tail_high)}",
+    )
+
+
+def _host_in_subnet(ip: str, mask: str, ip_class: int) -> bool:
+    """UI ``checkIP_class{C,B,A}``: strictly between network and broadcast."""
+    bounds = network_range(ip, mask, ip_class)
+    return bounds is not None and ip_cmp(ip, bounds[0]) == 1 and ip_cmp(ip, bounds[1]) == -1
+
+
+_CLASS_HOST_RANGES = {  # ipClass -> (letter, first, last host address accepted)
+    0: ("C", "192.0.1.1", "223.255.255.254"),
+    1: ("B", "128.0.0.1", "191.255.255.254"),
+    2: ("A", "0.0.0.1", "127.255.255.254"),
+}
+
+
+def _bridge_dhcp_range(ip: str, start: str, end: str) -> tuple[str, str]:
+    """UI ``autoChangeDHCPRangeBaseHostIP`` (class C, bridge / EoGRE mode)."""
+    head = ip.split(".")[:3]
+    low, high = ("20", "60") if int(ip.split(".")[3]) >= 127 else ("200", "240")
+    del start, end
+    return ".".join([*head, low]), ".".join([*head, high])
+
+
+def _lan_save_body(  # noqa: PLR0912
+    current: LanSettings,
+    *,
+    ip: str,
+    mask: str,
+    dhcp_enabled: bool,
+    start: str,
+    end: str,
+    lease: str,
+) -> dict[str, Any]:
+    """Validate like UI ``internetProtoSave`` and return the body fields (no token)."""
+    if not (is_ipv4(ip) and is_ipv4(mask)):
+        invalid("the LAN IP address or subnet mask is invalid")
+    if (
+        ip == current.ip
+        and mask == current.subnet_mask
+        and dhcp_enabled == current.dhcp_enabled
+        and start == current.dhcp_start
+        and end == current.dhcp_end
+        and lease == str(current.raw.get("leaseTime", ""))
+    ):
+        invalid("nothing to change")
+    ip_class = 0 if mask.startswith("255.255.255.") else 1 if mask.startswith("255.255.") else 2
+    letter, first, last = _CLASS_HOST_RANGES[ip_class]
+    if ip_cmp(ip, first) == -1 or ip_cmp(ip, last) == 1:
+        invalid(f"the LAN IP address must be a class {letter} address")
+    if ip_class == 2 and int(ip.split(".", maxsplit=1)[0]) == 127:
+        invalid("the LAN IP address is invalid")
+    octets = [int(o) for o in mask.split(".")]
+    if ip_class == 0 and octets[3] in (254, 255):
+        invalid("the subnet mask must be 255.255.255.x")
+    if ip_class == 1 and octets[3] != 0:
+        invalid("the subnet mask must be 255.255.x.0")
+    if ip_class == 2 and (not mask.startswith("255.") or octets[2] != 0 or octets[3] != 0):
+        invalid("the subnet mask must be 255.x.0.0")
+    if not _host_in_subnet(ip, mask, ip_class):
+        invalid("the LAN IP address is invalid for this subnet mask")
+    bounds = network_range(ip, mask, ip_class)
+    assert bounds is not None  # checked by _host_in_subnet
+    network, broadcast = bounds
+    if ip_class == 0 and current.operation_mode in ("Bridge", "Eogre"):
+        start, end = _bridge_dhcp_range(ip, start, end)
+    if dhcp_enabled:
+        if not is_ipv4(start):
+            invalid("the DHCP start address is invalid")
+        if not is_ipv4(end):
+            invalid("the DHCP end address is invalid")
+        if ip_cmp(start, end) == 1:
+            invalid("the DHCP start address is after the end address")
+        if (ip_cmp(ip, start) == 1 and ip_cmp(ip, end) == -1) or ip in (start, end):
+            if start == network:
+                invalid("the DHCP range starts at the network address")
+            if end == broadcast:
+                invalid("the DHCP range ends at the broadcast address")
+            invalid("the LAN IP address is inside the DHCP range")
+        if not (ip_cmp(start, network) == 1 and ip_cmp(start, broadcast) == -1):
+            invalid("the DHCP start address is outside the subnet")
+        if not (ip_cmp(end, network) == 1 and ip_cmp(end, broadcast) == -1):
+            invalid("the DHCP end address is outside the subnet")
+        lease_value = _js_parse_int(lease)
+        if lease_value is None or not MIN_LEASE_TIME <= lease_value <= MAX_LEASE_TIME:
+            invalid(f"the lease time must be {MIN_LEASE_TIME}-{MAX_LEASE_TIME} minutes")
+    return {
+        "ipClass": str(ip_class),
+        "subnetMaskClass": str(ip_class),
+        "hostIP": ip,
+        "subnetMask": mask,
+        "leaseTime": lease,
+        "startIP": start,
+        "endIP": end,
+        "dhcp_enable": dhcp_enabled,
+    }
+
+
+def _js_parse_int(value: str) -> int | None:
+    """JavaScript ``parseInt(value)``: leading integer, ``None`` for NaN."""
+    match = re.match(r"\s*([-+]?\d+)", value)
+    return int(match.group(1)) if match else None
 
 
 def _in_pool(settings: LanSettings, ip: str) -> bool:
@@ -214,3 +389,69 @@ class LanApi(Section):
             }
 
         await self._client._command(Endpoint.DHCP_RESERVATION_DELETE, body)
+
+    @uses(Page.LAN_SETTINGS, Endpoint.LAN_SAVE)
+    async def update_settings(
+        self,
+        *,
+        ip: str | None = None,
+        subnet_mask: str | None = None,
+        dhcp_enabled: bool | None = None,
+        dhcp_start: str | None = None,
+        dhcp_end: str | None = None,
+        lease_time: int | None = None,
+        confirm: bool = False,
+    ) -> None:
+        """Change the LAN address and the DHCP server. Destructive: ``confirm=True``.
+
+        Omitted fields keep their current value; the UI's checks run first
+        (``internetProtoSave``). The router restarts its LAN, which drops every
+        LAN connection (and, after an address change, the router moves): the
+        session is forgotten and a dropped connection is not an error.
+        """
+        current = await self.get_settings()
+        fields = _lan_save_body(
+            current,
+            ip=(current.ip or "") if ip is None else ip,
+            mask=(current.subnet_mask or "") if subnet_mask is None else subnet_mask,
+            dhcp_enabled=current.dhcp_enabled if dhcp_enabled is None else dhcp_enabled,
+            start=(current.dhcp_start or "") if dhcp_start is None else dhcp_start,
+            end=(current.dhcp_end or "") if dhcp_end is None else dhcp_end,
+            lease=(
+                str(current.raw.get("leaseTime", "")) if lease_time is None else str(lease_time)
+            ),
+        )
+
+        def body(token: str | None) -> dict[str, Any]:
+            return {TOKEN_FIELD: token, **fields}
+
+        data = await self._client._call(
+            Endpoint.LAN_SAVE, body, confirmed=confirm, tolerate_disconnect=True
+        )
+        if data.get("result") is False:
+            raise Id525CommandError(Endpoint.LAN_SAVE, data.get("error"))
+        self._client._forget_session()
+
+    @uses(Endpoint.ETH_WAN)
+    async def set_ethernet_port_role(
+        self, role: EthernetPortRole, *, confirm: bool = False
+    ) -> None:
+        """Use the configurable Ethernet port as WAN or LAN. Destructive: ``confirm=True``.
+
+        The router applies it after a reboot. A dropped connection is
+        tolerated (and then the session is forgotten).
+        """
+
+        def body(token: str | None) -> dict[str, Any]:
+            return {
+                TOKEN_FIELD: token,
+                "ethWanEnabled": 1 if EthernetPortRole(role) is EthernetPortRole.WAN else 0,
+            }
+
+        data = await self._client._call(
+            Endpoint.ETH_WAN, body, confirmed=confirm, tolerate_disconnect=True
+        )
+        if not data:
+            self._client._forget_session()
+        elif data.get("result") is False:
+            raise Id525CommandError(Endpoint.ETH_WAN, data.get("error"))

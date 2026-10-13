@@ -361,9 +361,9 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.APN_DEFAULT_RESET: EndpointInfo(
         "cellular-settings", _D, _TODO, "cellular-settings.html:493", "Reset APNs"
     ),
-    _E.LAN_SAVE: EndpointInfo("lan-settings", _D, _TODO, "lan-settings.html:563", "LAN / DHCP"),
+    _E.LAN_SAVE: EndpointInfo("lan-settings", _D, _CAPT, "lan-settings.html:563", "LAN / DHCP"),
     _E.ETH_WAN: EndpointInfo(
-        "lan-settings", _D, _TODO, "lan-settings.html:600", "Ethernet WAN port"
+        "lan-settings", _D, _CAPT, "lan-settings.html:600", "Ethernet WAN port"
     ),
     _E.DHCP_RESERVATION_ADD: EndpointInfo(
         "lan-settings", _W, _CAPT, "lan-settings.html:826", "Add DHCP reservation"
@@ -425,11 +425,11 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "fw-urlfilter", _W, _TODO, "fw-urlfilter.html:520", "Delete URL"
     ),
     _E.DIAG_CONNECTED: EndpointInfo(
-        "self-diag", _A, _TODO, "self-diag.html:221", "Interfaces connected"
+        "self-diag", _A, _CAPT, "self-diag.html:221", "Interfaces connected"
     ),
-    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _TODO, "self-diag.html:276", "CPU usage"),
-    _E.PING: EndpointInfo("self-ping", _A, _TODO, "self-ping.html:166", "Ping"),
-    _E.TRACEROUTE: EndpointInfo("self-tracert", _A, _TODO, "self-tracert.html:182", "Traceroute"),
+    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _CAPT, "self-diag.html:276", "CPU usage"),
+    _E.PING: EndpointInfo("self-ping", _A, _CAPT, "self-ping.html:166", "Ping"),
+    _E.TRACEROUTE: EndpointInfo("self-tracert", _A, _CAPT, "self-tracert.html:182", "Traceroute"),
 }
 
 _P = Page
@@ -454,9 +454,9 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.MAC_FILTER: PageInfo("MAC filter", _STATIC),
     _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _STATIC),
     _P.URL_FILTER: PageInfo("URL filter", _TODO),
-    _P.DIAGNOSTICS: PageInfo("Self diagnostics", _TODO),
-    _P.PING: PageInfo("Ping", _TODO),
-    _P.TRACEROUTE: PageInfo("Traceroute", _TODO),
+    _P.DIAGNOSTICS: PageInfo("Self diagnostics", _STATIC),
+    _P.PING: PageInfo("Ping", _STATIC),
+    _P.TRACEROUTE: PageInfo("Traceroute", _STATIC),
 }
 
 

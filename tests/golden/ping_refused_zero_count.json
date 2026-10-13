@@ -1,0 +1,24 @@
+{
+  "scenario": "ping_refused_zero_count",
+  "page": "self-ping",
+  "endpoint": "req_pingTest",
+  "ui_ref": "self-ping.html:166",
+  "call": "diagnostics.ping",
+  "inputs": {
+    "host": "192.0.2.7",
+    "count": 0,
+    "size": 32
+  },
+  "call_kwargs": {
+    "interval": 0
+  },
+  "answers": {},
+  "refused": true,
+  "fixture": "self-ping",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "The count needs to be bigger than zero.",
+  "notes": "",
+  "fixture_sha256": "f2ab515e4c8d0426f583b32edf2ce0087934f6ecdf0599b6ab9a04314086fb33"
+}

@@ -38,6 +38,40 @@ async def modify_reservation(page: BrowserPage, inputs: dict[str, Any]) -> None:
     await click(page, "editAddrBtn")
 
 
+LAN_FIELDS = (
+    ("ip", "lanHIPAddressText"),
+    ("subnet_mask", "lanHSMText"),
+    ("dhcp_start", "dhcpstartIPText"),
+    ("dhcp_end", "dhcpEndingIPText"),
+    ("lease_time", "dhcpLeaseText"),
+)
+
+
+async def save_lan(page: BrowserPage, inputs: dict[str, Any]) -> None:
+    pf = await platform_prefix(page)
+    if "dhcp_enabled" in inputs:
+        await page.evaluate(
+            """([id, on]) => {
+                const box = document.getElementById(id);
+                box.checked = on;
+                box.dispatchEvent(new Event("change", {bubbles: true}));
+            }""",
+            [f"{pf}-dhcpServer", inputs["dhcp_enabled"]],
+        )
+    for key, element in LAN_FIELDS:
+        if key in inputs:
+            await set_value(page, f"{pf}-{element}", str(inputs[key]))
+    await click(page, f"{pf}-dhcpBtn")
+    if inputs.get("dhcp_enabled") is False:
+        await click(page, "confirm_dialog_btn")  # "disable the DHCP server?" dialog
+
+
+async def set_port_role(page: BrowserPage, inputs: dict[str, Any]) -> None:
+    pf = await platform_prefix(page)
+    await click(page, f"{pf}-EthPort_{inputs['role'].upper()}")
+    await click(page, f"{pf}-cellularEthPortSaveBtn")
+
+
 async def delete_reservation(page: BrowserPage, inputs: dict[str, Any]) -> None:
     await click(page, f"staticAddrDel{await _position(page, inputs['index'])}")
     await click(page, "_dialog_modal_btn")  # the confirmation dialog's "Delete"
@@ -67,7 +101,173 @@ def _modify(name: str, inputs: dict[str, Any], **kw: Any) -> Scenario:
     )
 
 
+def _save(name: str, inputs: dict[str, Any], **kw: Any) -> Scenario:
+    return Scenario(
+        name=name,
+        page=Page.LAN_SETTINGS,
+        endpoint=Endpoint.LAN_SAVE,
+        call="lan.update_settings",
+        inputs=inputs,
+        call_kwargs={"confirm": True},
+        drive=save_lan,
+        **kw,
+    )
+
+
+LAN_SCENARIOS = [
+    _save(
+        "lan_save_dhcp_pool",
+        {"dhcp_start": "192.168.224.30", "dhcp_end": "192.168.224.200", "lease_time": 1440},
+    ),
+    _save(
+        "lan_save_new_address",
+        {"ip": "192.168.1.1", "dhcp_start": "192.168.1.20", "dhcp_end": "192.168.1.219"},
+        notes="address change: the UI does not wait for the answer",
+    ),
+    _save(
+        "lan_save_class_b",
+        {
+            "ip": "172.16.0.1",
+            "subnet_mask": "255.255.0.0",
+            "dhcp_start": "172.16.0.20",
+            "dhcp_end": "172.16.3.250",
+            "lease_time": 2,
+        },
+    ),
+    _save(
+        "lan_save_class_a",
+        {
+            "ip": "10.0.0.1",
+            "subnet_mask": "255.0.0.0",
+            "dhcp_start": "10.0.0.20",
+            "dhcp_end": "10.0.255.250",
+            "lease_time": 43200,
+        },
+    ),
+    _save(
+        "lan_save_subnet_25",
+        {
+            "subnet_mask": "255.255.255.128",
+            "dhcp_start": "192.168.224.20",
+            "dhcp_end": "192.168.224.126",
+        },
+    ),
+    _save(
+        "lan_save_dhcp_off",
+        {"dhcp_enabled": False, "lease_time": 1},
+        notes="DHCP off: the lease time is sent unchecked; the UI asks for confirmation",
+    ),
+    _save(
+        "lan_save_bridge_mode",
+        {"ip": "192.168.50.1"},
+        fixture="synthetic/lan-settings-bridge",
+        synthetic=True,
+        notes="bridge mode: the UI moves the DHCP range to .200-.240 of the new subnet",
+    ),
+    _save("lan_save_refused_unchanged", {}, refused=True, notes="nothing changed"),
+    _save("lan_save_refused_bad_ip", {"ip": "192.168.224.300"}, refused=True),
+    _save("lan_save_refused_bad_mask", {"subnet_mask": "255.255.255"}, refused=True),
+    _save(
+        "lan_save_refused_class_c_range",
+        {"ip": "224.0.0.1", "dhcp_start": "224.0.0.20", "dhcp_end": "224.0.0.200"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_class_b_range",
+        {"ip": "192.168.0.1", "subnet_mask": "255.255.0.0"},
+        refused=True,
+        notes="a 192.x address is class C, so a class B mask is refused",
+    ),
+    _save(
+        "lan_save_refused_loopback",
+        {"ip": "127.0.0.1", "subnet_mask": "255.0.0.0"},
+        refused=True,
+    ),
+    _save("lan_save_refused_mask_254", {"subnet_mask": "255.255.255.254"}, refused=True),
+    _save(
+        "lan_save_refused_class_b_mask",
+        {"ip": "172.16.0.1", "subnet_mask": "255.255.0.1"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_class_a_mask",
+        {"ip": "10.0.0.1", "subnet_mask": "255.0.1.0"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_mask_holes",
+        {"subnet_mask": "255.255.255.100"},
+        refused=True,
+        notes="not a contiguous mask",
+    ),
+    _save(
+        "lan_save_refused_network_address",
+        {"ip": "192.168.224.0"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_bad_start",
+        {"dhcp_start": "192.168.224"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_bad_end",
+        {"dhcp_end": "192.168.224.x"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_start_after_end",
+        {"dhcp_start": "192.168.224.100", "dhcp_end": "192.168.224.50"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_ip_in_pool",
+        {"ip": "192.168.224.50"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_pool_at_network",
+        {"dhcp_start": "192.168.224.0"},
+        refused=True,
+        notes="the router address .1 falls inside .0-.219, and the range starts at the network",
+    ),
+    _save(
+        "lan_save_refused_pool_at_broadcast",
+        {"dhcp_end": "192.168.224.255", "ip": "192.168.224.100"},
+        refused=True,
+    ),
+    _save(
+        "lan_save_refused_start_outside",
+        {"ip": "192.168.224.250", "dhcp_start": "192.168.223.20"},
+        refused=True,
+        notes="start below the subnet while the router address is above the range",
+    ),
+    _save(
+        "lan_save_refused_end_outside",
+        {"dhcp_end": "192.168.225.20"},
+        refused=True,
+    ),
+    _save("lan_save_refused_lease_short", {"lease_time": 1}, refused=True),
+    _save("lan_save_refused_lease_long", {"lease_time": 43201}, refused=True),
+]
+
+PORT_SCENARIOS = [
+    Scenario(
+        name=f"eth_port_{role}",
+        page=Page.LAN_SETTINGS,
+        endpoint=Endpoint.ETH_WAN,
+        call="lan.set_ethernet_port_role",
+        inputs={"role": role},
+        call_kwargs={"confirm": True},
+        drive=set_port_role,
+        notes="sent even when unchanged; applied after a reboot",
+    )
+    for role in ("wan", "lan")
+]
+
 SCENARIOS = [
+    *LAN_SCENARIOS,
+    *PORT_SCENARIOS,
     _add("dhcp_add", {"name": "printer", "ip": "192.168.224.50", "mac": "02:00:5E:00:00:AA"}),
     _add(
         "dhcp_add_unicode_name",
