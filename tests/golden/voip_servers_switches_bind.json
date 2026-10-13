@@ -1,0 +1,33 @@
+{
+  "scenario": "voip_servers_switches_bind",
+  "page": "voip-settings",
+  "endpoint": "voip_apply",
+  "ui_ref": "voip-settings.html:1",
+  "call": "voip.update",
+  "inputs": {
+    "sip_domain": "sip.example.net",
+    "proxy_server": "10.0.0.1",
+    "outbound_proxy": "",
+    "account": "Mario Rossi è&%",
+    "phone_number": "+390000000001",
+    "dns_srv": true,
+    "line_enabled": false,
+    "pos_mode": true,
+    "bind_interface": "fwanat.tim.it"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "voip-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "voip_apply",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"sip_domain\":\"sip.example.net\",\"proxy_server\":\"10.0.0.1\",\"outbound_proxy\":\"\",\"sip_account\":\"Mario Rossi è&%\",\"sip_password\":\"\",\"donotset_pass\":1,\"sip_callID\":\"+390000000001\",\"DNS_SRV\":1,\"LINE_Enable\":0,\"pos_mode_enable\":1,\"bindInterface\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "1d6b14de2c874af1d7405f49d80f57e938ebeaf2d04d42ace52294461ecbb963"
+}

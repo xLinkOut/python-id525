@@ -35,6 +35,9 @@ DUMMY_ARGS = {
     "mcc": "222",
     "mnc": "10",
     "apn": "web",
+    "interface": "5G_Main",
+    "band": "5G",
+    "enabled": True,
 }
 
 

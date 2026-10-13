@@ -1,0 +1,22 @@
+{
+  "scenario": "voip_refused_no_proxy",
+  "page": "voip-settings",
+  "endpoint": "voip_apply",
+  "ui_ref": "voip-settings.html:1",
+  "call": "voip.update",
+  "inputs": {
+    "proxy_server": "",
+    "outbound_proxy": "",
+    "phone_number": "0000111222"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "voip-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Please input valid outbound proxy.",
+  "notes": "",
+  "fixture_sha256": "1d6b14de2c874af1d7405f49d80f57e938ebeaf2d04d42ace52294461ecbb963"
+}
