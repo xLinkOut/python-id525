@@ -1,0 +1,25 @@
+{
+  "scenario": "dmz_enable",
+  "page": "fw-portfwd",
+  "endpoint": "dmz_save",
+  "ui_ref": "fw-portfwd.html:280",
+  "call": "port_forwarding.enable_dmz",
+  "inputs": {
+    "ip": "192.168.224.77"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-portfwd",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "dmz_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"DmzSta\":\"1\",\"DmzIP\":\"192.168.224.77\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "0a623315c4c0e3515f15cf0dfd5a50c01f712b6a4d3f4d7026b81e9fa8509081"
+}

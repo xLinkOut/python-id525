@@ -1,0 +1,22 @@
+{
+  "scenario": "portfwd_add_refused_port_zero",
+  "page": "fw-portfwd",
+  "endpoint": "portforward_add",
+  "ui_ref": "fw-portfwd.html:531",
+  "call": "port_forwarding.add_rule",
+  "inputs": {
+    "wan_port": 0,
+    "lan_ip": "192.168.224.70",
+    "lan_port": 443
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "fw-portfwd",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "0a623315c4c0e3515f15cf0dfd5a50c01f712b6a4d3f4d7026b81e9fa8509081"
+}

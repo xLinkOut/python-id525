@@ -1,0 +1,20 @@
+{
+  "scenario": "macfilter_add_from_client_list_refused_duplicate",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_add",
+  "ui_ref": "fw-macfilter.html:389",
+  "call": "mac_filter.add_connected_client",
+  "inputs": {
+    "mac": "02:00:5e:00:00:06"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "The MAC Address has already existed.",
+  "notes": "host-04 is already a rule (stored in upper case)",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

@@ -1,0 +1,21 @@
+{
+  "scenario": "macfilter_add_refused_duplicate_mac",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_add",
+  "ui_ref": "fw-macfilter.html:389",
+  "call": "mac_filter.add_rule",
+  "inputs": {
+    "mac": "02:00:5e:00:01:0A",
+    "name": "nas"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "The MAC Address has already existed.",
+  "notes": "duplicate check is case-insensitive",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

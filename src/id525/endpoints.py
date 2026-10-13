@@ -391,25 +391,29 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "fw-ipfilter", _W, _TODO, "fw-ipfilter.html:490", "Edit IP rule"
     ),
     _E.IPFILTER_SAVE: EndpointInfo("fw-ipfilter", _W, _TODO, "fw-ipfilter.html:511", "IP filter"),
-    _E.MACFILTER_ADD: EndpointInfo("fw-macfilter", _W, _TODO, "fw-macfilter.html:389", "Add MAC"),
-    _E.MACFILTER_EDIT: EndpointInfo("fw-macfilter", _W, _TODO, "fw-macfilter.html:712", "Edit MAC"),
+    _E.MACFILTER_ADD: EndpointInfo("fw-macfilter", _W, _CAPT, "fw-macfilter.html:389", "Add MAC"),
+    _E.MACFILTER_EDIT: EndpointInfo(
+        "fw-macfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-macfilter.html:712", "Edit MAC"
+    ),
     _E.MACFILTER_DELETE: EndpointInfo(
-        "fw-macfilter", _W, _TODO, "fw-macfilter.html:734", "Delete MAC"
+        "fw-macfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-macfilter.html:734", "Delete MAC"
     ),
     _E.MACFILTER_SAVE: EndpointInfo(
-        "fw-macfilter", _W, _TODO, "fw-macfilter.html:463", "MAC filter"
+        "fw-macfilter", _W, _CAPT, "fw-macfilter.html:463", "MAC filter"
     ),
     _E.SET_HOST_NAME: EndpointInfo(
-        "fw-macfilter", _W, _TODO, "fw-macfilter.html:416", "Rename client"
+        "fw-macfilter", _W, _DEAD, "fw-macfilter.html:416", "Rename client (UI code broken)"
     ),
-    _E.DMZ_SAVE: EndpointInfo("fw-portfwd", _W, _TODO, "fw-portfwd.html:280", "DMZ"),
+    _E.DMZ_SAVE: EndpointInfo("fw-portfwd", _W, _CAPT, "fw-portfwd.html:280", "DMZ"),
     _E.PORTFWD_STATUS: EndpointInfo(
-        "fw-portfwd", _W, _TODO, "fw-portfwd.html:295", "Port forwarding on/off"
+        "fw-portfwd", _W, _CAPT, "fw-portfwd.html:295", "Port forwarding on/off"
     ),
-    _E.PORTFWD_ADD: EndpointInfo("fw-portfwd", _W, _TODO, "fw-portfwd.html:531", "Add forward"),
-    _E.PORTFWD_EDIT: EndpointInfo("fw-portfwd", _W, _TODO, "fw-portfwd.html:741", "Edit forward"),
+    _E.PORTFWD_ADD: EndpointInfo("fw-portfwd", _W, _CAPT, "fw-portfwd.html:531", "Add forward"),
+    _E.PORTFWD_EDIT: EndpointInfo(
+        "fw-portfwd", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-portfwd.html:741", "Edit forward"
+    ),
     _E.PORTFWD_DELETE: EndpointInfo(
-        "fw-portfwd", _W, _TODO, "fw-portfwd.html:1036", "Delete forward"
+        "fw-portfwd", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-portfwd.html:1036", "Delete forward"
     ),
     _E.URLFILTER_STATUS: EndpointInfo(
         "fw-urlfilter", _W, _TODO, "fw-urlfilter.html:397", "URL filter on/off"
@@ -446,8 +450,8 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.FIREWALL: PageInfo("Firewall", _TODO),
     _P.DDNS: PageInfo("Dynamic DNS", _TODO),
     _P.IP_FILTER: PageInfo("IP filter", _TODO),
-    _P.MAC_FILTER: PageInfo("MAC filter", _TODO),
-    _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _TODO),
+    _P.MAC_FILTER: PageInfo("MAC filter", _STATIC),
+    _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _STATIC),
     _P.URL_FILTER: PageInfo("URL filter", _TODO),
     _P.DIAGNOSTICS: PageInfo("Self diagnostics", _TODO),
     _P.PING: PageInfo("Ping", _TODO),

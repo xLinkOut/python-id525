@@ -1,0 +1,28 @@
+{
+  "scenario": "portfwd_add_udp_cidr_address",
+  "page": "fw-portfwd",
+  "endpoint": "portforward_add",
+  "ui_ref": "fw-portfwd.html:531",
+  "call": "port_forwarding.add_rule",
+  "inputs": {
+    "wan_port": 51820,
+    "lan_ip": "192.168.224.72/24",
+    "lan_port": 51820,
+    "protocol": "udp"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-portfwd",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "portforward_add",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"global_port\":51820,\"global_port_range\":0,\"private_port\":51820,\"ipAddr\":\"192.168.224.72/24\",\"protocol\":\"1\",\"isEnabled\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "UI quirk: the address check accepts a /prefix and sends it as typed",
+  "fixture_sha256": "0a623315c4c0e3515f15cf0dfd5a50c01f712b6a4d3f4d7026b81e9fa8509081"
+}
