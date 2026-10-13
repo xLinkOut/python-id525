@@ -66,18 +66,28 @@ async def set_value(page: BrowserPage, element_id: str, value: str) -> None:
 
 
 async def click(page: BrowserPage, element_id: str) -> None:
-    """Click an element even inside a closed modal (the shims don't render modals)."""
-    found = await page.evaluate(
+    """Click an element the way a user could.
+
+    Modals are not rendered by the shims, so visibility can't be used; instead
+    an element inside a ``.modal`` the UI has not opened (no ``show`` class) is
+    refused: a user can't press a button of a dialog that is not open.
+    """
+    state = await page.evaluate(
         """(id) => {
             const el = document.getElementById(id);
-            if (!el) return false;
+            if (!el) return "missing";
+            const modal = el.closest(".modal");
+            if (modal && !modal.classList.contains("show")) return "closed-modal";
             el.click();
-            return true;
+            return "ok";
         }""",
         element_id,
     )
-    if not found:
+    if state == "missing":
         msg = f"no element #{element_id}"
+        raise LookupError(msg)
+    if state == "closed-modal":
+        msg = f"#{element_id} is in a modal the UI did not open"
         raise LookupError(msg)
 
 
