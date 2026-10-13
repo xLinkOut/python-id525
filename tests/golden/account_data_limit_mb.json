@@ -1,0 +1,26 @@
+{
+  "scenario": "account_data_limit_mb",
+  "page": "adm-user",
+  "endpoint": "data_usage_save",
+  "ui_ref": "adm-user.html:541",
+  "call": "account.set_data_limit",
+  "inputs": {
+    "value": 1,
+    "unit": "MB"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "adm-user",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "data_usage_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"data_value\":\"1\",\"data_unit\":\"MB\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "751f40ffb32c25bf496da1c8b26a943134a775934f53dd2caa13e223e9cb4382"
+}

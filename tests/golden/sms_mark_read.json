@@ -1,0 +1,83 @@
+{
+  "scenario": "sms_mark_read",
+  "page": "adm-sms",
+  "endpoint": "req_smsUpdateStatus",
+  "ui_ref": "adm-sms.html:453",
+  "call": "sms.mark_read",
+  "inputs": {
+    "phone_number": "+390000000001"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_smsReload": {
+      "sms_update_time": "1759480000",
+      "message": [
+        {
+          "index": 3,
+          "phone_number": "+390000000001",
+          "time": "2026/10/01 08:15:00",
+          "context": "Hai consumato il 50% del traffico.",
+          "read_status": 0
+        },
+        {
+          "index": 2,
+          "phone_number": "+390000000002",
+          "time": "2026/09/30 19:02:11",
+          "context": "Messaggio letto",
+          "read_status": 1
+        },
+        {
+          "index": 1,
+          "phone_number": "+390000000003",
+          "time": "2026/10/02 10:00:00",
+          "context": "Inviato dal router",
+          "read_status": 6
+        }
+      ]
+    }
+  },
+  "refused": false,
+  "fixture": "adm-sms",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_smsUpdateStatus",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"list_length\":1,\"index_List\":\"3\"}"
+    }
+  ],
+  "other_calls": [
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload",
+    "req_smsReload"
+  ],
+  "ui_message": "",
+  "notes": "index_List is a comma-joined string, list_length a number",
+  "fixture_sha256": "6eb7a5f71ee1850e6c9b086828dcd5d271ede1344c6eaae560509119e5cc82ff"
+}

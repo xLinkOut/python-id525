@@ -284,14 +284,18 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "client-status", _R, _LIVE, "client-status.html:157", "LAN clients"
     ),
     _E.SMS_LIST: EndpointInfo("adm-sms", _R, _LIVE, "adm-sms.html:610", "SMS list"),
-    _E.SMS_UPDATE_STATUS: EndpointInfo("adm-sms", _W, _TODO, "adm-sms.html:453", "Mark SMS read"),
-    _E.SMS_DELETE: EndpointInfo("adm-sms", _W, _TODO, "adm-sms.html:658", "Delete SMS"),
-    _E.SMS_COMPOSE: EndpointInfo("adm-sms", _A, _TODO, "adm-sms.html:702", "Send SMS"),
+    _E.SMS_UPDATE_STATUS: EndpointInfo(
+        "adm-sms", _W, Status.UI_CAPTURED_SYNTHETIC, "adm-sms.html:453", "Mark SMS read"
+    ),
+    _E.SMS_DELETE: EndpointInfo(
+        "adm-sms", _W, Status.UI_CAPTURED_SYNTHETIC, "adm-sms.html:658", "Delete SMS"
+    ),
+    _E.SMS_COMPOSE: EndpointInfo("adm-sms", _A, _CAPT, "adm-sms.html:702", "Send SMS"),
     _E.ACS_CHECK_UPDATE: EndpointInfo(
-        "adm-sw", _A, _TODO, "adm-sw.html:452", "Ask the operator for firmware"
+        "adm-sw", _A, _CAPT, "adm-sw.html:452", "Ask the operator for firmware (UI button disabled)"
     ),
     _E.ACS_CHECK_UPDATE_STATUS: EndpointInfo(
-        "adm-sw", _A, _TODO, "adm-sw.html:459", "Firmware check progress"
+        "adm-sw", _A, _CAPT, "adm-sw.html:459", "Firmware check progress"
     ),
     _E.ACS_UPDATE_CONFIRM: EndpointInfo(
         "adm-sw", _D, _UNSAFE, "adm-sw.html:533", "Install operator firmware"
@@ -311,17 +315,21 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "adm-backup", _D, _UNSAFE, "adm-backup.html:332", "Restore config backup"
     ),
     _E.SET_ACCOUNT: EndpointInfo(
-        "adm-user", _D, _TODO, "adm-user.html:440", "Change admin password"
+        "adm-user", _D, _CAPT, "adm-user.html:440", "Change admin password"
     ),
     _E.SET_DEVICE_MANAGEMENT: EndpointInfo(
-        "adm-user", _W, _TODO, "adm-user.html:482", "Session timeout"
+        "adm-user", _W, _CAPT, "adm-user.html:482", "Session timeout"
     ),
-    _E.RESET_DATA: EndpointInfo("adm-user", _D, _TODO, "adm-user.html:518", "Reset data usage"),
+    _E.RESET_DATA: EndpointInfo("adm-user", _D, _CAPT, "adm-user.html:518", "Reset data usage"),
     _E.DATA_USAGE_SAVE: EndpointInfo(
-        "adm-user", _W, _TODO, "adm-user.html:541", "Data usage settings"
+        "adm-user", _W, _CAPT, "adm-user.html:541", "Data usage settings"
     ),
-    _E.BATTERY_APPLY: EndpointInfo("adm-user", _W, _TODO, "adm-user.html:551", "Battery"),
-    _E.SLEEP_MODE_SAVE: EndpointInfo("adm-user", _W, _TODO, "adm-user.html:564", "Sleep mode"),
+    _E.BATTERY_APPLY: EndpointInfo(
+        "adm-user", _W, _DEAD, "adm-user.html:551", "Battery (never called)"
+    ),
+    _E.SLEEP_MODE_SAVE: EndpointInfo(
+        "adm-user", _W, _DEAD, "adm-user.html:564", "Sleep mode (never called)"
+    ),
     _E.RELOAD_PASSWORD: EndpointInfo(
         "adm-user", _R, _DEAD, "adm-user.html:261", "Admin password (never called)"
     ),
@@ -444,8 +452,8 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.CLIENT_STATUS: PageInfo("Connected clients", _TODO),
     _P.UTILIZATION: PageInfo("Utilization", _LIVE),
     _P.ABOUT: PageInfo("About", _LIVE),
-    _P.ACCOUNT: PageInfo("Account & data usage", _TODO),
-    _P.SOFTWARE: PageInfo("Software update", _TODO),
+    _P.ACCOUNT: PageInfo("Account & data usage", _STATIC),
+    _P.SOFTWARE: PageInfo("Software update", _STATIC),
     _P.SMS: PageInfo("SMS", _TODO),
     _P.BACKUP: PageInfo("Backup & reboot", _TODO),
     _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),

@@ -1,0 +1,25 @@
+{
+  "scenario": "account_session_timeout_max",
+  "page": "adm-user",
+  "endpoint": "set_device_management",
+  "ui_ref": "adm-user.html:482",
+  "call": "account.set_session_timeout",
+  "inputs": {
+    "minutes": 60
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "adm-user",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "set_device_management",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"timeout\":3600}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "751f40ffb32c25bf496da1c8b26a943134a775934f53dd2caa13e223e9cb4382"
+}
