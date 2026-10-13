@@ -1,0 +1,23 @@
+{
+  "scenario": "vpn_passthrough_unchanged",
+  "page": "fw-adv",
+  "endpoint": "fw_adv_vpn_apply",
+  "ui_ref": "fw-adv.html:149",
+  "call": "firewall.set_vpn_passthrough",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-adv",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "fw_adv_vpn_apply",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"isVpnEnable\":\"1\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "untouched switch: the page's string value is resent",
+  "fixture_sha256": "6aee87336c54c54a0cbcb40265d4a8afabd9435a07f1639b92a2d39bde59a147"
+}

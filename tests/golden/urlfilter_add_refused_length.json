@@ -1,0 +1,20 @@
+{
+  "scenario": "urlfilter_add_refused_length",
+  "page": "fw-urlfilter",
+  "endpoint": "urlfilter_add_save",
+  "ui_ref": "fw-urlfilter.html:477",
+  "call": "url_filter.add_url",
+  "inputs": {
+    "url": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "fw-urlfilter",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "041662422c148b358c5ed23b64c7d7fccde57ece708e2bd9db0835f24932b358"
+}

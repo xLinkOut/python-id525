@@ -382,15 +382,17 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "wifi-settings", _W, _DEAD, "wifi-settings.html:1388", "Mesh (commented out)"
     ),
     _E.VOIP_APPLY: EndpointInfo("voip-settings", _W, _TODO, "voip-settings.html:1", "VoIP / SIP"),
-    _E.FIREWALL_LEVEL: EndpointInfo("fw-adv", _W, _TODO, "fw-adv.html:137", "Firewall level"),
-    _E.VPN_PASSTHROUGH: EndpointInfo("fw-adv", _W, _TODO, "fw-adv.html:149", "VPN passthrough"),
-    _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _TODO, "fw-ddns.html:68", "DDNS settings"),
-    _E.DDNS_SET: EndpointInfo("fw-ddns", _W, _TODO, "fw-ddns.html:334", "Set DDNS"),
-    _E.IPFILTER_ADD: EndpointInfo("fw-ipfilter", _W, _TODO, "fw-ipfilter.html:315", "Add IP rule"),
-    _E.IPFILTER_EDIT: EndpointInfo(
-        "fw-ipfilter", _W, _TODO, "fw-ipfilter.html:490", "Edit IP rule"
+    _E.FIREWALL_LEVEL: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:137", "Firewall level"),
+    _E.VPN_PASSTHROUGH: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:149", "VPN passthrough"),
+    _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _STATIC, "fw-ddns.html:68", "DDNS settings"),
+    _E.DDNS_SET: EndpointInfo(
+        "fw-ddns", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ddns.html:334", "Set DDNS"
     ),
-    _E.IPFILTER_SAVE: EndpointInfo("fw-ipfilter", _W, _TODO, "fw-ipfilter.html:511", "IP filter"),
+    _E.IPFILTER_ADD: EndpointInfo("fw-ipfilter", _W, _CAPT, "fw-ipfilter.html:315", "Add IP rule"),
+    _E.IPFILTER_EDIT: EndpointInfo(
+        "fw-ipfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ipfilter.html:490", "Edit IP rule"
+    ),
+    _E.IPFILTER_SAVE: EndpointInfo("fw-ipfilter", _W, _CAPT, "fw-ipfilter.html:511", "IP filter"),
     _E.MACFILTER_ADD: EndpointInfo("fw-macfilter", _W, _TODO, "fw-macfilter.html:389", "Add MAC"),
     _E.MACFILTER_EDIT: EndpointInfo("fw-macfilter", _W, _TODO, "fw-macfilter.html:712", "Edit MAC"),
     _E.MACFILTER_DELETE: EndpointInfo(
@@ -412,12 +414,14 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "fw-portfwd", _W, _TODO, "fw-portfwd.html:1036", "Delete forward"
     ),
     _E.URLFILTER_STATUS: EndpointInfo(
-        "fw-urlfilter", _W, _TODO, "fw-urlfilter.html:397", "URL filter on/off"
+        "fw-urlfilter", _W, _CAPT, "fw-urlfilter.html:397", "URL filter on/off"
     ),
-    _E.URLFILTER_ADD: EndpointInfo("fw-urlfilter", _W, _TODO, "fw-urlfilter.html:477", "Add URL"),
-    _E.URLFILTER_EDIT: EndpointInfo("fw-urlfilter", _W, _TODO, "fw-urlfilter.html:311", "Edit URL"),
+    _E.URLFILTER_ADD: EndpointInfo("fw-urlfilter", _W, _CAPT, "fw-urlfilter.html:477", "Add URL"),
+    _E.URLFILTER_EDIT: EndpointInfo(
+        "fw-urlfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-urlfilter.html:311", "Edit URL"
+    ),
     _E.URLFILTER_DELETE: EndpointInfo(
-        "fw-urlfilter", _W, _TODO, "fw-urlfilter.html:520", "Delete URL"
+        "fw-urlfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-urlfilter.html:520", "Delete URL"
     ),
     _E.DIAG_CONNECTED: EndpointInfo(
         "self-diag", _A, _TODO, "self-diag.html:221", "Interfaces connected"
@@ -443,12 +447,12 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.LAN_SETTINGS: PageInfo("LAN settings", _STATIC),
     _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _TODO),
     _P.VOIP_SETTINGS: PageInfo("VoIP settings", _TODO),
-    _P.FIREWALL: PageInfo("Firewall", _TODO),
-    _P.DDNS: PageInfo("Dynamic DNS", _TODO),
-    _P.IP_FILTER: PageInfo("IP filter", _TODO),
+    _P.FIREWALL: PageInfo("Firewall", _STATIC),
+    _P.DDNS: PageInfo("Dynamic DNS", _STATIC),
+    _P.IP_FILTER: PageInfo("IP filter", _STATIC),
     _P.MAC_FILTER: PageInfo("MAC filter", _TODO),
     _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _TODO),
-    _P.URL_FILTER: PageInfo("URL filter", _TODO),
+    _P.URL_FILTER: PageInfo("URL filter", _STATIC),
     _P.DIAGNOSTICS: PageInfo("Self diagnostics", _TODO),
     _P.PING: PageInfo("Ping", _TODO),
     _P.TRACEROUTE: PageInfo("Traceroute", _TODO),

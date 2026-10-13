@@ -1,0 +1,25 @@
+{
+  "scenario": "ipfilter_add_ipv4",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_add",
+  "ui_ref": "fw-ipfilter.html:315",
+  "call": "ip_filter.add_rule",
+  "inputs": {
+    "ip": "203.0.113.25"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-ipfilter",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "ipfilter_add",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"is_edit\":\"0\",\"edit_instance\":\"\",\"ipf_lanipAddr\":\"\",\"ipf_lan_port\":\"\",\"ipf_wanipAddr\":\"203.0.113.25\",\"ipf_wan_port\":\"\",\"ipf_protocol\":\"\",\"ipf_iptype\":\"IPv4\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "387f47e9685d940d5be541fa63dec39be3b8a12fce6c12e45ecd4af56bcd93ee"
+}
