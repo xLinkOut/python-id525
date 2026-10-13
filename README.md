@@ -193,12 +193,32 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+### Changing settings
+
+Writes are opt-in. Inputs are checked with the same rules as the web UI
+(`Id525ValidationError`), and the request sent is the one the web UI would send.
+
+```python
+async with Id525Client("192.168.224.1", "admin", "password", read_only=False) as router:
+    lan = await router.lan.get_settings()
+    await router.lan.add_dhcp_reservation("printer", "192.168.224.50", "02:00:5e:00:00:aa")
+    await router.system.reboot(confirm=True)  # destructive: explicit confirmation
+```
+
+Operations are grouped by web UI page: `router.lan`, `router.wifi`,
+`router.cellular`, `router.port_forwarding`, `router.sms`, `router.system`...
+The coverage table above lists every one.
+
 ### Command line
 
 ```bash
 export ID525_USERNAME=admin ID525_PASSWORD=...
-id525 status            # also: clients cells utilization about sms session all
+id525 status            # quick reads: clients cells utilization about sms session all
 id525 --host 192.168.224.1 --env-file .env all
+id525 lan get-settings  # any operation: id525 <section> <operation> [--arg value]
+id525 --write lan add-dhcp-reservation --name printer --ip 192.168.224.50 --mac 02:00:5e:00:00:aa
+id525 --write system reboot --confirm
+id525 --help            # lists every section; id525 <section> --help its operations
 ```
 
 ## Things to know about the router
@@ -223,12 +243,32 @@ itself.
 
 ```bash
 uv sync
-uv run pytest            # tests run against an in-process fake router
+uv run pytest -m "not browser"   # client tests, against an in-process fake router
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
 ```
 
-Test fixtures are real router responses with every identifying value replaced.
+Tests never reach the network: a socket guard installed for the whole suite
+refuses anything but loopback (`tests/netguard.py`).
+
+**Write operations are proven offline.** The router's own web UI code runs in
+a sandboxed headless Chromium against a local mock router, and the request
+bodies it builds are recorded as goldens (`tests/golden/`); the client must
+send them byte for byte. The browser can only reach the mock: request routing,
+a dead proxy and a disabled resolver each block everything else, and
+`tests/uicapture/test_guards.py` proves each layer against a sentinel server.
+See [docs/capture.md](docs/capture.md).
+
+```bash
+uv run playwright install chromium
+uv run pytest -m browser --no-cov                                   # guard tests
+uv run python -m tools.uicapture.capture --assets <UI copy> --check  # re-capture
+uv run python -m tools.coverage_map                                 # README map
+```
+
+The router's UI scripts are not part of this repository; the capture needs a
+local copy of them (`--assets`). Page fixtures are real router pages with every
+identifying value replaced.
 
 ## License
 
