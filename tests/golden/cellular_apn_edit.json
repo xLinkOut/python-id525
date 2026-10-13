@@ -1,0 +1,32 @@
+{
+  "scenario": "cellular_apn_edit",
+  "page": "cellular-settings",
+  "endpoint": "req_editUserApn",
+  "ui_ref": "cellular-settings.html:1610",
+  "call": "cellular.edit_apn",
+  "inputs": {
+    "instance": 2,
+    "apn": "voip2.tim.it",
+    "profile_name": "VoIP & più",
+    "auth": "PAP",
+    "username": "me",
+    "password": "pa%ss",
+    "ip_type": "ipv4",
+    "enabled": false
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_editUserApn",
+      "body": "{\"active\":0,\"profile_handle\":2,\"instance\":2,\"name\":\"VoIP & più\",\"apn\":\"voip2.tim.it\",\"IPType\":0,\"auth\":\"PAP\",\"user\":\"me\",\"passwd\":\"pa%ss\",\"disable\":1,\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

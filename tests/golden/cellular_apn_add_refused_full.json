@@ -1,0 +1,20 @@
+{
+  "scenario": "cellular_apn_add_refused_full",
+  "page": "cellular-settings",
+  "endpoint": "req_addUserApn",
+  "ui_ref": "cellular-settings.html:1462",
+  "call": "cellular.add_apn",
+  "inputs": {
+    "apn": "sixth"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/cellular-settings-5-apns",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "1403a5af3192a1daad3c69e15ae048dd163fe1a955ba2915ae9becea47d878ed"
+}

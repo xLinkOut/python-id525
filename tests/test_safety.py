@@ -26,11 +26,15 @@ DUMMY_ARGS = {
     "ip": "192.168.224.50",
     "mac": "02:00:5e:00:00:99",
     "index": 1,
-    "instance": 1,
+    "instance": 2,
     "wan_port": 8080,
     "lan_ip": "192.168.224.50",
     "lan_port": 80,
     "role": "wan",
+    "mode": "4G",
+    "mcc": "222",
+    "mnc": "10",
+    "apn": "web",
 }
 
 

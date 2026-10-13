@@ -1,0 +1,21 @@
+{
+  "scenario": "cellular_apn_edit_refused_long_name",
+  "page": "cellular-settings",
+  "endpoint": "req_editUserApn",
+  "ui_ref": "cellular-settings.html:1610",
+  "call": "cellular.edit_apn",
+  "inputs": {
+    "instance": 2,
+    "profile_name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "WARNING: APN Profile needs to input value.",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

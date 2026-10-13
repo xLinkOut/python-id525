@@ -1,0 +1,25 @@
+{
+  "scenario": "cellular_mode_lte",
+  "page": "cellular-settings",
+  "endpoint": "req_CellularModeSelection",
+  "ui_ref": "cellular-settings.html:949",
+  "call": "cellular.set_network_mode",
+  "inputs": {
+    "mode": "4G"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_CellularModeSelection",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"modeSelected\":\"16\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

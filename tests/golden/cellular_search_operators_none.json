@@ -1,0 +1,27 @@
+{
+  "scenario": "cellular_search_operators_none",
+  "page": "cellular-settings",
+  "endpoint": "req_SearchOperators",
+  "ui_ref": "cellular-settings.html:840",
+  "call": "cellular.search_operators",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "req_SearchOperators": {
+      "scan_network": "No Avaiable Networks"
+    }
+  },
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_SearchOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

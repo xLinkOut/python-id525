@@ -1,0 +1,20 @@
+{
+  "scenario": "cellular_default_apn_refused_invalid",
+  "page": "cellular-settings",
+  "endpoint": "req_defaultApnSave",
+  "ui_ref": "cellular-settings.html:467",
+  "call": "cellular.set_default_apn",
+  "inputs": {
+    "apn": "web_x.it"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "WARNING: The APN is invalid.",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

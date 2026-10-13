@@ -1,0 +1,27 @@
+{
+  "scenario": "cellular_operation_routing",
+  "page": "cellular-settings",
+  "endpoint": "req_LanOperationModeSave",
+  "ui_ref": "cellular-settings.html:996",
+  "call": "cellular.set_operation_mode",
+  "inputs": {
+    "mode": "Routing"
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanOperationModeSave",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"modeSelectType\":\"Routing\",\"macSelectType\":\"Auto\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

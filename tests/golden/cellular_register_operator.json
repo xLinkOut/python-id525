@@ -1,0 +1,34 @@
+{
+  "scenario": "cellular_register_operator",
+  "page": "cellular-settings",
+  "endpoint": "req_RegistingOperators",
+  "ui_ref": "cellular-settings.html:586",
+  "call": "cellular.register_operator",
+  "inputs": {
+    "mcc": "222",
+    "mnc": "10"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_SearchOperators": {
+      "scan_network": "222,1,97,TIM,12,0;222,10,34,vodafone IT,8,0;222,88,18,WINDTRE,8,0;"
+    }
+  },
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_SearchOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    },
+    {
+      "endpoint": "req_RegistingOperators",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"mcc\":\"222\",\"mnc\":\"10\",\"type\":\"8\",\"mnc_includes_pcs_digit\":\"0\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "scan, then register an Available network; scan answer format inferred",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

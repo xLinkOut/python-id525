@@ -1,0 +1,25 @@
+{
+  "scenario": "cellular_apn_delete_last",
+  "page": "cellular-settings",
+  "endpoint": "req_deleteUserApn",
+  "ui_ref": "cellular-settings.html:1650",
+  "call": "cellular.delete_apn",
+  "inputs": {
+    "instance": 8
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/cellular-settings-5-apns",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_deleteUserApn",
+      "body": "{\"active\":0,\"profile_handle\":5,\"instance\":8,\"name\":\"iot\",\"apn\":\"iot.example\",\"IPType\":2,\"auth\":\"NONE\",\"user\":\"\",\"passwd\":\"\",\"disable\":0,\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "1403a5af3192a1daad3c69e15ae048dd163fe1a955ba2915ae9becea47d878ed"
+}
