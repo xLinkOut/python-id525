@@ -10,6 +10,7 @@ from id525 import (
     Id525Client,
     Id525CommandError,
     Id525ConfirmationRequiredError,
+    Id525ConnectionError,
     Id525ReadOnlyError,
 )
 from id525.endpoints import ENDPOINTS, PAGES, Endpoint, Kind, Page, Status
@@ -151,3 +152,11 @@ def test_sections_are_attached_to_the_client() -> None:
     client = Id525Client()
     for name, cls in SECTIONS.items():
         assert isinstance(getattr(client, name), cls)
+
+
+async def test_per_call_timeout(make_client: ClientFactory, router: FakeRouter) -> None:
+    """A per-call timeout overrides request_timeout for that call only."""
+    router.delay["reboot"] = 1.0
+    client = await make_client(read_only=False, request_timeout=5)
+    with pytest.raises(Id525ConnectionError):
+        await client._call(Endpoint.REBOOT, confirmed=True, request_timeout=0.2)

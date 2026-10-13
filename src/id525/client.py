@@ -340,6 +340,14 @@ class Id525Client:
         """
         self._password = password
 
+    def _drop_token(self) -> None:
+        """Forget the CSRF token: the next call fetches a fresh one.
+
+        The UI does this after calls that neither consume nor return a token
+        (e.g. traceroute).
+        """
+        self._token = None
+
     def _forget_session(self) -> None:
         """Drop all session state (e.g. after a reboot) without contacting the router."""
         self._logged_in = False
@@ -474,11 +482,14 @@ class Id525Client:
         with_token: bool = True,
         confirmed: bool = False,
         tolerate_disconnect: bool = False,
+        request_timeout: float | None = None,
     ) -> dict[str, Any]:
         """Call an allow-listed endpoint with session and token recovery.
 
         ``tolerate_disconnect``: the call itself may drop the connection (e.g.
         reboot); a transport error *on that call* then returns ``{}``.
+        ``request_timeout``: per-call timeout in seconds for that call (e.g. traceroute,
+        which only answers when done), instead of ``request_timeout``.
         """
         self.check_allowed(endpoint, confirmed=confirmed)
         build = body or _token_only
@@ -491,7 +502,13 @@ class Id525Client:
                     await self._post(Endpoint.TOKEN_QUERY, EMPTY_BODY)
                 payload = build(self._token) if with_token else EMPTY_BODY
                 try:
-                    return await self._post(endpoint, payload, check=True, confirmed=confirmed)
+                    return await self._post(
+                        endpoint,
+                        payload,
+                        check=True,
+                        confirmed=confirmed,
+                        request_timeout=request_timeout,
+                    )
                 except Id525ConnectionError:
                     if not tolerate_disconnect:
                         raise
@@ -572,7 +589,13 @@ class Id525Client:
         return raw.decode("utf-8", errors="replace"), session_id
 
     async def _post(
-        self, endpoint: Endpoint, body: object, *, check: bool = False, confirmed: bool = False
+        self,
+        endpoint: Endpoint,
+        body: object,
+        *,
+        check: bool = False,
+        confirmed: bool = False,
+        request_timeout: float | None = None,
     ) -> dict[str, Any]:
         """POST to an endpoint, rotate the token, detect session/token errors."""
         self.check_allowed(endpoint, confirmed=confirmed)
@@ -582,7 +605,11 @@ class Id525Client:
                 data=encode_body(body),
                 headers=self._headers({"Content-Type": "application/json"}),
                 ssl=self._ssl,
-                timeout=self._timeout,
+                timeout=(
+                    self._timeout
+                    if request_timeout is None
+                    else aiohttp.ClientTimeout(total=request_timeout)
+                ),
                 allow_redirects=False,
             ) as resp:
                 resp.raise_for_status()

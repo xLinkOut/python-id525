@@ -8,6 +8,7 @@ for unauthenticated page GETs, and login lockout.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -65,6 +66,8 @@ class FakeRouter:
     a list answered in turn (the last one repeats), as in the capture goldens."""
     page_fixtures: dict[str, str] = field(default_factory=dict)
     """Page name -> fixture name to serve (e.g. a synthetic variant)."""
+    delay: dict[str, float] = field(default_factory=dict)
+    """Seconds to wait before answering an endpoint (slow operations)."""
     drop: set[str] = field(default_factory=set)
     """Endpoints that drop the connection instead of answering (e.g. reboot)."""
 
@@ -142,6 +145,8 @@ class FakeRouter:
         raw = await request.read()
         self.calls.append(name)
         self.bodies.append((name, raw))
+        if name in self.delay:
+            await asyncio.sleep(self.delay[name])
         if name in self.drop and request.transport is not None:
             request.transport.close()
             return web.Response()
