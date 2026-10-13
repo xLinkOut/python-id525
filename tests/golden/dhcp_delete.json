@@ -5,12 +5,21 @@
   "ui_ref": "lan-settings.html:880",
   "call": "lan.delete_dhcp_reservation",
   "inputs": {
-    "index": 2
+    "index": 7
   },
   "call_kwargs": {},
+  "answers": {},
   "refused": false,
-  "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"instance\":2,\"interface_id\":1}",
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanStaticAddrDelete",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"instance\":7,\"interface_id\":2}"
+    }
+  ],
+  "other_calls": [],
   "ui_message": "",
   "notes": "",
-  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
 }

@@ -95,19 +95,44 @@ SCENARIOS = [
         refused=True,
         notes="MAC comparison is case-insensitive",
     ),
-    _modify("dhcp_modify_ip", {"index": 2, "ip": "192.168.224.21"}),
+    _add(
+        "dhcp_add_refused_empty_name",
+        {"name": "", "ip": "192.168.224.60", "mac": "02:00:5e:00:00:ac"},
+        refused=True,
+    ),
+    _add(
+        "dhcp_add_refused_long_name",
+        {"name": "n" * 33, "ip": "192.168.224.60", "mac": "02:00:5e:00:00:ac"},
+        refused=True,
+    ),
+    _add(
+        "dhcp_add_refused_bad_ip",
+        {"name": "nas", "ip": "192.168.224.256", "mac": "02:00:5e:00:00:ac"},
+        refused=True,
+    ),
+    _add(
+        "dhcp_add_refused_duplicate_name",
+        {"name": "device01", "ip": "192.168.224.60", "mac": "02:00:5e:00:00:ac"},
+        refused=True,
+    ),
+    _add(
+        "dhcp_add_refused_duplicate_ip",
+        {"name": "nas", "ip": "192.168.224.92", "mac": "02:00:5e:00:00:ac"},
+        refused=True,
+    ),
+    _modify("dhcp_modify_ip", {"index": 7, "ip": "192.168.224.21"}),
     _modify(
         "dhcp_modify_all",
-        {"index": 3, "name": "tv salotto", "ip": "192.168.224.40", "mac": "02:00:5e:00:00:cd"},
+        {"index": 12, "name": "tv salotto", "ip": "192.168.224.40", "mac": "02:00:5e:00:00:cd"},
     ),
     _modify(
         "dhcp_modify_unchanged",
-        {"index": 1},
+        {"index": 4},
         notes="nothing changed: every field is sent as the '0' sentinel",
     ),
     _modify(
         "dhcp_modify_refused_duplicate_ip",
-        {"index": 1, "ip": "192.168.224.20"},
+        {"index": 4, "ip": "192.168.224.20"},
         refused=True,
     ),
     Scenario(
@@ -115,7 +140,7 @@ SCENARIOS = [
         page=Page.LAN_SETTINGS,
         endpoint=Endpoint.DHCP_RESERVATION_DELETE,
         call="lan.delete_dhcp_reservation",
-        inputs={"index": 2},
+        inputs={"index": 7},
         drive=delete_reservation,
     ),
 ]

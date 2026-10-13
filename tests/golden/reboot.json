@@ -8,8 +8,17 @@
   "call_kwargs": {
     "confirm": true
   },
+  "answers": {},
   "refused": false,
-  "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}",
+  "fixture": "adm-backup",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "reboot",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
   "ui_message": "",
   "notes": "",
   "fixture_sha256": "62db1f1ce7492eed87bc7434f6f415a648e979cf268b1828de0c5cf626f785b6"

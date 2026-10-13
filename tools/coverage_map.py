@@ -10,7 +10,7 @@ from the ``@uses`` declarations (:mod:`id525.operations`), so the map cannot
 drift from the code (``tests/test_coverage_map.py`` enforces it).
 
 Colour (validated with the dataviz palette validator, light and dark):
-implemented tiers are one ordinal blue ramp (darker = more trusted on light,
+implemented tiers are one four-step ordinal blue ramp (darker = more trusted on light,
 lighter = more trusted on dark); "unsupported by design" is orange; "planned"
 is a neutral fill; "dead code" is an outline. Every cell also carries its text
 label, and the README table repeats everything, so colour is never the only cue.
@@ -48,6 +48,11 @@ GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
 LEGEND: tuple[tuple[str, tuple[Status, ...], str], ...] = (
     ("live-verified", (Status.LIVE_VERIFIED,), "observed on a real router (read-only probes)"),
     ("ui-captured", (Status.UI_CAPTURED,), "byte-identical to the router UI, captured offline"),
+    (
+        "ui-captured*",
+        (Status.UI_CAPTURED_SYNTHETIC,),
+        "as ui-captured, from invented page data (the real dump had no rows)",
+    ),
     ("static", (Status.STATIC,), "implemented from the UI code, not captured"),
     ("planned", (Status.PLANNED,), "not implemented yet"),
     (
@@ -61,6 +66,7 @@ LEGEND: tuple[tuple[str, tuple[Status, ...], str], ...] = (
 STATUS_ICON = {
     Status.LIVE_VERIFIED: "🟦",
     Status.UI_CAPTURED: "🔵",
+    Status.UI_CAPTURED_SYNTHETIC: "🔷",
     Status.STATIC: "🔹",
     Status.PLANNED: "⬜",
     Status.STUB_UNSAFE: "🟧",
@@ -94,6 +100,7 @@ LIGHT = Theme(
     fills={
         "live-verified": "#184f95",
         "ui-captured": "#2a78d6",
+        "ui-captured*": "#5598e7",
         "static": "#86b6ef",
         "planned": "#f0efec",
         "unsupported": "#eb6834",
@@ -108,8 +115,9 @@ DARK = Theme(
     muted="#898781",
     hairline="#383835",
     fills={
-        "live-verified": "#9ec5f4",
-        "ui-captured": "#3987e5",
+        "live-verified": "#b7d3f6",
+        "ui-captured": "#6da7ec",
+        "ui-captured*": "#3987e5",
         "static": "#1c5cab",
         "planned": "#2c2c2a",
         "unsupported": "#d95926",

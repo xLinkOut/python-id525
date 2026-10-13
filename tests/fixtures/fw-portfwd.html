@@ -1,0 +1,1930 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="portfwd_title">Port Forwarding</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+	var platform = "";
+	var platform_o = "";
+	var port_fwd_entries = "[]";
+	var portfwd_rules = JSON.parse( port_fwd_entries.replace(/&quot;/g,'"') );
+	var g_index;
+	var g_delete_index;
+	var pf_desc = "---";
+	var pf_isEnabled = "";
+	var pf_protocol = "";
+	var portTypeSelect = "";
+	var pf_ipAddr = "";
+	var pf_global_port = "";
+	var pf_private_port = "";
+	var pf_begin_global_port = "";
+	var pf_end_global_port = "";
+	var dmz_status ="0";
+	var ip_dmz ="";
+	var port_forward_status ="0";
+	var pf_array = [];
+	var IPv4_CIDR = /^(?=\d+\.\d+\.\d+\.\d+($|\/))(([1-9]?\d|1\d\d|2[0-4]\d|25[0-5])\.?){4}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/;
+	var host_ip = "192.168.224.1";
+	var startIP = "192.168.224.20";
+	var endIP = "192.168.224.219";
+	var ip_class_index = 1;
+
+    var modeSelectType_CFG = 0;
+
+    function decodeHTMLText(msgText){
+	    let textarea = document.createElement("textarea");
+        textarea.innerHTML = msgText.replace(/\r\n/g, "\\r\\n");
+        return textarea.value;
+	}
+
+	function bodyLoad() {
+        <!-- /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */ -->
+        menuOnLoad("fw-portfwd.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        <!-- /* Add your onload function call here: Start */ -->
+        mobile_CollapsibleAddListener('collapseUPNP');
+        mobile_CollapsibleAddListener('collapsePF');
+        mobile_CollapsibleAddListener('collapsePFRL');
+		saveLoadingListener();
+		saveEditAddrListener();
+		saveMoreInfo_Listener();
+
+		<!-- var rule_list = portfwd_rules.split(";"); -->
+		for(var i = 0; i < portfwd_rules.length; i++ )
+        {
+			var createJosn = {};
+			createJosn.instance = portfwd_rules[i].instance;
+			createJosn.description = portfwd_rules[i].description;
+			createJosn.internalClient = portfwd_rules[i].internalClient;
+			createJosn.externalPort = portfwd_rules[i].externalPort;
+			createJosn.externalPortEndRange = portfwd_rules[i].externalPortEndRange;
+			createJosn.internalPort = portfwd_rules[i].internalPort;
+			createJosn.protocol = portfwd_rules[i].protocol;
+			createJosn.enable = portfwd_rules[i].enable;
+			pf_array.push(createJosn);
+		}
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        <!-- /* Add your onload function call here: End */ -->
+    }
+	function initJS_function(pf){
+		document.getElementById(pf + "-dmz_switch").onchange = function(){switch_dmz_status();};
+		document.getElementById(pf + "-dmz_ip").oninput = function(){dmzip_current_input();};
+		document.getElementById(pf + "-dmz_status_applyBtn").onclick = function(){dmz_status_apply();};
+		document.getElementById(pf + "-pf_switch").onchange = function(){switch_pf_status();};
+		document.getElementById(pf + "-port_forward_applyBtn").onclick = function(){port_forward_apply();};
+		document.getElementById(pf + "-pf_filter_List").style = 'display: none;';
+		document.getElementById(pf + "-addNewBtn").onclick = function(){toggle_AddAddr_modal();};
+		if(pf != "mobile")
+		{
+			document.getElementById(pf + "-MaxLimtLabel").style = 'float: right; padding: 5px 15px;';
+			document.getElementById(pf + "-sortProtocolBtn").onclick = function(){sortProtocol();};
+			document.getElementById(pf + "-sortWanPortBtn").onclick = function(){sortWanPort();};
+			document.getElementById(pf + "-sortLanIpBtn").onclick = function(){sortLanIp();};
+			document.getElementById(pf + "-sortStatusfunctionBtn").onclick = function(){sortStatusfunction();};
+		}
+		document.getElementById("ProtocolSelect_both").onclick = function(){selectObj('ProtocolSelect', i18next.t('portfwd_dialog_tcpudp'));};
+		document.getElementById("ProtocolSelect_tcp").onclick = function(){selectObj('ProtocolSelect', i18next.t('portfwd_dialog_tcp'));};
+		document.getElementById("ProtocolSelect_udp").onclick = function(){selectObj('ProtocolSelect', i18next.t('portfwd_dialog_udp'));};
+		document.getElementById("PortTypeSelect_range").onclick = function(){selectObj('PortTypeSelect', i18next.t('portfwd_dialog_wanPort_range'));};
+		document.getElementById("PortTypeSelect_single").onclick = function(){selectObj('PortTypeSelect', i18next.t('portfwd_dialog_wanPort_single'));};
+		document.getElementById("add_pf_btn").onclick = function(){btnOKClicked();};
+		document.getElementById("edit_ProtocolSelect_both").onclick = function(){selectObj('edit_ProtocolSelect', i18next.t('portfwd_dialog_tcpudp'));};
+		document.getElementById("edit_ProtocolSelect_tcp").onclick = function(){selectObj('edit_ProtocolSelect', i18next.t('portfwd_dialog_tcp'));};
+		document.getElementById("edit_ProtocolSelect_udp").onclick = function(){selectObj('edit_ProtocolSelect', i18next.t('portfwd_dialog_udp'));};
+		document.getElementById("edit_PortTypeSelect_range").onclick = function(){selectObj('edit_PortTypeSelect', i18next.t('portfwd_dialog_wanPort_range'));};
+		document.getElementById("edit_PortTypeSelect_single").onclick = function(){selectObj('edit_PortTypeSelect', i18next.t('portfwd_dialog_wanPort_single'));};
+		document.getElementById("edit_rule_save_btn").onclick = function(){edit_rule_save();};
+		document.getElementById("popup_error_btn").onclick = function(){toggle_dialog_modal();};
+		document.getElementById("confirm_delete_btn").onclick = function(){confirm_delete();};
+		
+		dropdownItemKeyboardNavigation("ProtocolSelect_both");
+		dropdownItemKeyboardNavigation("ProtocolSelect_tcp");
+		dropdownItemKeyboardNavigation("ProtocolSelect_udp");
+		dropdownItemKeyboardNavigation("PortTypeSelect_range");
+		dropdownItemKeyboardNavigation("PortTypeSelect_single");
+		dropdownItemKeyboardNavigation("edit_ProtocolSelect_both");
+		dropdownItemKeyboardNavigation("edit_ProtocolSelect_tcp");
+		dropdownItemKeyboardNavigation("edit_ProtocolSelect_udp");
+		dropdownItemKeyboardNavigation("edit_PortTypeSelect_range");
+		dropdownItemKeyboardNavigation("edit_PortTypeSelect_single");
+	}
+	function onScreenWidthChange()
+	{
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+		if(portfwd_rules.length >= 10)
+		{
+			document.getElementById(platform + "-addNewBtn").style = "color: var(--disabledText);";
+			document.getElementById(platform + "-addNewBtn").disabled = true;
+			document.getElementById(platform + '-addNewImg').src="/images/iconAddNewDisable.svg";
+			document.getElementById(platform + "-MaxLimtLabel").style = "float: right; padding: 5px 15px;; color: var(--errorColor);";
+		}
+
+        if(modeSelectType_CFG==1){
+            document.getElementById(platform + '-pf_switch').disabled = true;
+            document.getElementById(platform + '-port_forward_applyBtn').disabled = true;
+        }
+		if(dmz_status == "0")
+		{
+			document.getElementById(platform + "-dmz_switch").checked = false;
+			document.getElementById(platform + "-dmz_ip_title").style.visibility = "hidden";
+			document.getElementById(platform + "-dmz_ip_border").style.visibility = "hidden";
+		}
+		else
+		{
+			document.getElementById(platform + "-dmz_switch").checked = true;
+			document.getElementById(platform + "-dmz_ip_title").style.visibility = "visible";
+			document.getElementById(platform + "-dmz_ip_border").style.visibility = "visible";
+		}
+		if(port_forward_status == "0" || port_forward_status.length == 0)
+		{
+			document.getElementById(platform + "-pf_switch").checked = false;
+			document.getElementById(platform + "-pf_filter_List").style.display = "none";
+		}
+		else
+		{
+			document.getElementById(platform + "-pf_switch").checked = true;
+			document.getElementById(platform + "-pf_filter_List").style.display = "block";
+		}
+
+		if(document.getElementById("PortTypeSelect").innerHTML == i18next.t('portfwd_dialog_wanPort_range'))
+		{
+			document.getElementById("PortEndTitle").style = "color: var(--headingText);";
+            document.getElementById("PortEnd").disabled = false;
+			document.getElementById("edit_PortEndTitle").style = "color: var(--headingText);";
+            document.getElementById("edit_PortEnd").disabled = false;
+			<!-- document.getElementById("_more_wan_port_end_title").style = "color: var(--headingText);"; -->
+		}
+		else
+		{
+			document.getElementById("PortEndTitle").style = "color: var(--disabledText);";
+            document.getElementById("PortEnd").disabled = true;
+			document.getElementById("edit_PortEndTitle").style = "color: var(--disabledText);";
+            document.getElementById("edit_PortEnd").disabled = true;
+			<!-- document.getElementById("_more_wan_port_end_title").style = "color: var(--disabledText);"; -->
+		}
+
+		document.getElementById(platform+ "-dmz_ip").value = ip_dmz;
+		initAddrListTable(pf_array);
+    }
+	function update_content(data_json)
+	{
+		document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+	}
+	function switch_dmz_status()
+	{
+        if(document.getElementById(platform + "-dmz_switch").checked)
+		{
+			dmz_status = "1";
+			document.getElementById(platform + "-dmz_ip_title").style.visibility = "visible";
+			document.getElementById(platform + "-dmz_ip_border").style.visibility = "visible";
+		}
+        else
+		{
+			dmz_status = "0";
+			document.getElementById(platform + "-dmz_ip_title").style.visibility = "hidden";
+			document.getElementById(platform + "-dmz_ip_border").style.visibility = "hidden";
+		}
+    }
+	function switch_pf_status()
+	{
+        if(document.getElementById(platform + "-pf_switch").checked)
+		{
+			port_forward_status = "1";
+			document.getElementById(platform + "-pf_switch").checked = true;
+			document.getElementById(platform + "-pf_filter_List").style.display = "block";
+		}
+        else
+		{
+			port_forward_status = "0";
+			document.getElementById(platform + "-pf_switch").checked = false;
+			document.getElementById(platform + "-pf_filter_List").style.display = "none";
+		}
+    }
+
+	function dmz_status_apply()
+	{
+		let dmz_ipAddr = document.getElementById(platform + "-dmz_ip").value;
+		let octets = dmz_ipAddr.split(".");
+		if(dmz_status == "1")
+		{
+			if(dmz_ipAddr == host_ip || octets.length != 4)
+			{
+				popup_error(i18next.t('portfwd_dialog_err_des3'));
+				return;
+			}
+			for(let i=0; i < octets.length; i++)
+			{
+				let octet = parseInt(octets[i]);
+				if(isNaN(octet) || octet <= 0 || octet >= 255)
+				{
+					popup_error(i18next.t('portfwd_dialog_err_des3'));
+					return;
+				}
+			}
+		}
+
+		document.getElementById('_modal_text').innerHTML = i18next.t('portfwd_save_loading');
+		toggle_modal();
+
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.DmzSta = dmz_status;
+		req.DmzIP = document.getElementById(platform + "-dmz_ip").value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/dmz_save.cgi", req)
+            .then(response_upnp_apply).catch(response_print);
+	}
+	function dmzip_current_input(){
+        username = document.getElementById(platform + "-dmz_ip").value;
+    }
+	function port_forward_apply()
+	{
+		document.getElementById('_modal_text').innerHTML = i18next.t('portfwd_save_loading');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.isPFEnable = port_forward_status;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/set_portforward_status.cgi", req)
+            .then(response_upnp_apply).catch(response_print);
+	}
+	function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_upnp_apply(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-portfwd.html";}, 1000);
+    }
+	function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);
+    }
+	function selectObj(id, text) {
+        var selectItem = document.getElementById(id);
+        selectItem.innerHTML = text;
+		if(document.getElementById("PortTypeSelect").innerHTML == i18next.t('portfwd_dialog_wanPort_range') || document.getElementById("edit_PortTypeSelect").innerHTML == i18next.t('portfwd_dialog_wanPort_range'))
+		{
+			document.getElementById("PortEndTitle").style = "color: var(--headingText);";
+            document.getElementById("PortEnd").disabled = false;
+			document.getElementById("edit_PortEndTitle").style = "color: var(--headingText);";
+            document.getElementById("edit_PortEnd").disabled = false;
+		}
+		else
+		{
+			document.getElementById("PortEndTitle").style = "color: var(--disabledText);";
+            document.getElementById("PortEnd").disabled = true;
+			document.getElementById("edit_PortEndTitle").style = "color: var(--disabledText);";
+            document.getElementById("edit_PortEnd").disabled = true;
+			document.getElementById("PortEnd").value = "";
+			document.getElementById("edit_PortEnd").value = "";
+			document.getElementById("wan_port_end_div").style.borderBottom = "1px solid var(--inputBorder)";
+			document.getElementById("edit_wan_port_end_div").style.borderBottom = "1px solid var(--inputBorder)";
+		}
+    }
+	function resetInputStyle()
+	{
+		document.getElementById("PortLANTitle").style = "color: var(--headingText);";
+		document.getElementById("lanipAddr").style = "color: var(--headingText);";
+		document.getElementById("PortLANTitle_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById("PortBeginTitle").style = "color: var(--headingText);";
+		document.getElementById("PortBegin").style = "color: var(--headingText);";
+		document.getElementById("wan_port_begin_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById("PortEndTitle").style = "color: var(--headingText);";
+		document.getElementById("PortEnd").style = "color: var(--headingText);";
+		document.getElementById("wan_port_end_div").style.borderBottom = "1px solid var(--inputBorder)";
+	}
+	function btnOKClicked()
+	{
+		resetInputStyle();
+
+		pf_protocol = document.getElementById("ProtocolSelect").innerHTML;
+		if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_tcpudp'))
+			pf_protocol = "2";
+		else if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_tcp'))
+			pf_protocol = "0";
+		else if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_udp'))
+			pf_protocol = "1";
+
+		//verify starting wan port
+		pf_begin_global_port = document.getElementById("PortBegin").value
+		if(isInteger(pf_begin_global_port) == false || parseInt(pf_begin_global_port) < 1 || parseInt(pf_begin_global_port) > 65535 || pf_begin_global_port.length == 0)
+		{
+			document.getElementById("PortBeginTitle").style = "color: var(--errorColor);";
+			document.getElementById("PortBegin").style = "color: var(--errorColor);";
+			document.getElementById("wan_port_begin_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("PortBegin").focus();
+			return;
+		}
+
+		portTypeSelect = document.getElementById("PortTypeSelect").innerHTML;
+		if(portTypeSelect == i18next.t('portfwd_dialog_wanPort_range'))
+		{
+			pf_end_global_port = document.getElementById("PortEnd").value
+			if(isInteger(pf_end_global_port) == false || parseInt(pf_end_global_port) < 1 || parseInt(pf_end_global_port) > 65535 || pf_end_global_port.length == 0)
+			{
+				document.getElementById("PortEndTitle").style = "color: var(--errorColor);";
+				document.getElementById("PortEnd").style = "color: var(--errorColor);";
+				document.getElementById("wan_port_end_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById("PortEnd").focus();
+				return;
+			}
+			if(parseInt(pf_begin_global_port) >= parseInt(pf_end_global_port))
+			{
+				document.getElementById("PortEndTitle").style = "color: var(--errorColor);";
+				document.getElementById("PortEnd").style = "color: var(--errorColor);";
+				document.getElementById("wan_port_end_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById("PortEnd").focus();
+				return;
+			}
+			<!-- pf_global_port = pf_begin_global_port + "-" + pf_end_global_port; -->
+			<!-- var port_range = pf_end_global_port - pf_begin_global_port -->
+			<!-- pf_private_port = pf_private_port + "-" + (parseInt(pf_private_port) + parseInt(port_range)) -->
+		}
+		else
+		{
+			pf_end_global_port = 0;
+		}
+
+		//verify enable status
+        if(document.getElementById("StatusCheckBox").checked)
+		{
+			pf_isEnabled = 1;
+		}
+        else
+		{
+			pf_isEnabled = 0;
+		}
+
+		//verify LAN IP
+		pf_ipAddr = document.getElementById("lanipAddr");
+		if(checkEmpty(pf_ipAddr))
+		{
+			document.getElementById("PortLANTitle").style = "color: var(--errorColor);";
+			document.getElementById("lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("PortLANTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("lanipAddr").focus();
+			return;
+		}
+
+		//verify lan port
+		pf_private_port = document.getElementById("LANPortBegin").value
+		if(isInteger(pf_private_port) == false || parseInt(pf_private_port) < 1 || parseInt(pf_private_port) > 65535 || pf_private_port.length == 0)
+		{
+			document.getElementById("LANPortBeginTitle").style = "color: var(--errorColor);";
+			document.getElementById("LANPortBegin").style = "color: var(--errorColor);";
+			document.getElementById("lan_port_begin_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("LANPortBegin").focus();
+			return;
+		}
+
+		toggle_AddAddr_modal();
+
+		for(var i = 0; i <= 3; i++)
+		{
+			var input_ip = parseInt(pf_ipAddr.value.split(".")[i])
+			var start_IP = parseInt(startIP.split(".")[i])
+			var end_ip = parseInt(endIP.split(".")[i])
+			if(i <= ip_class_index)
+			{
+				if(input_ip != start_IP)
+				{
+					popup_error(i18next.t('portfwd_dialog_err_des1'));
+					return;
+				}
+			}
+		}
+
+		/*
+		if(pf_ipAddr.value.split(".", 3).toString() !== host_ip.split(".", 3).toString())
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+		*/
+
+		if(IPv4_CIDR.test(pf_ipAddr.value) == false)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+		var pf_ipAddr_last = parseInt(pf_ipAddr.value.split(".")[3]);
+		if(pf_ipAddr_last == 0 || pf_ipAddr_last == 255)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}		
+		if(pf_ipAddr.value == host_ip)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}		
+		if(isRuleExist(portTypeSelect, pf_global_port, pf_ipAddr.value, pf_protocol, pf_array))
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des2'));
+			return;
+		}
+
+		/*
+		var tmp_pf_desc = document.getElementById("desc");
+		if(checkEmpty(tmp_pf_desc))
+		{
+			pf_desc = "---"
+		}
+		else
+		{
+			if(isValidStr(tmp_pf_desc.value) == false)
+			{
+				popup_error("Description is invalid. "+ filed_no_allow_letter + " cannot be used.");
+				return false;
+			}
+			if( tmp_pf_desc.value.length > 32 )
+			{
+				popup_error("Description is invalid. The maximum length of Description is 32.");
+				return false;
+			}
+			pf_desc = tmp_pf_desc.value
+		}
+		*/
+
+		document.getElementById('_modal_text').innerHTML = i18next.t('portfwd_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.global_port = parseInt(pf_begin_global_port);
+		req.global_port_range = parseInt(pf_end_global_port);
+		req.private_port = parseInt(pf_private_port);
+		req.ipAddr = pf_ipAddr.value;
+		req.protocol = pf_protocol;
+		req.isEnabled = pf_isEnabled;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/portforward_add.cgi", req)
+            .then(response_add_portforward).catch(response_print);
+	}
+	function isRuleExist(portTypeSelect, port, pf_ipAddr, pf_protocol, entries)
+	{
+		for(var i = 0; i < entries.length; i++)
+        {
+			var index = entries[i].index;
+			if(index == g_index)
+			{
+				continue; //skip compare own rule
+			}
+			var protocol = entries[i].protocol;
+			var wan_port = entries[i].wan_port;
+			var wan_port_range = entries[i].wan_port_range;
+			var lan_ip = entries[i].lan_ip;
+			var range_port = wan_port+"-"+(parseInt(wan_port)+parseInt(wan_port_range));
+			var end_wan_port = parseInt(wan_port)+parseInt(wan_port_range);
+
+			var input_port = port.split("-");
+			for(var j = parseInt(input_port[0]); j <= parseInt(input_port[1]); j++)
+			{
+				if(j == wan_port || j == end_wan_port)
+					return true;
+			}
+			if(port >= wan_port && port <= end_wan_port || port == range_port)
+			{
+				return true;
+			}
+		}
+        return false;
+    }
+	function resetInputStyle_edit()
+	{
+		document.getElementById("edit_PortLANTitle").style = "color: var(--headingText);";
+		document.getElementById("edit_lanipAddr").style = "color: var(--headingText);";
+		document.getElementById("edit_PortLANTitle_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById("edit_PortBeginTitle").style = "color: var(--headingText);";
+		document.getElementById("edit_PortBegin").style = "color: var(--headingText);";
+		document.getElementById("edit_wan_port_begin_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById("edit_PortEndTitle").style = "color: var(--headingText);";
+		document.getElementById("edit_PortEnd").style = "color: var(--headingText);";
+		document.getElementById("edit_wan_port_end_div").style.borderBottom = "1px solid var(--inputBorder)";
+	}
+	function edit_rule_save()
+	{
+		resetInputStyle_edit();
+		pf_protocol = document.getElementById("edit_ProtocolSelect").innerHTML;
+		if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_tcpudp'))
+		{
+			pf_protocol = "2";
+		}
+		else if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_tcp'))
+		{
+			pf_protocol = "0";
+		}
+		else if(decodeHTMLText(pf_protocol) == i18next.t('portfwd_dialog_udp'))
+		{
+			pf_protocol = "1";
+		}
+
+		pf_begin_global_port = document.getElementById("edit_PortBegin").value
+		if(isInteger(pf_begin_global_port) == false || parseInt(pf_begin_global_port) < 1 || parseInt(pf_begin_global_port) > 65535 || pf_begin_global_port.length == 0)
+		{
+			document.getElementById("edit_PortBeginTitle").style = "color: var(--errorColor);";
+			document.getElementById("edit_PortBegin").style = "color: var(--errorColor);";
+			document.getElementById("edit_wan_port_begin_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("edit_PortBegin").focus();
+			return;
+		}
+		pf_private_port = document.getElementById("edit_LANPortBegin").value
+		if(isInteger(pf_private_port) == false || parseInt(pf_private_port) < 1 || parseInt(pf_private_port) > 65535 || pf_private_port.length == 0)
+		{
+			document.getElementById("edit_LANPortBeginTitle").style = "color: var(--errorColor);";
+			document.getElementById("edit_LANPortBegin").style = "color: var(--errorColor);";
+			document.getElementById("edit_lan_port_begin_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("edit_LANPortBegin").focus();
+			return;
+		}
+
+		portTypeSelect = document.getElementById("edit_PortTypeSelect").innerHTML;
+		if(portTypeSelect == i18next.t('portfwd_dialog_wanPort_range'))
+		{
+			var pf_end_global_port = document.getElementById("edit_PortEnd").value
+			if(isInteger(pf_end_global_port) == false || parseInt(pf_end_global_port) < 1 || parseInt(pf_end_global_port) > 65535 || pf_end_global_port.length == 0)
+			{
+				document.getElementById("edit_PortEndTitle").style = "color: var(--errorColor);";
+				document.getElementById("edit_PortEnd").style = "color: var(--errorColor);";
+				document.getElementById("edit_wan_port_end_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById("edit_PortEnd").focus();
+				return;
+			}
+			if(parseInt(pf_begin_global_port) >= parseInt(pf_end_global_port))
+			{
+				document.getElementById("edit_PortEndTitle").style = "color: var(--errorColor);";
+				document.getElementById("edit_PortEnd").style = "color: var(--errorColor);";
+				document.getElementById("edit_wan_port_end_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById("edit_PortEnd").focus();
+				return;
+			}
+			<!-- pf_global_port = pf_begin_global_port + "-" + pf_end_global_port; -->
+			<!-- var port_range = pf_end_global_port - pf_begin_global_port -->
+			<!-- pf_private_port = pf_private_port + "-" + (parseInt(pf_private_port) + parseInt(port_range)) -->
+		}
+		else
+		{
+			pf_end_global_port = 0;
+		}
+		if(document.getElementById("edit_StatusCheckBox").checked)
+		{
+			pf_isEnabled = 1;
+		}
+        else
+		{
+			pf_isEnabled = 0;
+		}
+
+		pf_ipAddr = document.getElementById("edit_lanipAddr");
+		if(checkEmpty(pf_ipAddr))
+		{
+			document.getElementById("edit_PortLANTitle").style = "color: var(--errorColor);";
+			document.getElementById("edit_lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("edit_PortLANTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById("edit_lanipAddr").focus();
+			return;
+		}
+
+		toggle_editApn_modal();
+		if(isRuleExist(portTypeSelect, pf_global_port, pf_ipAddr.value, pf_protocol, pf_array))
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des2'));
+			return;
+		}
+
+		for(var i = 0; i <= 3; i++)
+		{
+			var input_ip = parseInt(pf_ipAddr.value.split(".")[i])
+			var start_IP = parseInt(startIP.split(".")[i])
+			var end_ip = parseInt(endIP.split(".")[i])
+			if(i <= ip_class_index)
+			{
+				if(input_ip != start_IP)
+				{
+					popup_error(i18next.t('portfwd_dialog_err_des1'));
+					return;
+				}
+			}
+		}
+
+		/*
+		if(pf_ipAddr.value.split(".", 3).toString() !== host_ip.split(".", 3).toString())
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+		*/
+		if(IPv4_CIDR.test(pf_ipAddr.value) == false)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+		var pf_ipAddr_last = parseInt(pf_ipAddr.value.split(".")[3]);
+		if(pf_ipAddr_last == 0 || pf_ipAddr_last == 255)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+		if(pf_ipAddr.value == host_ip)
+		{
+			popup_error(i18next.t('portfwd_dialog_err_des1'));
+			return;
+		}
+
+		/*
+		var tmp_pf_desc = document.getElementById("edit_desc");
+		if(checkEmpty(tmp_pf_desc))
+		{
+			pf_desc = "---"
+		}
+		else
+		{
+			if(isValidStr(tmp_pf_desc.value) == false)
+			{
+				popup_error("Description is invalid. "+ filed_no_allow_letter + " cannot be used.");
+				return false;
+			}
+			if( tmp_pf_desc.value.length > 32 )
+			{
+				popup_error("Description is invalid. The maximum length of Description is 32.");
+				return false;
+			}
+			pf_desc = tmp_pf_desc.value
+		}
+		*/
+
+		document.getElementById('_modal_text').innerHTML = i18next.t('portfwd_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.edit_instance = parseInt(g_index);
+		req.global_port = parseInt(pf_begin_global_port);
+		req.global_port_range = parseInt(pf_end_global_port);
+		req.private_port = parseInt(pf_private_port);
+		req.ipAddr = pf_ipAddr.value;
+		req.protocol = pf_protocol;
+		req.isEnabled = pf_isEnabled;
+
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/portforward_edit.cgi", req)
+            .then(response_add_portforward).catch(response_print);
+	}
+	function response_add_portforward(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+		if(!data_json.result){
+			popup_error(i18next.t('portfwd_dialog_err_des4'));
+			setTimeout(() => {toggle_modal();}, 1000);
+		}
+		else{
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-portfwd.html";}, 1000);
+		}
+    }
+	function toggle_editApn_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_EditApn_modal'));
+        _myModal.toggle();
+    }
+	function toggle_AddAddr_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_AddAddr_modal'));
+        _myModal.toggle();
+    }
+	function saveAddAddrListener() {
+        var myModalEl = document.getElementById('_AddAddr_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function initAddrListTable(entries)
+	{
+        var tbodystaticAddrList = document.getElementById(platform + '-tbodystaticAddrList');
+        var tbodystaticAddrListCon = '';
+        var tbodystaticAddrListAll = '';
+        var moreIcon = '';
+        var editIcon = '';
+        var deleteIcon = '';
+
+        tbodystaticAddrList.innerHTML = '';
+        for(var i = 0; i < entries.length; i++)
+        {
+            tbodystaticAddrListCon = '<tr class="cardViewTableTR">';
+			var instance = entries[i].instance;
+			var protocol = "";
+			switch(entries[i].protocol)
+			{
+				case 1:
+					protocol = "UDP";
+					break;
+				case 2:
+					protocol = "TCP/UDP";
+					break;
+				default:
+					protocol = "TCP";
+					break;
+			}
+
+			if(platform != 'mobile')
+			{
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +protocol+ '</label></td>';
+				if(entries[i].externalPortEndRange == 0)
+				{
+					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +entries[i].externalPort+ '</label></td>';
+				}
+				else
+				{
+					var tmp = entries[i].externalPort + "-" + entries[i].externalPortEndRange;
+					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + tmp + '</label></td>';
+				}
+			}
+			tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +entries[i].internalClient+ '</label></td>';
+			if(platform != 'mobile')
+			{
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +entries[i].internalPort+ '</label></td>';
+				if(entries[i].enable == 1)
+				{
+//					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><img src="/images/iconStatusOn.svg"></td>';
+					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><img src="/images/iconStatusOn.svg" alt="'+ i18next.t('portfwd_enable_alt') +'"></td>';
+				}
+				else
+				{
+//					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><img src="/images/iconStatusOff.svg"></td>';
+					tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><img src="/images/iconStatusOff.svg" alt="'+ i18next.t('portfwd_disable_alt') +'"></td>';
+				}
+			}
+			if(platform == 'mobile')
+			{
+				<!-- detailInfo = '<button class="btn" id="more_info_' + i + '"><img src="/images/iconMore.svg"></button>'; -->
+				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('portfwd_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('portfwd_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg"></button>';
+				<!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>'+ detailInfo + editIcon + deleteIcon + '</label></td>'; -->
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+			else
+			{
+				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('portfwd_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('portfwd_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg"></button>';
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>'+ editIcon + deleteIcon + '</label></td>';
+			}
+
+            tbodystaticAddrListCon += '</tr>';
+            tbodystaticAddrListAll += tbodystaticAddrListCon;
+        }
+        tbodystaticAddrList.innerHTML = tbodystaticAddrListAll;
+		for(var i = 0; i < entries.length; i++)(function(i){
+			var instance = entries[i].instance;
+            document.getElementById("edit_rule_"+instance).onclick = function(){edit_rule(instance);};
+            document.getElementById("deleteItem_"+instance).onclick = function(){deleteItem(instance);};
+        })(i);
+    }
+	function more_info(idx)
+	{	
+		<!-- idx = i-1; -->
+		var protocol = "";
+		switch(pf_array[idx].protocol)
+		{
+			case "1":
+				protocol = "UDP";
+				break;
+			case "2":
+				protocol = "TCP/UDP";
+				break;
+			default:
+				protocol = "TCP";
+				break;
+		}
+		document.getElementById('_more_protocol').innerHTML = protocol;
+		if(pf_array[idx].wan_port_range == 0)
+		{
+			document.getElementById('_more_wan_port_range').innerHTML = pf_array[idx].wan_port;
+		}
+		else
+		{
+			var wan_port_end = pf_array[idx].wan_port + pf_array[idx].wan_port_range;
+			document.getElementById('_more_wan_port_range').innerHTML = pf_array[idx].wan_port+"-"+wan_port_end;
+		}
+		document.getElementById('_more_lan_ip').innerHTML = pf_array[idx].lan_ip;
+		document.getElementById('_more_lan_port').innerHTML = pf_array[idx].lan_port;
+		if(pf_array[idx].status == 1)
+		{
+			document.getElementById("_more_status").src= "/images/iconStatusOn.svg";
+		}
+		else
+		{
+			document.getElementById("_more_status").src= "/images/iconStatusOff.svg";
+		}
+
+        toggle_MoreInfo_modal();
+    }
+    function edit_rule(instance)
+	{
+		for(var idx = 0; idx < pf_array.length; idx++)
+        {
+			var tmp_instance = pf_array[idx].instance;
+			if(tmp_instance == instance)
+				break;
+		}
+
+		var protocol = "";
+		switch(pf_array[idx].protocol)
+		{
+			case 1:
+				protocol = i18next.t('portfwd_dialog_udp');
+				break;
+			case 2:
+				protocol = i18next.t('portfwd_dialog_tcpudp');
+				break;
+			default:
+				protocol = i18next.t('portfwd_dialog_tcp');
+				
+				break;
+		}
+		document.getElementById('edit_ProtocolSelect').innerHTML = protocol;
+
+		if(pf_array[idx].enable == 1)
+		{
+			document.getElementById("edit_StatusCheckBox").checked = true;
+		}
+		else
+		{
+			document.getElementById("edit_StatusCheckBox").checked = false;
+		}
+
+		var wan_port_range = pf_array[idx].externalPortEndRange;
+		if(wan_port_range != 0)
+		{
+			document.getElementById("edit_PortEndTitle").style = "color: var(--headingText);";
+            document.getElementById("edit_PortEnd").disabled = false;
+			document.getElementById('edit_PortEnd').value = pf_array[idx].externalPortEndRange;
+			document.getElementById("edit_PortTypeSelect").innerHTML = i18next.t('portfwd_dialog_wanPort_range')
+		}
+		else
+		{
+			document.getElementById("edit_PortEndTitle").style = "color: var(--disabledText);";
+            document.getElementById("edit_PortEnd").disabled = true;
+			document.getElementById('edit_PortEnd').value = "";
+			document.getElementById("edit_PortTypeSelect").innerHTML = i18next.t('portfwd_dialog_wanPort_single')
+		}
+
+        document.getElementById('edit_PortBegin').value = pf_array[idx].externalPort;
+		document.getElementById('edit_lanipAddr').value = pf_array[idx].internalClient;
+		document.getElementById('edit_LANPortBegin').value = pf_array[idx].internalPort;
+		/*
+		if(rule[1] == "---")
+		{
+			document.getElementById('edit_desc').value = "";
+		}
+		else
+		{
+			document.getElementById('edit_desc').value = rule[1];
+		}
+		*/
+		
+		g_index = instance;
+        toggle_EditAddr_modal();
+    }
+    function addrMore(idx)
+	{
+		var rule_list = portfwd_rules.split(";");
+		for(var i = 0; i < rule_list.length-1; i++)
+		{
+			var rule = rule_list[i].split(",");
+			if(rule[0] == idx)
+				break
+		}
+		var protocol = "";
+
+		switch(rule[7])
+		{
+			case "1":
+				protocol = i18next.t('portfwd_dialog_udp');
+				break;
+			case "2":
+				protocol = i18next.t('portfwd_dialog_tcpudp');
+				break;
+			default:
+				protocol = i18next.t('portfwd_dialog_tcp');
+				
+				break;
+		}
+		<!-- document.getElementById('edit_ProtocolSelect').innerHTML = protocol; -->
+
+        <!-- document.getElementById('_MoreInfo_modal_header').innerHTML = i18next.t('portfwd_dialog_detailTitle'); -->
+        document.getElementById('_more_portocol').innerHTML = protocol;
+        document.getElementById('_more_wan_port_begin_label').innerHTML = rule[3];
+		document.getElementById('_more_lan_port_label').innerHTML = rule[5];
+		<!-- document.getElementById('_more_desc').innerHTML = rule[1]; -->
+        <!-- document.getElementById('_more_wan_port_end_label').innerHTML = ""; -->
+        document.getElementById('_more_lan_ip').innerHTML = rule[2];
+		if(rule[9] == 1)
+		{
+			document.getElementById("_more_status").src= "/images/iconStatusOn.svg";
+		}
+		else
+		{
+			document.getElementById("_more_status").src= "/images/iconStatusOff.svg";
+		}
+
+		var wan_port = parseInt(rule[3]);
+		var wan_port_range = parseInt(rule[4]);
+		if(wan_port_range != 0)
+		{
+			document.getElementById("_more_wan_port_end_title").style = "color: var(--headingText);";
+			document.getElementById('_more_wan_port_end_label').innerHTML = wan_port + wan_port_range;
+		}
+		else
+		{
+			document.getElementById("_more_wan_port_end_title").style = "color: var(--disabledText);";
+			document.getElementById('_more_wan_port_end_label').innerHTML = "";
+		}
+
+        toggle_MoreInfo_modal();
+    }
+	function deleteItem(instance)
+	{
+		toggle_check_modal()
+		g_delete_index = instance;
+	}
+	function confirm_delete()
+	{
+		toggle_check_modal()
+		<!-- document.getElementById('modal_add_portforward').style = "display: none"; -->
+		document.getElementById('_modal_text').innerHTML = i18next.t('portfwd_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.del_instance = g_delete_index;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/portforward_delete.cgi", req)
+            .then(response_upnp_apply).catch(response_print);
+	}
+	function toggle_EditAddr_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_EditApn_modal'));
+        _myModal.toggle();
+    }
+    function saveEditAddrListener() {
+        var myModalEl = document.getElementById('_EditApn_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	var sortProtocolStatus = 1;
+	var sortWanPortStatus = 1;
+	var sortLanIpStatus = 1;
+	var sortStatus = 1;
+	function sortProtocol()
+	{
+        sortProtocolStatus = sortProtocolStatus%2;
+        <!-- sortMACStatus = 1; -->
+        document.getElementById(platform + '-sortWanPortImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortLanIpImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortStatusImg').src="/images/iconSort.svg";
+		switch(sortProtocolStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortProtocolImg').src="/images/iconA-Z.svg";
+				pf_array.sort(function(a, b) {
+					if(a.protocol < b.protocol) { return -1; }
+					if(a.protocol > b.protocol) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortProtocolImg').src="/images/iconZ-A.svg";
+				pf_array.sort(function(a, b) {
+					if(a.protocol > b.protocol) { return -1; }
+					if(a.protocol < b.protocol) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(pf_array);
+        sortProtocolStatus++;
+    }
+	function sortWanPort()
+	{
+        sortWanPortStatus = sortWanPortStatus%2;
+        <!-- sortDevNameStatus = 1; -->
+        document.getElementById(platform + '-sortProtocolImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortLanIpImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortStatusImg').src="/images/iconSort.svg";
+		switch(sortWanPortStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortWanPortImg').src="/images/iconA-Z.svg";
+				pf_array.sort(function(a, b) {
+					if(a.wan_port < b.wan_port) { return -1; }
+					if(a.wan_port > b.wan_port) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortWanPortImg').src="/images/iconZ-A.svg";
+				pf_array.sort(function(a, b) {
+					if(a.wan_port > b.wan_port) { return -1; }
+					if(a.wan_port < b.wan_port) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(pf_array);
+        sortWanPortStatus++;
+    }
+	function sortLanIp()
+	{
+        sortLanIpStatus = sortLanIpStatus%2;
+        <!-- sortDevNameStatus = 1; -->
+        document.getElementById(platform + '-sortProtocolImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortWanPortImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortStatusImg').src="/images/iconSort.svg";
+		switch(sortLanIpStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortLanIpImg').src="/images/iconA-Z.svg";
+				pf_array.sort(function(a, b) {
+					if(a.lan_ip < b.lan_ip) { return -1; }
+					if(a.lan_ip > b.lan_ip) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortLanIpImg').src="/images/iconZ-A.svg";
+				pf_array.sort(function(a, b) {
+					if(a.lan_ip > b.lan_ip) { return -1; }
+					if(a.lan_ip < b.lan_ip) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(pf_array);
+        sortLanIpStatus++;
+    }
+	function sortStatusfunction()
+	{
+        sortStatus = sortStatus%2;
+        <!-- sortDevNameStatus = 1; -->
+        document.getElementById(platform + '-sortProtocolImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortWanPortImg').src="/images/iconSort.svg";
+        document.getElementById(platform + '-sortLanIpImg').src="/images/iconSort.svg";
+		switch(sortStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortStatusImg').src="/images/iconA-Z.svg";
+				pf_array.sort(function(a, b) {
+					if(a.status < b.status) { return -1; }
+					if(a.status > b.status) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortStatusImg').src="/images/iconZ-A.svg";
+				pf_array.sort(function(a, b) {
+					if(a.status > b.status) { return -1; }
+					if(a.status < b.status) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(pf_array);
+        sortStatus++;
+    }
+	function popup_error(msg)
+	{
+		document.getElementById("pop_error_content").style = 'width:720px; height:420px;';
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_check_modal(){
+		resetInputStyle();
+		document.getElementById("check_modal_content").style = 'width:720px; height:420px;';
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('check_modal'));
+        _myModal.toggle();
+    }
+	function saveCheckListener() {
+        var myModalEl = document.getElementById('check_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfo_Listener() {
+        var myModalEl = document.getElementById('_MoreInfo_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.modalTitle{
+        text-align: left;
+		font: normal normal 300 32px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalText{
+		font: normal normal 300 24px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalInputLabel{
+		font: normal normal 300 18px/21px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.dialog_modal .modal-content{
+		width:720px;
+		height:760px;
+	}
+	.model_width{
+		width:100%;
+	}
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.dialog_modal .modal-content{
+		width:720px;
+		height:600px;
+	}
+	.model_width{
+		width:50%;
+	}
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+		<div class="fx_pc" id="_fx_pc">
+		<div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="portfwd_dmz">DMZ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="portfwd_dmz_func">DMZ Function</td>
+					<td class="w-25">
+						<input class="switch_check" type="checkbox" id="xxl-dmz_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+				  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" id="xxl-dmz_ip_title" data-i18n="portfwd_dmz_ip">
+						DMZ IP Address
+					</td>
+					<td>
+						<div class="cardViewSelect" id="xxl-dmz_ip_border">
+							<input class="cardViewInputText" id="xxl-dmz_ip" type="text" data-i18n-aria-label="portfwd_dmz_ip">
+						</div>
+					</td>
+                  </tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xxl-dmz_status_applyBtn" data-i18n="save">Save</button>
+            </div>
+			<div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder" id="xxl-PortForwardingDiv">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="portfwd_forwarding">Port Forwarding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="portfwd_forwarding_func">Port Forwarding Function</td>
+					<td class="w-25">
+						<input class="switch_check" type="checkbox" id="xxl-pf_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+                </tbody>
+                </table>
+				<br><br>
+				<button class="inCard_SaveBtn" id="xxl-port_forward_applyBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xxl-pf_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="6" scope="row" class="">
+						<label class="cardViewTitle" data-i18n="portfwd_forwarding_list">Port Forwarding Rules List</label>
+						<button class="cardViewTitleBtn" id="xxl-addNewBtn">
+							<img src="/images/iconAddNew.svg" id="xxl-addNewImg" data-i18n-img-alt="portfwd_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+						</button>
+						<label class="cardViewTd" id="xxl-MaxLimtLabel" data-i18n="portfwd_maxLimit">Max Limit: 10</label>
+                    </th>
+                  </tr>
+					<tr class="cardViewTableFirstTR">
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_protocol">Protocol</label>
+							<button class="cardViewSortBtn" id="xxl-sortProtocolBtn">
+							<img id="xxl-sortProtocolImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortProtocol"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_wanPort">WAN Port Range</label>
+							<button class="cardViewSortBtn" id="xxl-sortWanPortBtn">
+							<img id="xxl-sortWanPortImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortWanPort"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_lanIP">LAN IP Address</label>
+							<button class="cardViewSortBtn" id="xxl-sortLanIpBtn">
+							<img id="xxl-sortLanIpImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortLanIP"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_lanPort">LAN Port</label>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_status">Status</label>
+							<button class="cardViewSortBtn" id="xxl-sortStatusfunctionBtn">
+							<img id="xxl-sortStatusImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortStatus"></button>
+						</td>
+						<td class="cardViewTableFirstTD"><label data-i18n="portfwd_forwarding_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xxl-tbodystaticAddrList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+		</div>
+		<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+		<div class="row ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="portfwd_dmz">DMZ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="portfwd_dmz_func">DMZ Function</td>
+					<td class="w-25">
+						<input class="switch_check" type="checkbox" id="xl-dmz_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+					<tr class="cardViewTr">
+						<td class="w-50 cardViewTd" id="xl-dmz_ip_title" data-i18n="portfwd_dmz_ip">
+							DMZ IP Address
+						</td>
+						<td>
+							<div class="cardViewSelect" id="xl-dmz_ip_border">
+								<input class="cardViewInputText" id="xl-dmz_ip" type="text" data-i18n-aria-label="portfwd_dmz_ip">
+							</div>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xl-dmz_status_applyBtn" data-i18n="save">Save</button>
+            </div>
+			<div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder" id="xl-PortForwardingDiv">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="portfwd_forwarding">Port Forwarding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50" data-i18n="portfwd_forwarding_func">Port Forwarding Function</td>
+					<td class="w-25">
+						<input class="switch_check" type="checkbox" id="xl-pf_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn"  id="xl-port_forward_applyBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xl-pf_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+					<tr>
+						<th colspan="6" scope="row" class="">
+							<label class="cardViewTitle" data-i18n="portfwd_forwarding_list">Port Forwarding Rules List</label>
+							<button class="cardViewTitleBtn" id="xl-addNewBtn">
+								<img src="/images/iconAddNew.svg" id="xl-addNewImg" data-i18n-img-alt="portfwd_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+							</button>
+							<label class="cardViewTd" id="xl-MaxLimtLabel" data-i18n="portfwd_maxLimit">Max Limit: 10</label>
+						</th>
+					</tr>
+					<tr class="cardViewTableFirstTR">
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_protocol">Protocol</label>
+							<button class="cardViewSortBtn" id="xl-sortProtocolBtn">
+							<img id="xl-sortProtocolImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortProtocol"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_wanPort">WAN Port Range</label>
+							<button class="cardViewSortBtn" id="xl-sortWanPortBtn">
+							<img id="xl-sortWanPortImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortWanPort"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_lanIP">LAN IP Address</label>
+							<button class="cardViewSortBtn" id="xl-sortLanIpBtn">
+							<img id="xl-sortLanIpImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortLanIP"></button>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_lanPort">LAN Port</label>
+						</td>
+						<td class="cardViewTableFirstTD">
+							<label data-i18n="portfwd_forwarding_status">Status</label>
+							<button class="cardViewSortBtn" id="xl-sortStatusfunctionBtn">
+							<img id="xl-sortStatusImg" src="/images/iconSort.svg" data-i18n-img-alt="portfwd_set_sortStatus"></button>
+						</td>
+						<td class="cardViewTableFirstTD"><label data-i18n="portfwd_forwarding_actions">Actions</label></td>
+					</tr>
+                </thead>
+                <tbody id="xl-tbodystaticAddrList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+		<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseUPNP-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseUPNP">
+                        <span data-i18n="portfwd_dmz">DMZ</span>
+                        <img id="collapseUPNP-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseUPNP" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="cardViewTd" data-i18n="portfwd_dmz_func">DMZ Function</td>
+							</tr>
+							<tr>
+								<td>
+									<input class="switch_check" type="checkbox" id="mobile-dmz_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+							<tr class="cardViewTr">
+								<td class="w-50 cardViewTd" id="mobile-dmz_ip_title" data-i18n="portfwd_dmz_ip">
+									DMZ IP Address
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<div class="cardViewSelect" id="mobile-dmz_ip_border">
+										<input class="cardViewInputText" id="mobile-dmz_ip" type="text" data-i18n-aria-label="portfwd_dmz_ip">
+									</div>
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-dmz_status_applyBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-PortForwardingDiv">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapsePF-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapsePF">
+                        <span data-i18n="portfwd_forwarding">Port Forwarding</span>
+                        <img id="collapsePF-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapsePF" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="w-25 cardViewTd" data-i18n="portfwd_forwarding_func">Port Forwarding Function</td>
+							</tr>
+							<tr>
+								<td>
+									<input class="switch_check" type="checkbox" id="mobile-pf_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-port_forward_applyBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-pf_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapsePFRL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapsePFRL">
+                        <span data-i18n="portfwd_forwarding_list">Port Forwarding Rules List</span>
+                        <img id="collapsePFRL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapsePFRL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+								<tr>
+									<th colspan="6" scope="row" class="">
+										<button class="cardViewTitleBtn" id="mobile-addNewBtn">
+											<img src="/images/iconAddNew.svg" id="mobile-addNewImg" data-i18n-img-alt="portfwd_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+										</button>
+										<label class="cardViewTd" id="mobile-MaxLimtLabel" data-i18n="portfwd_maxLimit">Max Limit: 10</label>
+									</th>
+								</tr>
+								<tr class="cardViewTableFirstTR">
+									<td class="w-50 cardViewTableFirstTD">
+										<label data-i18n="portfwd_forwarding_lanIP">LAN IP Address</label>
+									</td>
+									<td class="w-50 cardViewTableFirstTD"><label data-i18n="portfwd_forwarding_actions">Actions</label></td>
+								</tr>
+							</thead>
+							<tbody id="mobile-tbodystaticAddrList">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade dialog_modal" id="_AddAddr_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="portfwd_dialog_addTitle">Add Port Forwarding Rule</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_protocol">Protocol</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="ProtocolSelect" data-i18n="portfwd_dialog_tcpudp">Both (TCP & UDP)</button>
+                            <button data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="ProtocolSelect_both" data-i18n="portfwd_dialog_tcpudp">Both (TCP & UDP)</a></li>
+                              <li><a class="dropdown-item" href="#" id="ProtocolSelect_tcp" data-i18n="portfwd_dialog_tcp">TCP</a></li>
+                              <li><a class="dropdown-item" href="#" id="ProtocolSelect_udp" data-i18n="portfwd_dialog_udp">UDP</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_dialog_wanPort_type">WAN Port Type</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="PortTypeSelect" data-i18n="portfwd_dialog_wanPort_single">Single</button>
+                            <button data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="PortTypeSelect_range" data-i18n="portfwd_dialog_wanPort_range">Range</a></li>
+                              <li><a class="dropdown-item" href="#" id="PortTypeSelect_single" data-i18n="portfwd_dialog_wanPort_single">Single</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="PortBeginTitle" data-i18n="portfwd_dialog_start_wanPort">Starting WAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="wan_port_begin_div">
+							<input class="cardViewInputTextWithLabel" id="PortBegin" data-i18n-aria-label="portfwd_dialog_start_wanPort"></input>
+							<label class="cardViewInputSubLabel">(1 - 65535)</label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="PortEndTitle" data-i18n="portfwd_dialog_end_wanPort">Ending WAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="wan_port_end_div">
+                            <input class="cardViewInputText" id="PortEnd" data-i18n-aria-label="portfwd_dialog_end_wanPort"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="PortLANTitle" data-i18n="portfwd_dialog_lanIP">Port Forwarding LAN IP</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="PortLANTitle_div">
+                            <input class="cardViewInputText" id="lanipAddr" data-i18n-aria-label="portfwd_dialog_lanIP"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="LANPortBeginTitle" data-i18n="portfwd_dialog_lanPort">Port Forwarding LAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="lan_port_begin_div">
+							<input class="cardViewInputText" id="LANPortBegin" data-i18n-aria-label="portfwd_dialog_lanPort"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_status">Status</div>
+                        <div class="p-2 flex-fill inModalDivWithSwitch model_width">
+                            <input class="switch_check" type="checkbox" id="StatusCheckBox" value="" data-i18n-aria-label="checkbox_btn">
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="add_pf_btn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_EditApn_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="portfwd_dialog_editTitle">Modify Port Forwarding Rule</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_protocol">Protocol</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="edit_ProtocolSelect" data-i18n="portfwd_dialog_tcpudp">Both (TCP & UDP)</button>
+                            <button data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="edit_ProtocolSelect_both" data-i18n="portfwd_dialog_tcpudp">Both (TCP & UDP)</a></li>
+                              <li><a class="dropdown-item" href="#" id="edit_ProtocolSelect_tcp" data-i18n="portfwd_dialog_tcp">TCP</a></li>
+                              <li><a class="dropdown-item" href="#" id="edit_ProtocolSelect_udp" data-i18n="portfwd_dialog_udp">UDP</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_dialog_wanPort_type">WAN Port Type</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="edit_PortTypeSelect" data-i18n="portfwd_dialog_wanPort_single">Single</button>
+                            <button data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="edit_PortTypeSelect_range" data-i18n="portfwd_dialog_wanPort_range">Range</a></li>
+                              <li><a class="dropdown-item" href="#" id="edit_PortTypeSelect_single" data-i18n="portfwd_dialog_wanPort_single">Single</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_PortBeginTitle" data-i18n="portfwd_dialog_start_wanPort">Starting WAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_wan_port_begin_div">
+							<input class="cardViewInputTextWithLabel" id="edit_PortBegin" data-i18n-aria-label="portfwd_dialog_start_wanPort"></input>
+							<label class="cardViewInputSubLabel">(1 - 65535)</label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_PortEndTitle" data-i18n="portfwd_dialog_end_wanPort">Ending WAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_wan_port_end_div">
+                            <input class="cardViewInputText" id="edit_PortEnd" data-i18n-aria-label="portfwd_dialog_end_wanPort"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_PortLANTitle" data-i18n="portfwd_dialog_lanIP">Port Forwarding LAN IP</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_PortLANTitle_div">
+                            <input class="cardViewInputText" id="edit_lanipAddr" data-i18n-aria-label="portfwd_dialog_lanIP"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_LANPortBeginTitle" data-i18n="portfwd_dialog_lanPort">Port Forwarding LAN Port</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_lan_port_begin_div">
+							<input class="cardViewInputText" id="edit_LANPortBegin" data-i18n-aria-label="portfwd_dialog_lanPort"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_status">Status</div>
+                        <div class="p-2 flex-fill inModalDivWithSwitch model_width">
+                            <input class="switch_check" type="checkbox" id="edit_StatusCheckBox" value="" data-i18n-aria-label="checkbox_btn">
+                        </div>
+                    </div>
+					<!-- <div class="d-sm-flex flex-wrap flex-sm-nowrap"> -->
+                        <!-- <div class="p-2 w-50 align-items-center flex-fill inModalTitle" id="">Description (Optional)</div> -->
+                        <!-- <div class="p-2 w-50 flex-fill cardViewSelect" id=""> -->
+							<!-- <input class="cardViewInputText" id="edit_desc"></input> -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+					<button class="inModal_Btn" id="edit_rule_save_btn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content" id="pop_error_content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="popup_error_btn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="check_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content" id="check_modal_content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="portfwd_dialog_delTitle">Delete Port Forwarding Rules</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="portfwd_dialog_delDes">Are you sure you want to delete "Port Forwarding" rule?</label>
+					<button class="inModal_Btn" id="confirm_delete_btn" data-i18n="delete">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="portfwd_forwarding_list">Port Forwarding Rules List</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_protocol">Protocol</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_protocol"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_wanPort">WAN Port Range</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_wan_port_range"></label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_lanIP">LAN IP Address</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_lan_ip"></label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_lanPort">LAN Port</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_lan_port"></label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="portfwd_forwarding_status">Status</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+							<img src="" id="_more_status" data-i18n-img-alt="portfwd_forwarding_status">
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        if(inited == 0){
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_AddAddr_modal");
+            set_EAA_ToItem("_EditApn_modal");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+        inited=1;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_Port_Forwarding');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_AddAddr_modal");
+            set_EAA_ToItem("_EditApn_modal");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+    });
+</script>
+</html>

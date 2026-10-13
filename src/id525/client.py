@@ -63,7 +63,23 @@ from .parsers import (
     parse_sms,
     parse_utilization_page,
 )
-from .sections import CellularApi, LanApi, SoftwareApi, SystemApi
+from .sections import (
+    AccountApi,
+    CellularApi,
+    DdnsApi,
+    DiagnosticsApi,
+    FirewallApi,
+    IpFilterApi,
+    LanApi,
+    MacFilterApi,
+    PortForwardingApi,
+    SmsApi,
+    SoftwareApi,
+    SystemApi,
+    UrlFilterApi,
+    VoipApi,
+    WifiApi,
+)
 
 if TYPE_CHECKING:
     import ssl
@@ -164,14 +180,36 @@ class Id525Client:
         self._logged_in = False
         self._auth_failed = False
         self._read_only = read_only
+        self.account = AccountApi(self)
+        """Admin account, session timeout, data usage (``adm-user`` page)."""
         self.cellular = CellularApi(self)
         """Cellular settings and SIM (``cellular-settings`` page)."""
+        self.ddns = DdnsApi(self)
+        """Dynamic DNS (``fw-ddns`` page)."""
+        self.diagnostics = DiagnosticsApi(self)
+        """Ping, traceroute and self diagnostics (``self-*`` pages)."""
+        self.firewall = FirewallApi(self)
+        """Firewall level and VPN passthrough (``fw-adv`` page)."""
+        self.ip_filter = IpFilterApi(self)
+        """IP filter rules (``fw-ipfilter`` page)."""
         self.lan = LanApi(self)
         """LAN / DHCP settings (``lan-settings`` page)."""
+        self.mac_filter = MacFilterApi(self)
+        """MAC filter and client names (``fw-macfilter`` page)."""
+        self.port_forwarding = PortForwardingApi(self)
+        """Port forwarding and DMZ (``fw-portfwd`` page)."""
+        self.sms = SmsApi(self)
+        """SMS management (``adm-sms`` page)."""
         self.software = SoftwareApi(self)
         """Firmware update (``adm-sw`` page)."""
         self.system = SystemApi(self)
         """Reboot, backup and reset (``adm-backup`` page)."""
+        self.url_filter = UrlFilterApi(self)
+        """URL filter (``fw-urlfilter`` page)."""
+        self.voip = VoipApi(self)
+        """VoIP / SIP (``voip-settings`` page)."""
+        self.wifi = WifiApi(self)
+        """Wi-Fi radios, SSIDs and WPS (``wifi-settings`` page)."""
 
     async def __aenter__(self) -> Self:
         await self.login()
@@ -293,6 +331,14 @@ class Id525Client:
     async def keep_alive(self) -> None:
         """Refresh the CSRF token; the web UI uses this call to extend the session."""
         await self._call(Endpoint.TOKEN_QUERY, with_token=False)
+
+    def _set_password(self, password: str) -> None:
+        """Use ``password`` for future logins (after changing the admin password).
+
+        Without this, an automatic re-login would use the old password and
+        spend an attempt towards the router's login lockout.
+        """
+        self._password = password
 
     def _forget_session(self) -> None:
         """Drop all session state (e.g. after a reboot) without contacting the router."""

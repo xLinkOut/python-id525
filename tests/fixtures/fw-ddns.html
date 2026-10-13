@@ -1,0 +1,853 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="ddns_title">Dynamic DNS</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = "";
+	var platform_o = "";
+	var ddns_enable_current = "";
+	var ddns_enable = "";
+	var ddns_host_name = "";
+	var ddns_user_name = "";
+	var ddns_password = "";
+	var ddns_url = "";
+	var ddns_status = "nointer";
+	var network_3gpp_v4_status = "1";
+	
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("fw-ddns.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).then(reload_ddns).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIAF', true);
+		saveLoadingListener();
+		saveDialogListener();
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+	function reload_ddns()
+	{
+        const req = {};
+		fetch_api_response('/cgi-bin/cgi/get_ddns_config.cgi', req)
+		.then((info) => {
+			if(info.result) 
+			{
+				ddns_enable = info.ddns_enable;
+				ddns_host_name = info.ddns_host_name;
+				ddns_user_name = info.ddns_user_name;
+				ddns_password = info.ddns_password;
+				ddns_url = info.ddns_url;
+				onScreenWidthChange();
+			}
+			else
+			{
+			}
+		})
+		.catch((err) => {
+		});
+	}
+	async function fetch_api_response(url, req)
+	{
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		let response = await do_fetch_api("POST", url, req)
+		.catch((err) => {
+			response_print(err);
+			throw err;
+		});
+		update_content(response);
+		return response;
+	}
+
+	function initJS_function(pf){
+		document.getElementById(pf + "-dns_switch").onchange = function(){switch_status();};
+		document.getElementById(pf + "-host_name_input").oninput = function(){hostname_input();};
+		document.getElementById(pf + "-username").oninput = function(){username_input();};
+		document.getElementById(pf + "-dns_server_a").onclick = function(){selectObj(pf + '-dns_server', 'dyndns.org');};
+		document.getElementById(pf + "-dns_server_b").onclick = function(){selectObj(pf + '-dns_server', 'dtdns.com');};
+		document.getElementById(pf + "-dns_server_c").onclick = function(){selectObj(pf + '-dns_server', 'zoneedit.com');};
+		document.getElementById(pf + "-dns_server_d").onclick = function(){selectObj(pf + '-dns_server', 'no-ip.com');};
+		document.getElementById(pf + "-dns_server_e").onclick = function(){selectObj(pf + '-dns_server', 'afraid.org-v2-basic');};
+
+		dropdownItemKeyboardNavigation(pf + "-dns_server_a");
+		dropdownItemKeyboardNavigation(pf + "-dns_server_b");
+		dropdownItemKeyboardNavigation(pf + "-dns_server_c");
+		dropdownItemKeyboardNavigation(pf + "-dns_server_d");
+		dropdownItemKeyboardNavigation(pf + "-dns_server_e");
+		
+		document.getElementById(pf + "-pwd").oninput = function(){pwd_input();};
+		document.getElementById(pf + "-pwd").style = 'width:80%;';
+		document.getElementById(pf + "-toggle_pwd").onclick = function(){toggle(pf + '-toggle_pwd', pf + '-pwd');};
+		document.getElementById(pf + "-ddns_save_btn").onclick = function(){ddns_save();};
+		document.getElementById("toggle_dialog_modal_btn").onclick = function(){toggle_dialog_modal();};
+	}
+
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+		selectObj(platform + '-dns_server', ddns_url);
+		if(ddns_enable == "1")
+		{
+			document.getElementById(platform + "-dns_switch").checked = true;
+			document.getElementById(platform + "-ddns_title").style.visibility = "visible";
+			document.getElementById(platform + "-ddns_status").style.visibility = "visible";
+			document.getElementById(platform + "-username_div").style.visibility = "visible";
+			document.getElementById(platform + "-username_input_div").style.visibility = "visible";
+			document.getElementById(platform + "-server_pwd_div").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div1").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div2").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div3").style.visibility = "visible";
+			document.getElementById(platform + "-hostname_div1").style.visibility = "visible";
+			document.getElementById(platform + "-hostname_div2").style.visibility = "visible";
+		}
+        else
+		{
+			document.getElementById(platform + "-dns_switch").checked = false;
+			document.getElementById(platform + "-ddns_title").style.visibility = "hidden";
+			document.getElementById(platform + "-ddns_status").style.visibility = "hidden";
+			document.getElementById(platform + "-username_div").style.visibility = "hidden";
+			document.getElementById(platform + "-username_input_div").style.visibility = "hidden";
+			document.getElementById(platform + "-server_pwd_div").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div1").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div2").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div3").style.visibility = "hidden";
+			document.getElementById(platform + "-hostname_div1").style.visibility = "hidden";
+			document.getElementById(platform + "-hostname_div2").style.visibility = "hidden";
+		}
+
+		document.getElementById(platform + "-ddns_status").classList.add("cardViewInputText");
+
+		if(ddns_enable_current == "1") /* status on */
+		{
+			if(network_3gpp_v4_status == "1")
+			{
+			    if(ddns_status == "good" || ddns_status == "nochg"){
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_success');
+			    }else if(ddns_status == "nointernet"){
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_failure1');
+			    }else if(ddns_status == "nohost"){
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_failure2');
+			    }else if(ddns_status == "badauth"){
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_failure3');
+			    }else if(ddns_status == "abuse"){
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_failure4');
+			    }else{//Idle
+			        document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_idle');
+			    }
+			}
+			else
+			{
+				if(document.getElementById(platform + "-dns_switch").checked)
+				{
+					document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_failure1');
+				}
+				else
+				{
+					document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_idle');
+				}
+			}
+		}
+		else /* status off */
+		{
+			document.getElementById(platform + "-ddns_status").innerHTML = i18next.t('ddns_status_idle');
+		}
+
+		document.getElementById(platform + "-host_name_input").value = ddns_host_name;
+		document.getElementById(platform + "-username").value = ddns_user_name;
+		document.getElementById(platform + "-pwd").value = ddns_password;
+    }
+	function update_content(data_json)
+	{
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+	
+	function isValidInput(str)
+	{
+	  const regex = /^[A-Za-z0-9-.]+$/;
+	  return regex.test(str);
+	}
+
+	function ddns_save()
+	{
+		<!-- var host_name = document.getElementById(platform +"-host_name_input").value; -->
+		<!-- var user_name = document.getElementById(platform +"-username").value; -->
+		<!-- var pwd = document.getElementById(platform +"-pwd").value; -->
+		//ddns host name
+		if( ddns_host_name.length >= 64 )
+		{
+			popup_error(i18next.t('ddns_dialog_errDes1'));
+			return false;
+		}
+		if( !isValidInput(ddns_host_name) )
+		{
+			popup_error(i18next.t('ddns_dialog_errDes4'));
+			return false;
+		}
+
+		//ddns user name
+		if( ddns_user_name.length >= 64 )
+		{
+			popup_error(i18next.t('ddns_dialog_errDes2'));
+			return false;
+		}
+		invalidSymbolCount = (ddns_user_name.match(/['"`%&+;:,<>?]/g) || []).length;
+		numberCount = (ddns_user_name.match(/[0-9]/g) || []).length;
+		lowcaseCount = (ddns_user_name.match(/[a-z]/g) || []).length;
+		upcaseCount = (ddns_user_name.match(/[A-Z]/g) || []).length;
+		symbolCount = (ddns_user_name.match(/[!@#$^*()\[\]=_\-./\\|]/g) || []).length;
+		alphabetCount = lowcaseCount + upcaseCount;
+		nonalphabetCount = numberCount + symbolCount;
+		if(invalidSymbolCount > 0)
+		{
+			popup_error(i18next.t('ddns_dialog_errDes8'));
+			return;
+		}
+		//else if(alphabetCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes7'));
+		//	return;
+		//}
+		//else if(numberCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes6'));
+		//	return;
+		//}
+		//else if(symbolCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes5'));
+		//	return;
+		//}
+
+		//ddns password
+		if( ddns_password.length >= 64 )
+		{
+			popup_error(i18next.t('ddns_dialog_errDes3'));
+			return false;
+		}
+		invalidSymbolCount = (ddns_password.match(/['"`%&+;:,<>?]/g) || []).length;
+		numberCount = (ddns_password.match(/[0-9]/g) || []).length;
+		lowcaseCount = (ddns_password.match(/[a-z]/g) || []).length;
+		upcaseCount = (ddns_password.match(/[A-Z]/g) || []).length;
+		symbolCount = (ddns_password.match(/[!@#$^*()\[\]=_\-./\\|]/g) || []).length;
+		alphabetCount = lowcaseCount + upcaseCount;
+		nonalphabetCount = numberCount + symbolCount;
+		if(invalidSymbolCount > 0)
+		{
+			popup_error(i18next.t('ddns_dialog_errDes8'));
+			return;
+		}
+		//else if(alphabetCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes7'));
+		//	return;
+		//}
+		//else if(numberCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes6'));
+		//	return;
+		//}
+		//else if(symbolCount == 0)
+		//{
+		//	popup_error(i18next.t('ddns_dialog_errDes5'));
+		//	return;
+		//}
+
+		document.getElementById('_modal_text').innerHTML = i18next.t('ddns_save_loading');
+		toggle_modal();
+
+		<!-- if(document.getElementById(platform + "-dns_switch").checked) -->
+		<!-- { -->
+			<!-- var enable = "1"; -->
+		<!-- } -->
+		<!-- else -->
+		<!-- { -->
+			<!-- var enable = "0"; -->
+		<!-- } -->
+		if(ddns_url === "afraid.org")
+		{
+			ddns_url = "afraid.org-v2-basic";
+		}
+		<!-- else -->
+		<!-- { -->
+			<!-- var server = document.getElementById(platform + "-dns_server").innerHTML; -->
+		<!-- } -->
+		
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.DDNS_Status = ddns_enable;
+		<!-- req.ddns_host_name = document.getElementById(platform +"-host_name_input").value; -->
+		<!-- req.ddns_user_name = document.getElementById(platform +"-username").value; -->
+		<!-- req.ddns_password = document.getElementById(platform +"-pwd").value; -->
+		req.DDNS_Hostname = ddns_host_name;
+		req.DDNS_Login = ddns_user_name;
+		req.DDNS_Auth = ddns_password;
+		req.DDNS_Server = ddns_url;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/set_ddns_config.cgi", req)
+		setTimeout(toggle_modal, 4000);
+		setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-ddns.html";}, 4000);
+			<!-- .then(response => {setTimeout(toggle_modal,3000); return response}).then(response_set_ddns).catch(response_print); -->
+	}
+	function toggle(toggleid, id)
+	{
+		var password_eye = document.getElementById(toggleid);
+		var password_input = document.getElementById(id);
+		if(password_input.type === "password")
+		{
+			password_input.type = "text";
+			password_eye.src = "/images/ic_login_show.svg";
+		}
+		else if(password_input.type === "text")
+		{
+			password_input.type = "password";
+			password_eye.src = "/images/ic_login_hide.svg";
+		}
+	}
+	function selectObj(id, text)
+	{
+        var selectItem = document.getElementById(id);
+		if(text === "afraid.org-v2-basic")
+		{
+			selectItem.innerHTML = "afraid.org";
+			ddns_url = "afraid.org";
+		}
+		else
+		{
+			selectItem.innerHTML = text;
+			ddns_url = text;
+		}
+    }
+	function popup_error(msg)
+	{
+        document.getElementById('_dialog_error_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_error_text').innerHTML = "";
+        document.getElementById('_dialog_error_warning').innerHTML = msg;
+        toggle_dialog_modal();
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_set_ddns(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        <!-- setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-ddns.html";}, 1000); -->
+    }
+	function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+    }
+	
+	function switch_status()
+	{
+		if(document.getElementById(platform + "-dns_switch").checked)
+		{
+			ddns_enable = "1";
+			document.getElementById(platform + "-ddns_title").style.visibility = "visible";
+			document.getElementById(platform + "-ddns_status").style.visibility = "visible";
+			document.getElementById(platform + "-username_div").style.visibility = "visible";
+			document.getElementById(platform + "-username_input_div").style.visibility = "visible";
+			document.getElementById(platform + "-server_pwd_div").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div1").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div2").style.visibility = "visible";
+			document.getElementById("mobile-server_pwd_div3").style.visibility = "visible";
+			document.getElementById(platform + "-hostname_div1").style.visibility = "visible";
+			document.getElementById(platform + "-hostname_div2").style.visibility = "visible";
+		}
+        else
+		{
+			ddns_enable = "0";
+			document.getElementById(platform + "-ddns_title").style.visibility = "hidden";
+			document.getElementById(platform + "-ddns_status").style.visibility = "hidden";
+			document.getElementById(platform + "-username_div").style.visibility = "hidden";
+			document.getElementById(platform + "-username_input_div").style.visibility = "hidden";
+			document.getElementById(platform + "-server_pwd_div").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div1").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div2").style.visibility = "hidden";
+			document.getElementById("mobile-server_pwd_div3").style.visibility = "hidden";
+			document.getElementById(platform + "-hostname_div1").style.visibility = "hidden";
+			document.getElementById(platform + "-hostname_div2").style.visibility = "hidden";
+		}
+    }
+	function hostname_input(){
+        ddns_host_name = document.getElementById(platform + "-host_name_input").value;
+    }
+	function username_input(){
+        ddns_user_name = document.getElementById(platform + "-username").value;
+    }
+	function pwd_input(){
+        ddns_password = document.getElementById(platform + "-pwd").value;
+    }
+    function setAltToImgItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+    }
+    function setAriaLabelToInputItem(p_id){
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 50px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.modalTitle{
+        text-align: left;
+		font: normal normal 300 32px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalText{
+		font: normal normal 300 24px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalInputLabel{
+		font: normal normal 300 18px/21px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 50px;
+      margin: 0 0 18px 0;
+    }
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row" class="cardViewTitle" data-i18n="ddns_title">Dynamic DNS</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr>
+						<td class="cardViewTd w-25" data-i18n="ddns_func">Dynamic DNS Function</td>
+						<td class="cardViewTd w-25">
+						  <input class="switch_check" type="checkbox" id="xxl-dns_switch" data-i18n-aria-label="ddns_func_switch">
+						</td>
+						<td class="cardViewTd w-25" id="xxl-hostname_div1" data-i18n="ddns_hostname">Host Name</td>
+						<td class="cardViewTd w-25" id="xxl-hostname_div2">
+							<div class="cardViewSelect">
+								<input class="cardViewInputText" id="xxl-host_name_input" type="text" data-i18n-aria-label="ddns_hostname_input">
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="cardViewTd w-25" id="xxl-ddns_title" data-i18n="ddns_status">Status</td>
+						<td class="cardViewTd w-25"><label class="" id="xxl-ddns_status"></td>
+						<td class="cardViewTd w-25" id="xxl-username_div" data-i18n="ddns_user">Username</td>
+						<td class="cardViewTd w-25" id="xxl-username_input_div">
+							<div class="cardViewSelect">
+								<input class="cardViewInputText" id="xxl-username" type="text" data-i18n-aria-label="ddns_user_input">
+							</div>
+						</td>
+					</tr>
+					<tr id="xxl-server_pwd_div">
+						<td class="cardViewTd w-25" data-i18n="ddns_server">Dynamic DNS server</td>
+						<td class="cardViewTd w-25">
+							<div class="cardViewSelect">
+								<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-dns_server">dyndns.org</button>
+								<button id="xxl-filterMode_dropdown" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button">
+									<span class="visually-hidden"></span>
+								</button>
+								<ul class="dropdown-menu dropdown-menu-lg-end">
+								  <li><a class="dropdown-item" href="#" id="xxl-dns_server_a">dyndns.org</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-dns_server_b">dtdns.com</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-dns_server_c">zoneedit.com</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-dns_server_d">no-ip.com</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-dns_server_e">afraid.org-v2-basic</a></li>
+								</ul>
+							</div>
+						</td>
+						<td class="cardViewTd w-25" id="xxl-filterMode_title" data-i18n="ddns_pass">Password</td>
+						<td class="cardViewTd w-25">
+							<div class="cardViewSelect" id="xxl-input_pwd_div">
+								<input class="cardViewInputTextWithLabel" id="xxl-pwd" name="password" type="password" data-i18n-aria-label="ddns_pass_input">
+								<input class="cardViewInputSubInput" id="xxl-toggle_pwd" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+							</div>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xxl-ddns_save_btn" onclick="ddns_save()" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="ddns_title">Dynamic DNS</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr>
+						<td class="w-25 cardViewTd" data-i18n="ddns_func">Dynamic DNS Function</td>
+						<td>
+						  <input class="switch_check" type="checkbox" id="xl-dns_switch"  data-i18n-aria-label="ddns_func_switch">
+						</td>
+						<td class="w-25 cardViewTd" id="xl-hostname_div1" data-i18n="ddns_hostname">Host Name</td>
+						<td class="w-25 cardViewTd" id="xl-hostname_div2">
+							<div class="cardViewSelect">
+								<input class="cardViewInputText" id="xl-host_name_input" type="text" data-i18n-aria-label="ddns_hostname_input">
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="w-25 cardViewTd" id="xl-ddns_title" data-i18n="ddns_status">Status</td>
+						<td class="w-25"><label class="" id="xl-ddns_status"><br>
+						</td>
+						<td class="w-25 cardViewTd" id="xl-username_div" data-i18n="ddns_user">Username</td>
+						<td class="w-25 cardViewTd" id="xl-username_input_div">
+							<div class="cardViewSelect">
+								<input class="cardViewInputText" id="xl-username" type="text" data-i18n-aria-label="ddns_user_input">
+							</div>
+						</td>
+					</tr>
+					<tr id="xl-server_pwd_div">
+						<td class="w-25 cardViewTd" data-i18n="ddns_server">Dynamic DNS server</td>
+						<td class="w-25">
+							<div class="cardViewSelect">
+								<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-dns_server">dyndns.org</button>
+								<button id="xl-filterMode_dropdown" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button">
+									<span class="visually-hidden"></span>
+								</button>
+								<ul class="dropdown-menu dropdown-menu-lg-end">
+									<li><a class="dropdown-item" href="#" id="xl-dns_server_a">dyndns.org</a></li>
+									<li><a class="dropdown-item" href="#" id="xl-dns_server_b">dtdns.com</a></li>
+									<li><a class="dropdown-item" href="#" id="xl-dns_server_c">zoneedit.com</a></li>
+									<li><a class="dropdown-item" href="#" id="xl-dns_server_d">no-ip.com</a></li>
+									<li><a class="dropdown-item" href="#" id="xl-dns_server_e">afraid.org-v2-basic</a></li>
+								</ul>
+							</div>
+						</td>
+						<td class="w-25 cardViewTd" id="xl-filterMode_title" data-i18n="ddns_pass">Password</td>
+						<td class="w-25">
+							<div class="cardViewSelect" id="xl-input_pwd_div">
+								<input class="cardViewInputTextWithLabel" id="xl-pwd" name="password" type="password" data-i18n-aria-label="ddns_pass_input">
+								<input class="cardViewInputSubInput" id="xl-toggle_pwd" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+							</div>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-ddns_save_btn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-44 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAF-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAF">
+                        <span data-i18n="ddns_title">Dynamic DNS</span>
+                        <img id="collapseIAF-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAF" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="cardViewTd" data-i18n="ddns_func">Dynamic DNS Function</td>
+							</tr>
+							<tr>
+								<td>
+								  <input class="switch_check" type="checkbox" id="mobile-dns_switch" data-i18n-aria-label="ddns_func_select">
+								</td>
+							</tr>
+							<tr>
+								<td class="cardViewTd" id="mobile-ddns_title" data-i18n="ddns_status">Status</td>
+							</tr>
+							<tr>
+								<td>
+									<label class="" id="mobile-ddns_status"><br>
+								</td>
+							</tr>
+							<tr id="mobile-server_pwd_div">
+								<td class="cardViewTd" data-i18n="ddns_server">Dynamic DNS server</td>
+							</tr>
+							<tr id="mobile-server_pwd_div1">
+								<td>
+									<div class="cardViewSelect">
+										<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-dns_server">dyndns.org</button>
+										<button id="mobile-filterMode_dropdown" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button">
+											<span class="visually-hidden"></span>
+										</button>
+										<ul class="dropdown-menu dropdown-menu-lg-end">
+											<li><a class="dropdown-item" href="#" id="mobile-dns_server_a">dyndns.org</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-dns_server_b">dtdns.com</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-dns_server_c">zoneedit.com</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-dns_server_d">no-ip.com</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-dns_server_e">afraid.org-v2-basic</a></li>
+										</ul>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td class="cardViewTd" id="mobile-hostname_div1" data-i18n="ddns_hostname">Host Name</td>
+							</tr>
+							<tr>
+								<td class="cardViewTd" id="mobile-hostname_div2">
+									<div class="cardViewSelect">
+										<input class="cardViewInputText" id="mobile-host_name_input" type="text" data-i18n-aria-label="ddns_hostname_input">
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td class="cardViewTd" id="mobile-username_div" data-i18n="ddns_user">Username</td>
+							</tr>
+							<tr>
+								<td class="cardViewTd" id="mobile-username_input_div">
+									<div class="cardViewSelect">
+										<input class="cardViewInputText" id="mobile-username" type="text" data-i18n-aria-label="ddns_user_input">
+									</div>
+								</td>
+							</tr>
+							<tr id="mobile-server_pwd_div2">
+								<td class="cardViewTd" id="" data-i18n="ddns_pass">Password</td>
+							</tr>
+							<tr id="mobile-server_pwd_div3">
+								<td class="w-50 cardViewTd">
+									<div class="cardViewSelect" id="mobile-input_pwd_div">
+										<input class="cardViewInputTextWithLabel" id="mobile-pwd" name="password" type="password" data-i18n-aria-label="ddns_pass_input">
+										<input class="cardViewInputSubInput" id="mobile-toggle_pwd" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+									</div>
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-ddns_save_btn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_error_header"></label>
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_error_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_error_warning"></label>
+					<button class="inModal_Btn" id="toggle_dialog_modal_btn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_DynamicDNS');
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+    });
+</script>
+</html>

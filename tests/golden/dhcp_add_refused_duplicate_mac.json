@@ -10,9 +10,13 @@
     "mac": "02:00:5E:00:00:01"
   },
   "call_kwargs": {},
+  "answers": {},
   "refused": true,
-  "body": null,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
   "ui_message": "The MAC already existed.",
   "notes": "MAC comparison is case-insensitive",
-  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
 }

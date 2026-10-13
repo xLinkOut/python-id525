@@ -10,9 +10,18 @@
     "mac": "02:00:5e:00:00:ab"
   },
   "call_kwargs": {},
+  "answers": {},
   "refused": false,
-  "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"deviceName\":\"Stampante 2º piano ü\",\"Static_IP\":\"192.168.224.219\",\"MAC\":\"02:00:5e:00:00:ab\",\"interface_index\":1}",
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanStaticAddrAdd",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"deviceName\":\"Stampante 2º piano ü\",\"Static_IP\":\"192.168.224.219\",\"MAC\":\"02:00:5e:00:00:ab\",\"interface_index\":1}"
+    }
+  ],
+  "other_calls": [],
   "ui_message": "",
   "notes": "non-ASCII and spaces are allowed by the UI; last address of the pool",
-  "fixture_sha256": "36f408d94eeabf8185b9f528f71af6804b9f3b08e1122d1601fe16c68a8a17ba"
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
 }

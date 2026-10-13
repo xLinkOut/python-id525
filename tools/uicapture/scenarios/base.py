@@ -20,9 +20,11 @@ class Scenario:
     """One user interaction in the router UI, and the client call equivalent to it.
 
     ``drive`` performs the interaction in the browser; ``call`` names the client
-    method (``"section.method"``) that must send the very same request when
-    given ``inputs``. With ``refused=True`` the UI must refuse to send anything
-    (client-side validation) and the client must raise ``Id525ValidationError``.
+    method (``"section.method"``) that must send the very same sequence of
+    mutating requests when given ``inputs``. ``endpoint`` is the endpoint the
+    scenario documents (it must be among them). With ``refused=True`` the UI
+    must refuse to send anything (client-side validation) and the client must
+    raise ``Id525ValidationError``.
     """
 
     name: str
@@ -35,6 +37,17 @@ class Scenario:
     notes: str = ""
     call_kwargs: dict[str, Any] = field(default_factory=dict)
     """Extra arguments for the client call only (e.g. ``confirm=True``)."""
+    answers: dict[str, Any] = field(default_factory=dict)
+    """Canned router answers, endpoint -> JSON object, or a list of objects
+    answered in turn (the last one repeats). Merged over ``{"result": true}``;
+    replayed identically by the golden test so client and UI see the same."""
+    fixture: str | None = None
+    """Page fixture to serve instead of ``tests/fixtures/<page>.html``, e.g.
+    ``"synthetic/fw-portfwd-rules"`` (see :mod:`tools.uicapture.synthetic`)."""
+    synthetic: bool = False
+    """The page data the interaction starts from (e.g. table rows) was invented
+    because the real dump had none: the request *shape* is the UI's, but field
+    types of existing entries are an assumption. Lowers the status claim."""
 
 
 async def set_value(page: BrowserPage, element_id: str, value: str) -> None:

@@ -1,0 +1,2666 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="wifi_set_title">Wi-Fi Settings</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- Generic WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    var curRadio = '2.4G';
+    var curBandwidth2G = 'Auto(20/40MHz)';
+    var curBandwidth5G = 'Auto(20/40/80/160MHz)';
+    var curChannel2G = 'Auto';
+    var curChannel5G = 'Auto';
+    var curWiFiMode2G = '11beg';
+    var curWiFiMode5G = '11bea';
+    var channel2G_innerHTML = '';
+    var channel5G_innerHTML = '';
+    var curRadioStatus2G = true;
+	var curRadioStatus2G_guest = true;
+    var curRadioStatus5G = true;
+	var curRadioStatus5G_guest = true;
+    var curMeshMode = 'Gateway';
+    var curMeshGuestEnable = false;
+    var o_meshMode = 'Gateway';
+    var bandwidth2G = '0';
+    var bandwidth5G = '3';
+    var channel2G_cfg = '0';
+    var channel5G_cfg = '0';
+    var channel2G = [1,2,3,4,5,6,7,8,9,10,11,12,13];
+    var channel5G = [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128];
+    var radioStatus2G = '1';
+    var radioStatus5G = '1';
+    var curInterface2G = '2.4G_Main';
+    var curInterface5G = '5G_Main';
+    var curSSID = 'TestWiFi05';
+    var curSecurity = 'WPA3-Personal';
+    var curPassword = 'TestPass0004';
+    var curMeshHomeSecurity = 'WPA3-Personal';
+    var curMeshGuestSecurity = 'WPA3-Personal';
+    //var wifi_ssid_infos_2 = '{&quot;SSID_Settings_2&quot;:[{&quot;SSID_Enable&quot;:1,&quot;SSID&quot;:&quot;TestWiFi01&quot;,&quot;MaxDevices&quot;:16,&quot;SSID_Hidden&quot;:1,&quot;AP_Isolation&quot;:1,&quot;Security_Mode&quot;:&quot;WPA-PSK/WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;AES&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0001&quot;,&quot;WPS_Enable&quot;:1,&quot;Instance&quot;:1}]}';
+    var wifi_ssid_infos_2 = "{&quot;SSID_Settings_2&quot;:[{&quot;SSID_Enable&quot;:1, &quot;SSID&quot;:&quot;TestNet%2D24&quot;,&quot;MaxDevices&quot;:64,&quot;SSID_Hidden&quot;:&quot;0&quot;,&quot;Security_Mode&quot;:&quot;WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;CCMP&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0002&quot;,&quot;WPS_Enable&quot;:&quot;0&quot;,&quot;Instance&quot;:0}]}";
+	var wifi_ssid_infos_2_Json = {};
+    var wifi_ssid_infos_2_List = [];
+	var wifi_ssid_infos_2_guest = "{&quot;SSID_Settings_2_guest&quot;:[{&quot;SSID_Enable&quot;:0, &quot;SSID&quot;:&quot;TestWiFi03&quot;,&quot;MaxDevices&quot;:32,&quot;SSID_Hidden&quot;:&quot;0&quot;,&quot;Security_Mode&quot;:&quot;WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;CCMP&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0003&quot;,&quot;WPS_Enable&quot;:&quot;0&quot;,&quot;Instance&quot;:1}]}";
+	var wifi_ssid_infos_2_guest_Json = {};
+    var wifi_ssid_infos_2_guest_List = [];
+    //var wifi_ssid_infos_5 = '{&quot;SSID_Settings_5&quot;:[{&quot;SSID_Enable&quot;:1,&quot;SSID&quot;:&quot;TestWiFi04&quot;,&quot;MaxDevices&quot;:16,&quot;SSID_Hidden&quot;:1,&quot;AP_Isolation&quot;:1,&quot;Security_Mode&quot;:&quot;WPA-PSK/WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;AES&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0001&quot;,&quot;WPS_Enable&quot;:1,&quot;Instance&quot;:2}]}';
+    var wifi_ssid_infos_5 = "{&quot;SSID_Settings_5&quot;:[{&quot;SSID_Enable&quot;:1, &quot;SSID&quot;:&quot;TestNet%2D24&quot;,&quot;MaxDevices&quot;:64,&quot;SSID_Hidden&quot;:&quot;0&quot;,&quot;Security_Mode&quot;:&quot;WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;CCMP&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0002&quot;,&quot;WPS_Enable&quot;:&quot;0&quot;,&quot;Instance&quot;:2}]}";
+	var wifi_ssid_infos_5_Json = {};
+    var wifi_ssid_infos_5_List = [];
+	var wifi_ssid_infos_5_guest = "{&quot;SSID_Settings_5_guest&quot;:[{&quot;SSID_Enable&quot;:0, &quot;SSID&quot;:&quot;TestWiFi03&quot;,&quot;MaxDevices&quot;:32,&quot;SSID_Hidden&quot;:&quot;0&quot;,&quot;Security_Mode&quot;:&quot;WPA2-PSK&quot;,&quot;Cypher&quot;:&quot;CCMP&quot;,&quot;KeyPassphrase&quot;:&quot;TestPass0003&quot;,&quot;WPS_Enable&quot;:&quot;0&quot;,&quot;Instance&quot;:3}]}";
+	var wifi_ssid_infos_5_guest_Json = {};
+    var wifi_ssid_infos_5_guest_List = [];
+    var o_wifiSSID_5_Security_Mode = 'WPA3-Personal';
+    var o_wifiSSID_2_Security_Mode = 'WPA3-Personal';
+    var o_wifiSSID_5_Settings = {};
+    var o_wifiSSID_2_Settings = {};
+ 
+    var wifiConfigJson = {};
+    var wpsStatus_cfg = '1';
+    var wpsStatus = true;
+    var wpsScanerTimerID = 0;
+    
+    var mloEnabled = 1;
+    var meshCtrlEnabled = 0;
+
+	function wifiModeMapping(wifi_mode){
+		var convert_str = '';
+
+		if(wifi_mode == '11beg'){
+			convert_str = '802.11be/ax/n/g/b';
+		}
+		else if(wifi_mode == '11axg'){
+			convert_str = '802.11ax/n/g/b';
+		}
+		else if(wifi_mode == '11ng'){
+			convert_str = '802.11n/g/b';
+		}
+		else if(wifi_mode == '11bg'){
+			convert_str = '802.11g/b';
+		}
+		else if(wifi_mode == '11bea'){
+			convert_str = '802.11be/ax/ac/n/a';
+		}
+		else if(wifi_mode == '11axa'){
+			convert_str = '802.11ax/ac/n/a';
+		}
+		else if(wifi_mode == '11ac'){
+			convert_str = '802.11ac/n/a';
+		}
+		else if(wifi_mode == '11na'){
+			convert_str = '802.11n/a';
+		}
+
+		return convert_str;
+	}
+
+	function decodeHTMLText(msgText){
+		let textarea = document.createElement("textarea");
+		textarea.innerHTML = msgText.replace(/\r\n/g, "\\r\\n");
+		return textarea.value;
+	}
+
+    function response_print(response){
+        //console.log("response_print: " + JSON.stringify(response));
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("wifi-settings.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        mobile_CollapsibleAddListener('collapseWifiRS');
+        mobile_CollapsibleAddListener('collapseWPS');
+        saveLoadingListener();
+        saveDialogListener();
+
+        wifi_ssid_infos_2_Json = JSON.parse(wifi_ssid_infos_2.replace(/&quot;/g,'"'));
+        wifi_ssid_infos_2_List = wifi_ssid_infos_2_Json.SSID_Settings_2;
+        wifi_ssid_infos_2_guest_Json = JSON.parse(wifi_ssid_infos_2_guest.replace(/&quot;/g,'"'));
+        wifi_ssid_infos_2_guest_List = wifi_ssid_infos_2_guest_Json.SSID_Settings_2_guest;
+
+        wifi_ssid_infos_5_Json = JSON.parse(wifi_ssid_infos_5.replace(/&quot;/g,'"'));
+        wifi_ssid_infos_5_List = wifi_ssid_infos_5_Json.SSID_Settings_5;
+        wifi_ssid_infos_5_guest_Json = JSON.parse(wifi_ssid_infos_5_guest.replace(/&quot;/g,'"'));
+        wifi_ssid_infos_5_guest_List = wifi_ssid_infos_5_guest_Json.SSID_Settings_5_guest;
+
+        for(var i=0 ; i<wifi_ssid_infos_2_List.length ; i++){
+            var ssid_2g = decodeURIComponent(wifi_ssid_infos_2_List[i].SSID);
+            wifi_ssid_infos_2_List[i].SSID = ssid_2g;
+			var ssid_2g_pw = decodeURIComponent(wifi_ssid_infos_2_List[i].KeyPassphrase);
+			wifi_ssid_infos_2_List[i].KeyPassphrase = ssid_2g_pw;
+        }
+
+        for(var i=0 ; i<wifi_ssid_infos_2_guest_List.length ; i++){
+            var ssid_2g = decodeURIComponent(wifi_ssid_infos_2_guest_List[i].SSID);
+            wifi_ssid_infos_2_guest_List[i].SSID = ssid_2g;
+			var ssid_2g_pw = decodeURIComponent(wifi_ssid_infos_2_guest_List[i].KeyPassphrase);
+			wifi_ssid_infos_2_guest_List[i].KeyPassphrase = ssid_2g_pw;
+        }
+
+        for(var i=0 ; i<wifi_ssid_infos_5_List.length ; i++){
+            var ssid_5g = decodeURIComponent(wifi_ssid_infos_5_List[i].SSID);
+            wifi_ssid_infos_5_List[i].SSID = ssid_5g;
+			var ssid_5g_pw = decodeURIComponent(wifi_ssid_infos_5_List[i].KeyPassphrase);
+			wifi_ssid_infos_5_List[i].KeyPassphrase = ssid_5g_pw;
+        }
+
+         for(var i=0 ; i<wifi_ssid_infos_5_guest_List.length ; i++){
+            var ssid_5g = decodeURIComponent(wifi_ssid_infos_5_guest_List[i].SSID);
+            wifi_ssid_infos_5_guest_List[i].SSID = ssid_5g;
+			var ssid_5g_pw = decodeURIComponent(wifi_ssid_infos_5_guest_List[i].KeyPassphrase);
+			wifi_ssid_infos_5_guest_List[i].KeyPassphrase = ssid_5g_pw;
+        }
+		
+        o_wifiSSID_5_Settings = JSON.parse(wifi_ssid_infos_5.replace(/&quot;/g,'"')).SSID_Settings_5[0];
+        o_wifiSSID_2_Settings = JSON.parse(wifi_ssid_infos_2.replace(/&quot;/g,'"')).SSID_Settings_2[0];
+
+        curMeshMode = 'Gateway'; //always gateway mode
+
+        initWifiConfig();
+        
+        if(wpsStatus_cfg == '1'){
+            wpsStatus = true;
+            wpsStatus_cfg = true;
+        }else{
+            wpsStatus = false;
+            wpsStatus_cfg = false;
+        }
+ 
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function initJS_function(pf){
+        document.getElementById(pf + "-SecuritySelect_WPA3").onclick = function(){selectObj(pf + '-wifiSecuritySelect', 'WPA3-Personal');};
+        document.getElementById(pf + "-SecuritySelect_WPA23").onclick = function(){selectObj(pf + '-wifiSecuritySelect', 'WPA2-PSK/WPA3');};
+        document.getElementById(pf + "-SecuritySelect_WPA2").onclick = function(){selectObj(pf + '-wifiSecuritySelect', 'WPA2-PSK');};
+        document.getElementById(pf + "-SecuritySelect_WPA12").onclick = function(){selectObj(pf + '-wifiSecuritySelect', 'WPA/WPA2-PSK');};
+        document.getElementById(pf + "-SecuritySelect_NONE").onclick = function(){selectObj(pf + '-wifiSecuritySelect', 'None');};
+        dropdownItemKeyboardNavigation(pf + "-SecuritySelect_WPA3");
+		dropdownItemKeyboardNavigation(pf + "-SecuritySelect_WPA23");
+		dropdownItemKeyboardNavigation(pf + "-SecuritySelect_WPA2");
+		dropdownItemKeyboardNavigation(pf + "-SecuritySelect_WPA12");
+		dropdownItemKeyboardNavigation(pf + "-SecuritySelect_NONE");
+		//Radio
+        document.getElementById(pf + "-RadioSelect_24").onclick = function(){selectObj(pf + '-wifiRadioSelect', '2.4G');};
+        document.getElementById(pf + "-RadioSelect_5").onclick = function(){selectObj(pf + '-wifiRadioSelect', '5G');};
+        dropdownItemKeyboardNavigation(pf + "-RadioSelect_24");
+		dropdownItemKeyboardNavigation(pf + "-RadioSelect_5")
+
+        document.getElementById(pf + "-WPSSaveBtn").onclick = function(){wpsStatusSet();};
+        document.getElementById(pf + "-WPSScanBtn").onclick = function(){wpsScan();};
+        document.getElementById(pf + "-wifiSetting_BT").onclick = function(){wifiSettingSave();};
+        document.getElementById(pf + "-toggleWifiPWD").onclick = function(){hidePass_toggle(pf + '-toggleWifiPWD',pf + '-wifiPasswordText');};
+
+        document.getElementById(pf + "-WPSStatusCheckBox").onchange = function(){checkWPSStatus();};
+        document.getElementById(pf + "-ssidHiddenCheckbox").onchange = function(){ssidHiddenCheck();};
+        document.getElementById(pf + "-wifiRadioCheckbox").onchange = function(){wifiRadioCheck();};
+        document.getElementById(pf + '-wifiMloCheckbox').onchange = function(){mloCheck()};
+        document.getElementById(pf + '-wifiMeshCtrlCheckbox').onchange = function(){meshCheck()};
+
+        document.getElementById(pf + "-wifiMaxNumberText").oninput = function(){wifiMaxNumberInput();};
+        document.getElementById(pf + "-wifiPasswordText").oninput = function(){wifiPasswordInput();};
+        document.getElementById(pf + "-wifiSSIDText").oninput = function(){wifiSSIDInput();};
+
+        if(pf == "mobile"){
+            document.getElementById(pf + "-WPSScanBtn").style = "margin-bottom:16px;";
+        }else{
+            document.getElementById(pf + "-WPSScanBtn").style = "margin-right:40px;";
+        }
+        document.getElementById(pf + "-WPSStatusTextTd").style = "font: normal normal 900 18px/21px Roboto;";
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+//console.log('platform: '+platform);
+        initJS_function(platform);
+        document.getElementById(platform + '-WPSStatusCheckBox').checked = wpsStatus;
+        document.getElementById(platform + '-WPSScanBtn').disabled = !wpsStatus;
+		
+        if(curRadio === '2.4G'){
+			if(curInterface2G.indexOf("Main") != -1){
+				document.getElementById(platform + '-wifiRadioCheckbox').checked = curRadioStatus2G;
+			}
+			else{
+				document.getElementById(platform + '-wifiRadioCheckbox').checked = curRadioStatus2G_guest;
+			}
+        }else{
+			if(curInterface5G.indexOf("Main") != -1){
+				document.getElementById(platform + '-wifiRadioCheckbox').checked = curRadioStatus5G;
+			}
+			else{
+				document.getElementById(platform + '-wifiRadioCheckbox').checked = curRadioStatus5G_guest;
+			}
+        }
+
+        selectObj(platform + '-wifiRadioSelect', curRadio);
+        //selectObj(platform + '-wifiMeshModeSelect', curMeshMode);
+		if(document.getElementById(platform + '-mlo_tr').classList.contains("d-none")){
+			document.getElementById(platform + '-mlo_tr').classList.remove("d-none");
+		}
+
+		if(1 == mloEnabled){
+			document.getElementById(platform + '-wifiMloCheckbox').checked = true;
+		}else{
+			document.getElementById(platform + '-wifiMloCheckbox').checked = false;
+		}
+		if(1 == meshCtrlEnabled){
+			document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked = true;
+		}else{
+			document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked = false;
+		}
+
+        if(o_wifiSSID_2_Settings.Security_Mode === 'WPA3-PSK' && o_wifiSSID_5_Settings.Security_Mode === 'WPA3-PSK'){
+            //console.log("Lock WPS function");
+            document.getElementById(platform + '-WPSScanBtn').disabled = true;
+        }
+
+		wifiPasswordStrengthCheck();
+    }
+    
+    function initWifiConfig(){
+        //(20MHZ:0, 40MHZ:1, 80MHZ:3, 20/40MHZ:2)
+        switch(bandwidth2G){
+            case '0':
+                curBandwidth2G = '20MHz';
+            break;
+            case '5':
+                curBandwidth2G = 'Auto(20/40MHz)';
+            break;
+            default:
+                curBandwidth2G = 'Auto(20/40MHz)';
+            break;
+        }
+        switch(bandwidth5G){
+            case '0':
+                curBandwidth5G = '20MHz';
+            break;
+            case '1':
+                curBandwidth5G = '40MHz';
+            break;
+            case '2':
+                curBandwidth5G = '80MHz';
+            break;
+            case '3':
+                curBandwidth5G = '160MHz';
+            break;
+            default:
+                curBandwidth5G = '80MHz';
+            break;
+        }
+
+		if(wifi_ssid_infos_2_List[0].SSID_Enable == 1 && (radioStatus2G == '1') ){
+			curRadioStatus2G = true;
+		}else{
+			curRadioStatus2G = false;
+		}
+
+		if(wifi_ssid_infos_2_guest_List[0].SSID_Enable == 1 && (radioStatus2G == '1') ){
+			curRadioStatus2G_guest = true;
+		}else{
+			curRadioStatus2G_guest = false;
+		}
+
+		if(wifi_ssid_infos_5_List[0].SSID_Enable == 1 && (radioStatus5G == '1') ){
+			curRadioStatus5G = true;
+		}else{
+			curRadioStatus5G = false;
+		}
+
+		if(wifi_ssid_infos_5_guest_List[0].SSID_Enable == 1 && (radioStatus5G == '1') ){
+			curRadioStatus5G_guest = true;
+		}else{
+			curRadioStatus5G_guest = false;
+		}
+
+        if(channel2G_cfg == 0){
+            curChannel2G = 'Auto';
+        }else{
+            curChannel2G = 'Ch ' + channel2G_cfg;
+        }
+        
+        if(channel5G_cfg == 0){
+            curChannel5G = 'Auto';
+        }else{
+            curChannel5G = 'Ch ' + channel5G_cfg;
+        }
+
+        channel2G_innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiChannel0\">Auto</a></li>';
+        for(var i=0 ; i<channel2G.length ; i++){
+            channel2G_innerHTML += '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiChannel'+channel2G[i]+'\">Ch ' + channel2G[i] + '</a></li>';
+        }
+        channel5G_innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiChannel0\">Auto</a></li>';
+        for(var i=0 ; i<channel5G.length ; i++){
+            channel5G_innerHTML += '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiChannel'+channel5G[i]+'\">Ch ' + channel5G[i] + '</a></li>';
+        }
+    }
+    
+    function checkInterface(wifi_interface){
+        var wifiBandwidthSelectUL = document.getElementById(platform + '-wifiBandwidthSelectUL');
+        var wifiInterfaceSelectUL = document.getElementById(platform + '-wifiInterfaceSelectUL');
+        var wifiChannelSelectUL = document.getElementById(platform + '-wifiChannelSelectUL');
+		var wifiModeSelectUL = document.getElementById(platform + '-wifiModeSelectUL');
+		var p_list = ['xxl','xl','mobile'];
+		for(var i=0; i<p_list.length; i++){
+    		document.getElementById(p_list[i] + '-wifiBandwidthSelectUL').innerHTML ='';
+            document.getElementById(p_list[i] + '-wifiInterfaceSelectUL').innerHTML ='';
+            document.getElementById(p_list[i] + '-wifiChannelSelectUL').innerHTML ='';
+    		document.getElementById(p_list[i] + '-wifiModeSelectUL').innerHTML ='';
+    	}
+        var wifiSSID_Settings = {};
+        if(wifi_interface == '2.4G'){
+            document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = curBandwidth2G;
+            wifiBandwidthSelectUL.innerHTML ='<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_Auto\">Auto(20/40MHz)</a></li>'+
+                                             '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_20\">20MHz</a></li>';
+            document.getElementById("wifiBandwidth_Auto").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', 'Auto(20\/40MHz)');};
+            document.getElementById("wifiBandwidth_20").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', '20MHz');};
+			dropdownItemKeyboardNavigation("wifiBandwidth_Auto");
+			dropdownItemKeyboardNavigation("wifiBandwidth_20");
+
+            document.getElementById(platform + '-wifiInterfaceSelect').innerHTML = curInterface2G;
+            if( meshCtrlEnabled == 1 )
+            {
+                wifiInterfaceSelectUL.innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_24_Main\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'2.4G_Main\')\">2.4G_Main</a></li>';
+                document.getElementById("wifiInterface_24_Main").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '2.4G_Main');};
+				dropdownItemKeyboardNavigation("wifiInterface_24_Main");
+            }
+            else
+            {
+                wifiInterfaceSelectUL.innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_24_Main\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'2.4G_Main\')\">2.4G_Main</a></li>'+
+	    		                                  '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_24_Guest\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'2.4G_Guest\')\">2.4G_Guest</a></li>';
+                document.getElementById("wifiInterface_24_Main").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '2.4G_Main');};
+    			document.getElementById("wifiInterface_24_Guest").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '2.4G_Guest');};
+				dropdownItemKeyboardNavigation("wifiInterface_24_Main");
+				dropdownItemKeyboardNavigation("wifiInterface_24_Guest");
+            }
+
+
+            document.getElementById(platform + '-wifiChannelSelect').innerHTML = curChannel2G;
+            wifiChannelSelectUL.innerHTML = channel2G_innerHTML;
+            document.getElementById("wifiChannel0").onclick = function(){selectObj(platform + '-wifiChannelSelect', 'Auto');};
+			dropdownItemKeyboardNavigation("wifiChannel0");
+            for(var i=0 ; i<channel2G.length ; i++)(function(i){
+                document.getElementById("wifiChannel"+channel2G[i]).onclick = function(){selectObj(platform + '-wifiChannelSelect', 'Ch '+channel2G[i]);};
+				dropdownItemKeyboardNavigation("wifiChannel"+channel2G[i]);
+            })(i);
+
+            document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping(curWiFiMode2G);
+            wifiModeSelectUL.innerHTML ='<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_be_ax_bgn\">802.11be/ax/n/g/b</a></li>'+
+                                        '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_ax_bgn\">802.11ax/n/g/b</a></li>'+
+										'<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_bgn\">802.11n/g/b</a></li>'+
+										'<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_bg\">802.11g/b</a></li>';
+            document.getElementById("wifiMode_be_ax_bgn").onclick = function(){selectObj(platform + '-wifiModeSelect', '11beg');};
+            document.getElementById("wifiMode_ax_bgn").onclick = function(){selectObj(platform + '-wifiModeSelect', '11axg');};
+            document.getElementById("wifiMode_bgn").onclick = function(){selectObj(platform + '-wifiModeSelect', '11ng');};
+            document.getElementById("wifiMode_bg").onclick = function(){selectObj(platform + '-wifiModeSelect', '11bg');};
+			dropdownItemKeyboardNavigation("wifiMode_be_ax_bgn");
+			dropdownItemKeyboardNavigation("wifiMode_ax_bgn");
+			dropdownItemKeyboardNavigation("wifiMode_bgn");
+			dropdownItemKeyboardNavigation("wifiMode_bg");
+
+			if(curInterface2G.indexOf("Main") != -1){
+				wifiSSID_Settings = wifi_ssid_infos_2_List[0];
+				//MLO always display 5G info - SSID, Security_Mode, Cypher and KeyPassphrase
+				//console.log("checkInterface - mloEnabled [%d]", mloEnabled);
+				if( (1 == mloEnabled) || (1 == meshCtrlEnabled) ){
+					wifiSSID_Settings.SSID = wifi_ssid_infos_5_List[0].SSID;
+					wifiSSID_Settings.Security_Mode = wifi_ssid_infos_5_List[0].Security_Mode;
+					wifiSSID_Settings.Cypher = wifi_ssid_infos_5_List[0].Cypher;
+					wifiSSID_Settings.KeyPassphrase = wifi_ssid_infos_5_List[0].KeyPassphrase;
+				}
+			}
+			else{
+				wifiSSID_Settings = wifi_ssid_infos_2_guest_List[0];
+			}
+        }else{
+			if(curBandwidth5G == '160MHz'){
+				document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = 'Auto(160/80/40/20MHz)';
+			}
+			else{
+				document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = curBandwidth5G;
+			}
+            wifiBandwidthSelectUL.innerHTML ='<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_160\">Auto(160/80/40/20MHz)</a></li>'+
+						  '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_80\">80MHz</a></li>'+
+                          '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_40\">40MHz</a></li>'+
+                          '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiBandwidth_20\">20MHz</a></li>';
+			document.getElementById("wifiBandwidth_160").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', '160MHz');};
+            document.getElementById("wifiBandwidth_80").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', '80MHz');};
+            document.getElementById("wifiBandwidth_40").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', '40MHz');};
+            document.getElementById("wifiBandwidth_20").onclick = function(){selectObj(platform + '-wifiBandwidthSelect', '20MHz');};
+			dropdownItemKeyboardNavigation("wifiBandwidth_160");
+			dropdownItemKeyboardNavigation("wifiBandwidth_80");
+			dropdownItemKeyboardNavigation("wifiBandwidth_40");
+			dropdownItemKeyboardNavigation("wifiBandwidth_20");
+
+            document.getElementById(platform + '-wifiInterfaceSelect').innerHTML = curInterface5G;
+            //wifiInterfaceSelectUL.innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_5_Main\">5G_Main</a></li>';
+            if( meshCtrlEnabled == 1 )
+            {
+                wifiInterfaceSelectUL.innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_5_Main\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'5G_Main\')\">5G_Main</a></li>';
+                document.getElementById("wifiInterface_5_Main").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '5G_Main');};
+				dropdownItemKeyboardNavigation("wifiInterface_5_Main");
+            }
+            else
+            {
+                wifiInterfaceSelectUL.innerHTML = '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_5_Main\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'5G_Main\')\">5G_Main</a></li>'+
+			                                      '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiInterface_5_Guest\" onclick=\"selectObj(\'' + platform + '-wifiInterfaceSelect\', \'5G_Guest\')\">5G_Guest</a></li>';
+                document.getElementById("wifiInterface_5_Main").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '5G_Main');};
+    			document.getElementById("wifiInterface_5_Guest").onclick = function(){selectObj(platform + '-wifiInterfaceSelect', '5G_Guest');};
+				dropdownItemKeyboardNavigation("wifiInterface_5_Main");
+				dropdownItemKeyboardNavigation("wifiInterface_5_Guest");
+            }
+
+            document.getElementById(platform + '-wifiChannelSelect').innerHTML = curChannel5G;
+            wifiChannelSelectUL.innerHTML = channel5G_innerHTML;
+            document.getElementById("wifiChannel0").onclick = function(){selectObj(platform + '-wifiChannelSelect', 'Auto');};
+            dropdownItemKeyboardNavigation("wifiChannel0");
+			for(var i=0 ; i<channel5G.length ; i++)(function(i){
+                document.getElementById("wifiChannel"+channel5G[i]).onclick = function(){selectObj(platform + '-wifiChannelSelect', 'Ch '+channel5G[i]);};
+				dropdownItemKeyboardNavigation("wifiChannel"+channel5G[i]);
+            })(i);
+
+            document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping(curWiFiMode5G);
+            wifiModeSelectUL.innerHTML ='<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_be_ax_ac_na\">802.11be/ax/ac/n/a</a></li>'+
+                                        '<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_ax_ac_na\">802.11ax/ac/n/a</a></li>'+
+										'<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_ac_na\">802.11ac/n/a</a></li>'+
+										'<li><a class=\"dropdown-item\" href=\"#\" id=\"wifiMode_na\">802.11n/a</a></li>';
+            document.getElementById("wifiMode_be_ax_ac_na").onclick = function(){selectObj(platform + '-wifiModeSelect', '11bea');};
+            document.getElementById("wifiMode_ax_ac_na").onclick = function(){selectObj(platform + '-wifiModeSelect', '11axa');};
+            document.getElementById("wifiMode_ac_na").onclick = function(){selectObj(platform + '-wifiModeSelect', '11ac');};
+            document.getElementById("wifiMode_na").onclick = function(){selectObj(platform + '-wifiModeSelect', '11na');};
+			dropdownItemKeyboardNavigation("wifiMode_be_ax_ac_na");
+			dropdownItemKeyboardNavigation("wifiMode_ax_ac_na");
+			dropdownItemKeyboardNavigation("wifiMode_ac_na");
+			dropdownItemKeyboardNavigation("wifiMode_na");
+
+			if(curInterface5G.indexOf("Main") != -1){
+				wifiSSID_Settings = wifi_ssid_infos_5_List[0];
+			}
+			else{
+				wifiSSID_Settings = wifi_ssid_infos_5_guest_List[0];
+			}
+        }
+
+		wifiRadioReset();
+        document.getElementById(platform + '-wifiSSIDText').value = decodeURIComponent(wifiSSID_Settings.SSID);
+        document.getElementById(platform + '-wifiPasswordText').value = decodeURIComponent(wifiSSID_Settings.KeyPassphrase);
+        document.getElementById(platform + '-wifiMaxNumberText').value = wifiSSID_Settings.MaxDevices;
+
+        if(wifiSSID_Settings.SSID_Hidden == 1){//(On:1, Off:0)
+            document.getElementById(platform + '-ssidHiddenCheckbox').checked = true;
+        }else{
+            document.getElementById(platform + '-ssidHiddenCheckbox').checked = false;
+        }
+
+        var pwdTR_obj = document.getElementById(platform + '-PasswordTR');
+        var pwdTR_m1_obj = document.getElementById(platform + '-PasswordTR1');
+        var pwdTR_m2_obj = document.getElementById(platform + '-PasswordTR2');
+        if(wifiSSID_Settings.Security_Mode === 'OPEN'){
+            document.getElementById(platform + '-wifiSecuritySelect').innerHTML = 'None';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'none';
+                pwdTR_m2_obj.style.display = 'none';
+            }else{
+                pwdTR_obj.style.display = 'none';
+            }
+        }else if(wifiSSID_Settings.Security_Mode === 'WPA-PSK/WPA2-PSK'){
+            document.getElementById(platform + '-wifiSecuritySelect').innerHTML = 'WPA/WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(wifiSSID_Settings.Security_Mode === 'WPA2-PSK'){
+            document.getElementById(platform + '-wifiSecuritySelect').innerHTML = 'WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(wifiSSID_Settings.Security_Mode === 'WPA2-PSK/WPA3-PSK'){
+            document.getElementById(platform + '-wifiSecuritySelect').innerHTML = 'WPA2-PSK/WPA3';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(wifiSSID_Settings.Security_Mode === 'WPA3-PSK'){
+            document.getElementById(platform + '-wifiSecuritySelect').innerHTML = 'WPA3-Personal';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }
+        
+    }
+
+    function checkWPSInterface(){
+        if(curMeshMode === 'Mesh Router' || curMeshMode === 'Extender'){
+            //wpsStatus = true;
+            document.getElementById(platform + '-WPSStatusCheckBox').checked = wpsStatus;
+            document.getElementById(platform + '-WPSStatusCheckBox').disabled = true;
+            document.getElementById(platform + '-WPSSaveBtn').disabled = true;
+        }else{
+            document.getElementById(platform + '-WPSStatusCheckBox').checked = wpsStatus;
+            document.getElementById(platform + '-WPSStatusCheckBox').disabled = false;
+            document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+        }
+    }
+
+    function wifiRadioCheck(){
+        var tmp_checked = document.getElementById(platform + '-wifiRadioCheckbox').checked;
+		/*
+        if(curRadio === '2.4G'){
+            curRadioStatus2G = checked;
+        }else{
+            curRadioStatus5G = checked;
+        }
+        wifiRadioReset(checked);
+		*/
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                //wifi_ssid_infos_2_List[0].SSID_Enable = tmp_checked;
+				curRadioStatus2G = tmp_checked;
+            }
+			else{
+				//wifi_ssid_infos_2_guest_List[0].SSID_Enable = tmp_checked;
+				curRadioStatus2G_guest = tmp_checked;
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                //wifi_ssid_infos_5_List[0].SSID_Enable = tmp_checked;
+				curRadioStatus5G = tmp_checked;
+            }
+			else{
+				//wifi_ssid_infos_5_guest_List[0].SSID_Enable = tmp_checked;
+				curRadioStatus5G_guest = tmp_checked;
+			}
+        }
+
+		wifiRadioReset();
+    }
+
+    function wifiRadioReset(){
+        var tmp_checked = false;
+
+        if(curRadio === '2.4G'){
+			if(curInterface2G.indexOf("Main") != -1){
+				tmp_checked = curRadioStatus2G;
+			}
+			else{
+				tmp_checked = curRadioStatus2G_guest;
+			}
+        }else{
+			if(curInterface5G.indexOf("Main") != -1){
+				tmp_checked = curRadioStatus5G;
+			}
+			else{
+				tmp_checked = curRadioStatus5G_guest;
+			}
+        }
+		//Disabled SSID item
+		document.getElementById(platform + '-wifiRadioCheckbox').checked = tmp_checked;
+		document.getElementById(platform + '-wifiSSIDText').disabled = !tmp_checked;
+		document.getElementById(platform + '-wifiSecuritySelect').disabled = !tmp_checked;
+		document.getElementById(platform + '-wifiSecuritySelectRight').disabled = !tmp_checked;
+		document.getElementById(platform + '-wifiPasswordText').disabled = !tmp_checked;
+		document.getElementById(platform + '-wifiMaxNumberText').disabled = !tmp_checked;
+		document.getElementById(platform + '-ssidHiddenCheckbox').disabled = !tmp_checked;
+/*
+        if(curRadio === '2.4G'){
+            checked = curRadioStatus2G;
+        }else{
+            checked = curRadioStatus5G;
+        }
+        document.getElementById(platform + '-wifiRadioCheckbox').checked = checked;
+        if(checked){
+            document.getElementById(platform + '-wifiSSIDSettings').style.display = 'table-cell';
+            document.getElementById(platform + '-wifiChannelTd').style.display = 'table-cell';
+            document.getElementById(platform + '-wifiChannelSelectTd').style.display = 'table-cell';
+            document.getElementById(platform + '-wifiBandwidthTd').style.display = 'table-cell';
+            document.getElementById(platform + '-wifiBandwidthSelectTd').style.display = 'table-cell';
+        }else{
+            document.getElementById(platform + '-wifiChannelTd').style.display = 'none';
+            document.getElementById(platform + '-wifiChannelSelectTd').style.display = 'none';
+            document.getElementById(platform + '-wifiBandwidthTd').style.display = 'none';
+            document.getElementById(platform + '-wifiBandwidthSelectTd').style.display = 'none';
+        }
+        wifiSSIDReset();
+        
+        if( curMeshMode === 'Gateway' ){
+            document.getElementById(platform + '-wifiRadioSettingsTable').style.display = '';
+        }else{
+            document.getElementById(platform + '-wifiRadioSettingsTable').style.display = 'none';
+        }
+*/
+    }
+/*    
+    function wifiSSIDReset(){
+        var checked = false;
+        if(curRadio === '2.4G'){
+            checked = curRadioStatus2G;
+        }else{
+            checked = curRadioStatus5G;
+            }
+        document.getElementById(platform + '-wifiRadioCheckbox').checked = checked;
+        if(checked && curMeshMode === 'Gateway'){
+            document.getElementById(platform + '-wifiSSIDSettingsTable').style.display = '';
+        }else{
+            document.getElementById(platform + '-wifiSSIDSettingsTable').style.display = 'none';
+        }
+    }
+*/ 
+    function wifiSSIDInput(){
+        var tmp_text = document.getElementById(platform + '-wifiSSIDText').value;
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                wifi_ssid_infos_2_List[0].SSID = decodeURIComponent(tmp_text);
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) )
+                	wifi_ssid_infos_5_List[0].SSID = decodeURIComponent(tmp_text);
+            }
+			else{
+				wifi_ssid_infos_2_guest_List[0].SSID = decodeURIComponent(tmp_text);
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                wifi_ssid_infos_5_List[0].SSID = decodeURIComponent(tmp_text);
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) )
+                	wifi_ssid_infos_2_List[0].SSID = decodeURIComponent(tmp_text);
+            }
+			else{
+				wifi_ssid_infos_5_guest_List[0].SSID = decodeURIComponent(tmp_text);
+			}
+        }
+    }
+
+	function checkStrength(password) {
+		let score = 0;
+		if (password.length >= 8){
+			if (/[A-Z]/.test(password)) score++;
+			if (/[a-z]/.test(password)) score++;
+			if (/[0-9]/.test(password)) score++;
+			if (/[!@#$^*()\[\]=_\-./\\|]/.test(password)) score++;
+		}
+
+		//console.log("score : " + score);
+		if (score <= 1) return "weak";
+		if (score === 2 || score === 3) return "medium";
+		return "strong";
+	}
+
+	function wifiPasswordStrengthCheck(){
+		var passwordInput = document.getElementById(platform + "-wifiPasswordText");
+		var strengthText = document.getElementById(platform + "-strengthText");
+		var value = passwordInput.value;
+		var strength = checkStrength(value);
+
+		strengthText.className = "strength";
+
+		strengthText.classList.add(strength);
+		strengthText.textContent = i18next.t(strength);
+	}
+
+    function wifiPasswordInput(){	
+		wifiPasswordStrengthCheck();
+
+        var tmp_text = document.getElementById(platform + '-wifiPasswordText').value;
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                wifi_ssid_infos_2_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) )
+                	wifi_ssid_infos_5_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+            }
+			else{
+				wifi_ssid_infos_2_guest_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                wifi_ssid_infos_5_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) )
+                	wifi_ssid_infos_2_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+            }
+			else{
+				wifi_ssid_infos_5_guest_List[0].KeyPassphrase = decodeURIComponent(tmp_text);
+			}
+        }
+    }
+
+    function ssidHiddenCheck(){
+        var tmp_checked = 0;
+        if(document.getElementById(platform + '-ssidHiddenCheckbox').checked){
+            tmp_checked = 1;
+        }
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                wifi_ssid_infos_2_List[0].SSID_Hidden = tmp_checked;
+            }
+			else{
+				wifi_ssid_infos_2_guest_List[0].SSID_Hidden = tmp_checked;
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                wifi_ssid_infos_5_List[0].SSID_Hidden = tmp_checked;
+            }
+			else{
+				wifi_ssid_infos_5_guest_List[0].SSID_Hidden = tmp_checked;
+			}
+        }
+    }
+
+    function syncRadioSettings(){
+				//MLO and Mesh always display 5G info - SSID, Security_Mode, Cypher and KeyPassphrase
+				//console.log("checkInterface - mloEnabled [%d]", mloEnabled);
+				if( (1 == mloEnabled) || (1 == meshCtrlEnabled) ){
+					wifi_ssid_infos_2_List[0].SSID = wifi_ssid_infos_5_List[0].SSID;
+					wifi_ssid_infos_2_List[0].Security_Mode = wifi_ssid_infos_5_List[0].Security_Mode;
+					wifi_ssid_infos_2_List[0].Cypher = wifi_ssid_infos_5_List[0].Cypher;
+					wifi_ssid_infos_2_List[0].KeyPassphrase = wifi_ssid_infos_5_List[0].KeyPassphrase;
+				}
+    }
+    function mloCheck(){       
+        if(document.getElementById(platform + '-wifiMloCheckbox').checked){
+          mloEnabled = 1;
+          document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked = false;
+          meshCtrlEnabled = 0;
+          syncRadioSettings();
+		  if(curRadio === '2.4G'){
+			document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping('11beg');
+		  }
+		  else{
+			document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping('11bea');
+		  }
+		  curWiFiMode5G = '11bea';
+		  curWiFiMode2G = '11beg';
+		  show_MLOEnable();
+        }else{
+        	mloEnabled = 0;            
+        }
+        //console.log("mloCheck - mloEnabled [%d]", mloEnabled);
+    }
+    
+    function meshCheck(){       
+        if(document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked){
+            meshCtrlEnabled = 1;
+            document.getElementById(platform + '-wifiMloCheckbox').checked = false;
+            mloEnabled = 0;
+            syncRadioSettings();
+        }else{
+            meshCtrlEnabled = 0;            
+        }
+        //console.log("meshCheck - meshCtrlEnabled [%d]", meshCtrlEnabled);
+    }
+    
+    function wifiMaxNumberInput(){
+        var maxDevicesObj = document.getElementById(platform + '-wifiMaxNumberText');
+        if (maxDevicesObj.value > 64) {
+            maxDevicesObj.value = 64; 
+        }
+        if (maxDevicesObj.value.length > 2) {
+            maxDevicesObj.value = maxDevicesObj.value.slice(0,2); 
+        }
+        var tmp_text = maxDevicesObj.value;
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                wifi_ssid_infos_2_List[0].MaxDevices = parseInt(tmp_text, 10);
+            }
+			else{
+				wifi_ssid_infos_2_guest_List[0].MaxDevices = parseInt(tmp_text, 10);
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                wifi_ssid_infos_5_List[0].MaxDevices = parseInt(tmp_text, 10);
+            }
+			else{
+				wifi_ssid_infos_5_guest_List[0].MaxDevices = parseInt(tmp_text, 10);
+			}
+        }
+    }
+    
+    function wifiSecuritySet(security){
+        var tmp_text = '';
+        var cypher = '';
+        var pwdTR_obj = document.getElementById(platform + '-PasswordTR');
+        var pwdTR_m1_obj = document.getElementById(platform + '-PasswordTR1');
+        var pwdTR_m2_obj = document.getElementById(platform + '-PasswordTR2');
+        if(security == 'None'){
+            tmp_text = 'OPEN';
+            cypher = 'NONE';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'none';
+                pwdTR_m2_obj.style.display = 'none';
+            }else{
+                pwdTR_obj.style.display = 'none';
+            }
+        }else if(security == 'WPA/WPA2-PSK'){
+            tmp_text = 'WPA-PSK/WPA2-PSK';
+            cypher = 'AES';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK'){
+            tmp_text = 'WPA2-PSK';
+            cypher = 'AES';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK/WPA3'){
+            tmp_text = 'WPA2-PSK/WPA3-PSK';
+            cypher = 'AES';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA3-Personal'){
+            tmp_text = 'WPA3-PSK';
+            cypher = 'AES';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }
+        if(curRadio === '2.4G'){
+            if(curInterface2G.indexOf("Main") != -1){
+                wifi_ssid_infos_2_List[0].Security_Mode = tmp_text;
+                wifi_ssid_infos_2_List[0].Cypher = cypher;
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) ){
+                	wifi_ssid_infos_5_List[0].Security_Mode = tmp_text;
+                	wifi_ssid_infos_5_List[0].Cypher = cypher;
+                }
+            }
+			else{
+                wifi_ssid_infos_2_guest_List[0].Security_Mode = tmp_text;
+                wifi_ssid_infos_2_guest_List[0].Cypher = cypher;
+			}
+        }else{
+            if(curInterface5G.indexOf("Main") != -1){
+                wifi_ssid_infos_5_List[0].Security_Mode = tmp_text;
+                wifi_ssid_infos_5_List[0].Cypher = cypher;
+                if(1 == mloEnabled || (1 == meshCtrlEnabled) ){
+                	wifi_ssid_infos_2_List[0].Security_Mode = tmp_text;
+                	wifi_ssid_infos_2_List[0].Cypher = cypher;
+                }
+            }
+			else{
+                wifi_ssid_infos_5_guest_List[0].Security_Mode = tmp_text;
+                wifi_ssid_infos_5_guest_List[0].Cypher = cypher;
+			}
+        }
+    }
+    
+    function meshHomeSecuritySet(security){
+        var tmp_text = '';
+        var pwdTR_obj = document.getElementById(platform + '-MeshHomePasswordTR');
+        var pwdTR_m1_obj = document.getElementById(platform + '-MeshHomePasswordTR1');
+        var pwdTR_m2_obj = document.getElementById(platform + '-MeshHomePasswordTR2');
+        if(security == 'None'){
+            tmp_text = 'OPEN';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'none';
+                pwdTR_m2_obj.style.display = 'none';
+            }else{
+                pwdTR_obj.style.display = 'none';
+            }
+        }else if(security == 'WPA/WPA2-PSK'){
+            tmp_text = 'WPA-PSK/WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK'){
+            tmp_text = 'WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK/WPA3'){
+            tmp_text = 'WPA2-PSK/WPA3-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA3-Personal'){
+            tmp_text = 'WPA3-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }
+        //mesh_ssid_infos_home.Security_Mode = tmp_text;
+    }
+    
+    function meshGuestSecuritySet(security){
+        var tmp_text = '';
+        var pwdTR_obj = document.getElementById(platform + '-MeshGuestPasswordTR');
+        var pwdTR_m1_obj = document.getElementById(platform + '-MeshGuestPasswordTR1');
+        var pwdTR_m2_obj = document.getElementById(platform + '-MeshGuestPasswordTR2');
+        if(security == 'None'){
+            tmp_text = 'OPEN';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'none';
+                pwdTR_m2_obj.style.display = 'none';
+            }else{
+                pwdTR_obj.style.display = 'none';
+            }
+        }else if(security == 'WPA/WPA2-PSK'){
+            tmp_text = 'WPA-PSK/WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK'){
+            tmp_text = 'WPA2-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA2-PSK/WPA3'){
+            tmp_text = 'WPA2-PSK/WPA3-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }else if(security == 'WPA3-Personal'){
+            tmp_text = 'WPA3-PSK';
+            if(platform == 'mobile'){
+                pwdTR_m1_obj.style.display = 'table-row';
+                pwdTR_m2_obj.style.display = 'table-row';
+            }else{
+                pwdTR_obj.style.display = 'table-row';
+            }
+        }
+        //mesh_ssid_infos_guest.Security_Mode = tmp_text;
+    }
+    
+    function checkWPSStatus(){
+        wpsStatus = document.getElementById(platform + '-WPSStatusCheckBox').checked;
+        //document.getElementById(platform + '-WPSScanBtn').disabled = !wpsStatus;
+        if(wpsStatus){
+        }else{
+        }
+    }
+    function wpsScan(){
+        if(o_wifiSSID_2_Settings.Security_Mode === 'WPA3-PSK' && o_wifiSSID_5_Settings.Security_Mode === 'WPA3-PSK'){
+            show_EditError(i18next.t('wifi_dialog_error4'));
+            return;
+        }
+        if(document.getElementById(platform + '-WPSScanBtn').innerHTML === i18next.t('wifi_wps_start')){
+            document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_stop');
+            document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_processing');
+            document.getElementById(platform + '-WPSSaveBtn').disabled = true;
+            wpsStartScan();
+        }else{
+            wpsStopScan();
+        }
+    }
+    
+    function wifiSettingSave_response(data_json){
+        console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+		//console.log("data_json.result: " + data_json.result);
+        clearTimeout(wifiSettingID);
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/wifi-settings.html";}, 500);
+    }
+
+	function wifiPasswordCheck(pw_str)
+    {
+        var validPwd = 0;
+        var numberCount = 0;
+        var lowcaseCount = 0;
+        var upcaseCount = 0;
+        var symbolCount = 0;
+        var alphabetCount = 0;
+        var nonalphabetCount = 0;
+        var invalidSymbolCount = 0;
+        var err_msg = '';
+
+        invalidSymbolCount = (pw_str.match(/['"`%&+;:,<>?]/g) || []).length;
+
+        if(invalidSymbolCount > 0)
+        {
+            err_msg = i18next.t('up_pass_err_meg4');
+            validPwd=4;
+        }
+        else
+        {
+            numberCount = (pw_str.match(/[0-9]/g) || []).length;
+            lowcaseCount = (pw_str.match(/[a-z]/g) || []).length;
+            upcaseCount = (pw_str.match(/[A-Z]/g) || []).length;
+            symbolCount = (pw_str.match(/[!@#$^*()\[\]=_\-./\\|]/g) || []).length;
+
+            //alphabetCount = lowcaseCount + upcaseCount;
+            nonalphabetCount = numberCount + symbolCount;
+
+            if(lowcaseCount == 0)
+            {
+                //err_msg = i18next.t('up_pass_err_meg0');
+                validPwd++;
+            }
+            if(upcaseCount == 0){
+                //err_msg = i18next.t('up_pass_err_meg9');
+                validPwd++;
+            }
+            if(numberCount == 0)
+            {
+                //err_msg = i18next.t('up_pass_err_meg2');
+                validPwd++;
+            }
+            if(symbolCount == 0)
+            {
+                //err_msg = i18next.t('up_pass_err_meg1');
+                validPwd++;
+            }
+        }
+
+        if(validPwd > 2){
+            document.getElementById('_dialog_modal_content').style.height = "550px";
+            document.getElementById('_dialog_modal_content').style.width = "850px";
+            document.getElementById("Dialog_Modal").style = "left:288px;";
+            document.getElementById("Dialog_Modal").onclick = function(){
+                toggle_dialog_modal();
+                document.getElementById('_dialog_modal_content').style.height = "460px";
+                document.getElementById('_dialog_modal_content').style.width = "720px";
+                document.getElementById("Dialog_Modal").style = "left:223px;";
+                document.getElementById("Dialog_Modal").onclick = function(){toggle_dialog_modal();};
+            };
+            show_EditError(i18next.t('up_pass_err_meg'));
+            return false;
+        }
+
+        return true;
+    }
+
+    var wifiSettingID;
+    async function wifiSettingSave(){
+        // Open WPS if mesh mode is Mesh Router/Extender
+        //if((curMeshMode == 'Mesh Router' || curMeshMode == 'Extender') &&
+            //wpsStatus_cfg != true)
+        if( (1 == meshCtrlEnabled) && (wpsStatus_cfg != true) )                
+        {
+            try {
+                let response = await wpsStatusSet();
+                if(!response.result) 
+                    return response;
+            } catch (err) {
+                throw err;
+            }
+        }
+
+        //prepare json data
+        const req = {}; //create javascript object;
+
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        if(curMeshMode == 'Gateway'){
+            //req.Mesh_Settings.Operating_Mode = meshCtrlEnabled;
+            req.meshCtrlEnabled = meshCtrlEnabled;
+            if(1 == mloEnabled || (1 == meshCtrlEnabled) ){
+              wifi_ssid_infos_2_List[0].Security_Mode = wifi_ssid_infos_5_List[0].Security_Mode;
+              wifi_ssid_infos_2_List[0].Cypher = wifi_ssid_infos_5_List[0].Cypher;
+              wifi_ssid_infos_2_List[0].SSID = wifi_ssid_infos_5_List[0].SSID;
+              wifi_ssid_infos_2_List[0].KeyPassphrase = wifi_ssid_infos_5_List[0].KeyPassphrase;
+            }
+            req.mloEnabled = mloEnabled;
+
+			var i=0;
+			//Radio settings
+			if(curRadioStatus2G){
+				wifi_ssid_infos_2_List[i].SSID_Enable = 1;
+			}else{
+				wifi_ssid_infos_2_List[i].SSID_Enable = 0;
+			}
+
+			if(curRadioStatus2G_guest){
+				wifi_ssid_infos_2_guest_List[i].SSID_Enable = 1;
+			}else{
+				wifi_ssid_infos_2_guest_List[i].SSID_Enable = 0;
+			}
+
+			if(curRadioStatus5G){
+				wifi_ssid_infos_5_List[i].SSID_Enable = 1;
+			}else{
+				wifi_ssid_infos_5_List[i].SSID_Enable = 0;
+			}
+
+			if(curRadioStatus5G_guest){
+				wifi_ssid_infos_5_guest_List[i].SSID_Enable = 1;
+			}else{
+				wifi_ssid_infos_5_guest_List[i].SSID_Enable = 0;
+			}
+
+			wifi_ssid_infos_2_List[i].SSID = decodeURIComponent(wifi_ssid_infos_2_List[i].SSID);
+			wifi_ssid_infos_2_guest_List[i].SSID = decodeURIComponent(wifi_ssid_infos_2_guest_List[i].SSID);
+			wifi_ssid_infos_2_List[i].KeyPassphrase = decodeURIComponent(wifi_ssid_infos_2_List[i].KeyPassphrase);
+			wifi_ssid_infos_2_guest_List[i].KeyPassphrase = decodeURIComponent(wifi_ssid_infos_2_guest_List[i].KeyPassphrase);
+
+			wifi_ssid_infos_5_List[i].SSID = decodeURIComponent(wifi_ssid_infos_5_List[i].SSID);
+			wifi_ssid_infos_5_guest_List[i].SSID = decodeURIComponent(wifi_ssid_infos_5_guest_List[i].SSID);
+			wifi_ssid_infos_5_List[i].KeyPassphrase = decodeURIComponent(wifi_ssid_infos_5_List[i].KeyPassphrase);
+			wifi_ssid_infos_5_guest_List[i].KeyPassphrase = decodeURIComponent(wifi_ssid_infos_5_guest_List[i].KeyPassphrase);
+
+			//for(var i=0 ; i<4 ; i++){
+            if(wifi_ssid_infos_2_List[i].SSID.length <= 0 || wifi_ssid_infos_2_List[i].SSID.length > 32){
+                show_EditError(i18next.t('wifi_dialog_error1',{protocol:'2.4G_Main'}));
+                return;
+			}
+			else if(wifi_ssid_infos_2_guest_List[i].SSID.length <= 0 || wifi_ssid_infos_2_guest_List[i].SSID.length > 32){
+				show_EditError(i18next.t('wifi_dialog_error1',{protocol:'2.4G_Guest'}));
+				return;
+            }
+			else if(wifi_ssid_infos_5_List[i].SSID.length <= 0 || wifi_ssid_infos_5_List[i].SSID.length > 32){
+                show_EditError(i18next.t('wifi_dialog_error1',{protocol:'5G_Main'}));
+                return;
+            }
+			else if(wifi_ssid_infos_5_guest_List[i].SSID.length <= 0 || wifi_ssid_infos_5_guest_List[i].SSID.length > 32){
+				show_EditError(i18next.t('wifi_dialog_error1',{protocol:'5G_Guest'}));
+				return;
+			}
+			else if(wifi_ssid_infos_2_List[i].KeyPassphrase.length < 10 || wifi_ssid_infos_2_List[i].KeyPassphrase.length > 63){
+                if(wifi_ssid_infos_2_List[i].SSID_Enable == 1 && wifi_ssid_infos_2_List[i].Security_Mode != 'OPEN'){
+                    show_EditError(i18next.t('wifi_dialog_error2',{protocol:'2.4G_Main'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_2_guest_List[i].KeyPassphrase.length < 10 || wifi_ssid_infos_2_guest_List[i].KeyPassphrase.length > 63){
+                if(wifi_ssid_infos_2_guest_List[i].SSID_Enable == 1 && wifi_ssid_infos_2_guest_List[i].Security_Mode != 'OPEN'){
+                    show_EditError(i18next.t('wifi_dialog_error2',{protocol:'2.4G_Guest'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_5_List[i].KeyPassphrase.length < 10 || wifi_ssid_infos_5_List[i].KeyPassphrase.length > 63){
+                if(wifi_ssid_infos_5_List[i].SSID_Enable == 1 && wifi_ssid_infos_5_List[i].Security_Mode != 'OPEN'){
+                    show_EditError(i18next.t('wifi_dialog_error2',{protocol:'5G_Main'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_5_guest_List[i].KeyPassphrase.length < 10 || wifi_ssid_infos_5_guest_List[i].KeyPassphrase.length > 63){
+                if(wifi_ssid_infos_5_guest_List[i].SSID_Enable == 1 && wifi_ssid_infos_5_guest_List[i].Security_Mode != 'OPEN'){
+                    show_EditError(i18next.t('wifi_dialog_error2',{protocol:'5G_Guest'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_2_List[i].MaxDevices < 2 || wifi_ssid_infos_2_List[i].MaxDevices > 64){
+                if(wifi_ssid_infos_2_List[i].SSID_Enable == 1){
+                    show_EditError(i18next.t('wifi_dialog_error3',{protocol:'2.4G_Main'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_2_guest_List[i].MaxDevices < 2 || wifi_ssid_infos_2_guest_List[i].MaxDevices > 64){
+                if(wifi_ssid_infos_2_guest_List[i].SSID_Enable == 1){
+                    show_EditError(i18next.t('wifi_dialog_error3',{protocol:'2.4G_Guest'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_5_List[i].MaxDevices < 2 || wifi_ssid_infos_5_List[i].MaxDevices > 64){
+                if(wifi_ssid_infos_5_List[i].SSID_Enable == 1){
+                    show_EditError(i18next.t('wifi_dialog_error3',{protocol:'5G_Main'}));
+                    return;
+                }
+            }
+			else if(wifi_ssid_infos_5_guest_List[i].MaxDevices < 2 || wifi_ssid_infos_5_guest_List[i].MaxDevices > 64){
+                if(wifi_ssid_infos_5_guest_List[i].SSID_Enable == 1){
+                    show_EditError(i18next.t('wifi_dialog_error3',{protocol:'5G_Guest'}));
+                    return;
+                }
+            }
+        //}
+		
+			if(wifi_ssid_infos_2_List[i].SSID_Enable == 1 && wifiPasswordCheck(wifi_ssid_infos_2_List[i].KeyPassphrase) == false){
+				return;
+			}
+
+			if(wifi_ssid_infos_2_guest_List[i].SSID_Enable == 1 && wifiPasswordCheck(wifi_ssid_infos_2_guest_List[i].KeyPassphrase) == false){
+				return;
+			}
+
+			if(wifi_ssid_infos_5_List[i].SSID_Enable == 1 && wifiPasswordCheck(wifi_ssid_infos_5_List[i].KeyPassphrase) == false){
+				return;
+			}
+
+			if(wifi_ssid_infos_5_guest_List[i].SSID_Enable == 1 && wifiPasswordCheck(wifi_ssid_infos_5_guest_List[i].KeyPassphrase) == false){
+				return;
+			}
+/*
+			if(curRadio === '2.4G'){
+				if(curInterface2G.indexOf("Main") != -1){
+					wifi_ssid_infos_2_List[0].Security_Mode = tmp_text;
+					wifi_ssid_infos_2_List[0].Cypher = cypher;
+				}
+				else{
+					wifi_ssid_infos_2_guest_List[0].Security_Mode = tmp_text;
+					wifi_ssid_infos_2_guest_List[0].Cypher = cypher;
+				}
+			}else{
+				if(curInterface5G.indexOf("Main") != -1){
+					wifi_ssid_infos_5_List[0].Security_Mode = tmp_text;
+					wifi_ssid_infos_5_List[0].Cypher = cypher;
+				}
+				else{
+					wifi_ssid_infos_5_guest_List[0].Security_Mode = tmp_text;
+					wifi_ssid_infos_5_guest_List[0].Cypher = cypher;
+				}
+			}
+*/
+			if(curBandwidth2G.indexOf("Auto") != -1){
+				req.Bandwidth2G = 5;
+			}else if(curBandwidth2G.indexOf("20") != -1){
+				req.Bandwidth2G = 0;
+			}else if(curBandwidth2G.indexOf("40") != -1){
+				req.Bandwidth2G = 1;
+			}else{
+				req.Bandwidth2G = 5;
+			}
+
+			req.WiFiMode2G = curWiFiMode2G;
+
+			if(curChannel2G == 'Auto'){
+				req.Channel2G = 0;
+			}else{
+				var tmp_arr = curChannel2G.split(' ');
+				req.Channel2G = parseInt(tmp_arr[1], 10);
+			}
+
+			if(curBandwidth5G.indexOf("80") != -1){
+				req.Bandwidth5G = 2;
+			}else if(curBandwidth5G.indexOf("20") != -1){
+				req.Bandwidth5G = 0;
+			}else if(curBandwidth5G.indexOf("40") != -1){
+				req.Bandwidth5G = 1;
+			}else if(curBandwidth5G.indexOf("160") != -1){
+				req.Bandwidth5G = 3;
+			}else{
+				req.Bandwidth5G = 2;
+			}
+
+			req.WiFiMode5G = curWiFiMode5G;
+
+			if(curChannel5G == 'Auto'){
+				req.Channel5G = 0;
+			}else{
+				var tmp_arr = curChannel5G.split(' ');
+				req.Channel5G = parseInt(tmp_arr[1], 10);
+			}
+
+			//SSID settings
+			req.SSID_Settings_2 = wifi_ssid_infos_2_List;
+			req.SSID_Settings_2_guest = wifi_ssid_infos_2_guest_List;
+			req.SSID_Settings_5 = wifi_ssid_infos_5_List;
+			req.SSID_Settings_5_guest = wifi_ssid_infos_5_guest_List;
+        }
+
+        document.getElementById('_modal_text').innerHTML = i18next.t('wifi_save_loading');
+        toggle_modal();
+
+       // console.log("req:" + JSON.stringify(req));
+
+        wifiSettingID = setTimeout(() => {
+            console.log("Timeout: Ignore");
+            toggle_modal();
+            window.location.href = "/cgi-bin/cm/wifi-settings.html";
+        }, 80000);//Wifi config timeout 80 sec
+
+        //    do_fetch_api("POST", "/cgi-bin/cgi/req_wifiSetting.cgi", req)
+        //    .then(response => {setTimeout(toggle_modal,1000); return response}).then(wifiSettingSave_response).catch(response_print);
+        try {
+            let response = {};
+            response.result = false;
+
+            //if(curMeshMode == 'Gateway')
+                response = await do_fetch_api("POST", "/cgi-bin/cgi/req_wifiSetting.cgi", req);
+            //else if(curMeshMode == 'Mesh Router')
+                //response = await do_fetch_api("POST", "/cgi-bin/cgi/req_meshRouterSetting.cgi", req);
+
+            setTimeout(toggle_modal,1000); 
+            wifiSettingSave_response(response);
+
+            return response;
+        } catch (err) {
+            response_print(err);
+			clearTimeout(wifiSettingID);
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/wifi-settings.html";}, 500);
+            throw err;
+        }
+		
+    }
+
+    function wpsStatusSet_response(data_json){
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+        }else {
+            wpsStatus_cfg = wpsStatus;
+            document.getElementById(platform + '-WPSScanBtn').disabled = !wpsStatus_cfg;
+        }
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        //console.log("res: " + JSON.stringify(data_json));
+        clearTimeout(wpsStatusSetID);
+    }
+    var wpsStatusSetID;
+    async function wpsStatusSet(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.wpsStatus = wpsStatus;
+
+        document.getElementById('_modal_text').innerHTML = i18next.t('wifi_save_loading');
+        toggle_modal();
+
+        //console.log("req:" + JSON.stringify(req));
+        wpsStatusSetID = setTimeout(() => {
+            console.log("Timeout: Ignore");
+            toggle_modal();
+            window.location.href = "/cgi-bin/cm/wifi-settings.html";
+        },60000);
+        
+        try {
+            let response = await do_fetch_api("POST", "/cgi-bin/cgi/req_wpsSetting.cgi", req);
+            setTimeout(toggle_modal,1000);
+            wpsStatusSet_response(response);
+            return response;
+        } catch (err) {
+            response_print(err);
+            throw err;
+        }
+    }
+    
+    function wpsStartScan_response(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+            document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_fail');
+            if( curMeshMode === 'Gateway' )
+            document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+        }else {
+            //Start scan...
+            wpsScanerTimerID = setTimeout(wpsCheckScan, 1000);
+        }
+    }
+    function wpsStartScan(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_wpsStartScan.cgi", req)
+        .then(response => {return response}).then(wpsStartScan_response).catch(response_print);
+    }
+    
+    function wpsCheckScan_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+            document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_fail');
+            if( curMeshMode === 'Gateway' )
+            document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+        }else {
+            //Start scan...
+            if(data_json.wpsStatus == 0){
+                wpsScanerTimerID = setTimeout(wpsCheckScan, 1000);
+            }else if(data_json.wpsStatus == 1){//success
+                document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+                document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_success');
+                if( curMeshMode === 'Gateway' )
+                document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+                //setTimeout(wpsStopScan, 3000);
+            }else if(data_json.wpsStatus == 2){//Fail
+                document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+                document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_fail');
+                if( curMeshMode === 'Gateway' )
+                document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+                //setTimeout(wpsStopScan, 3000);
+            }else if(data_json.wpsStatus == 3){//Timeout
+                document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+                document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_timeout');
+                if( curMeshMode === 'Gateway' )
+                document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+                //setTimeout(wpsStopScan, 3000);
+            }
+        }
+    }
+    function wpsCheckScan(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_wpsCheckScan.cgi", req)
+        .then(response => {return response}).then(wpsCheckScan_response).catch(response_print);
+    }
+    
+    function wpsStopScan_response(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+        }else {
+            //Stop scan...
+            clearTimeout(wpsScanerTimerID);
+            document.getElementById(platform + '-WPSScanBtn').innerHTML = i18next.t('wifi_wps_start');
+            document.getElementById(platform + '-WPSStatusTextTd').innerHTML = i18next.t('wifi_wps_status_idle');
+            if( curMeshMode === 'Gateway' )
+            document.getElementById(platform + '-WPSSaveBtn').disabled = false;
+        }
+    }
+    function wpsStopScan(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_wpsStopScan.cgi", req)
+        .then(response => {return response}).then(wpsStopScan_response).catch(response_print);
+    }
+    
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+    
+    function show_MeshModeWPSHint(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('wifi_dialog_notice');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('wifi_dialog_notice_des');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+        
+        toggle_dialog_modal();
+    }
+
+    function show_MLOEnable(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('wifi_dialog_notice');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('wifi_dialog_mlo_enable');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+        
+        toggle_dialog_modal();
+    }
+
+    function show_WPA3Select(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('wifi_dialog_notice');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('wifi_dialog_WPA3_ONLY');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+        
+        toggle_dialog_modal();
+    }
+
+    function show_DFSChannelSelect(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('wifi_dialog_notice');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('wifi_dialog_DFS_Channel');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+
+        toggle_dialog_modal();
+    }
+
+    function hidePass_toggle(toggleid, id)
+	{
+		var password_eye = document.getElementById(toggleid);
+		var password_input = document.getElementById(id);
+		if(password_input.type === "password")
+		{
+			password_input.type = "text";
+			password_eye.src = "/images/iconPasswordShow.svg";
+		}
+		else if(password_input.type === "text")
+		{
+			password_input.type = "password";
+			password_eye.src = "/images/iconPasswordHide.svg";
+		}
+	}
+    function setWPS_functionStatus(set_status){
+        document.getElementById(platform + "-WPSScanBtn").disabled = set_status;
+    }
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+        console.log(id +"#####" + text + "#############\n" + selectItem.innerHTML);
+        selectItem.innerHTML = text;
+        if(id.indexOf("wifiRadioSelect") != -1){
+            checkInterface(text);
+            curRadio = text;
+            wifiRadioReset();
+			wifiPasswordStrengthCheck();
+        }else if(id.indexOf("wifiBandwidthSelect") != -1){
+            if(curRadio == '2.4G'){
+                curBandwidth2G = text;
+				if(curBandwidth2G == 'Auto(20/40MHz)'){
+					if(curWiFiMode2G == '11bg'){
+						curWiFiMode2G = '11beg';
+						document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping(curWiFiMode2G);
+					}
+				}
+			}
+            else{
+				if(curChannel5G == 'Ch 140'){
+					curBandwidth5G = '20MHz';
+				}
+				else if(curChannel5G == 'Ch 132' || curChannel5G == 'Ch 136'){
+					if(text == '80MHz' || text == '160MHz'){
+						curBandwidth5G = '40MHz';
+					}
+					else
+						curBandwidth5G = text;
+				}
+				else{
+					curBandwidth5G = text;
+				}
+
+				if( (text == '160MHz' || text == '80MHz') && curWiFiMode5G == '11na'){
+					curWiFiMode5G = '11bea';
+					document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping(curWiFiMode5G);
+					selectItem.innerHTML = 'Auto(160/80/40/20MHz)';
+				}
+				else{
+					if(text == '160MHz')
+						selectItem.innerHTML = 'Auto(160/80/40/20MHz)';
+					else
+						selectItem.innerHTML = curBandwidth5G;
+				}
+
+				if(text == '160MHz'){
+					if( curChannel5G == 'Ch 120' || curChannel5G == 'Ch 124' || curChannel5G == 'Ch 128' || curChannel5G == 'Ch 104' 
+					 || curChannel5G == 'Ch 100' || curChannel5G == 'Ch 108' || curChannel5G == 'Ch 112' || curChannel5G == 'Ch 116')
+					{
+						show_DFSChannelSelect();
+					}
+				}
+			}
+        }else if(id.indexOf("wifiMeshModeSelect") != -1){
+            if( (1 == meshCtrlEnabled) && (wpsStatus_cfg != true) ){
+                show_MeshModeWPSHint();
+            }
+            /*
+            if((text == "Mesh Router" || text == "Extender") && 
+                curMeshMode != text &&
+                wpsStatus_cfg != true
+              ){
+                show_MeshModeWPSHint();
+              }
+              */
+            curMeshMode = text;
+            if( curMeshMode == "Gateway"){
+                checkInterface(curRadio);                
+                console.log("selectObj: mloEnabled [%d] curRadio [%s] curInterface2G [%s] curInterface5G [%s]", mloEnabled, curRadio, curInterface2G, curInterface5G);
+                /*
+                if( (curRadio === '2.4G') && (curInterface2G.indexOf("Main") != -1)){
+                  if(document.getElementById(platform + '-mlo_tr').classList.contains("d-none")){
+                	  document.getElementById(platform + '-mlo_tr').classList.remove("d-none");
+                  }
+            		}
+            		if( (curRadio === '5G') && (curInterface5G.indexOf("Main") != -1)){
+            		  if(document.getElementById(platform + '-mlo_tr').classList.contains("d-none")){
+                	  document.getElementById(platform + '-mlo_tr').classList.remove("d-none");
+                  }
+            		}
+                */
+                if(document.getElementById(platform + '-mlo_tr').classList.contains("d-none")){
+                    document.getElementById(platform + '-mlo_tr').classList.remove("d-none");
+                }
+				//Hide the mesh temporarily.
+				/*
+                if(document.getElementById(platform + '-meshCtrl_tr').classList.contains("d-none")){
+                    document.getElementById(platform + '-meshCtrl_tr').classList.remove("d-none");
+                }
+				*/
+                if(1 == mloEnabled){
+                	document.getElementById(platform + '-wifiMloCheckbox').checked = true;
+                }else{
+                	document.getElementById(platform + '-wifiMloCheckbox').checked = false;
+                }
+                if(1 == meshCtrlEnabled){
+                	document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked = true;
+                }else{
+                	document.getElementById(platform + '-wifiMeshCtrlCheckbox').checked = false;
+                }
+            }else if( curMeshMode == "Mesh Router"){
+                if(!document.getElementById(platform + '-mlo_tr').classList.contains("d-none")){
+                  document.getElementById(platform + '-mlo_tr').classList.add("d-none");
+                }
+            }else if( curMeshMode == "Extender"){
+                ;
+            }
+            checkWPSInterface();
+            wifiRadioReset();
+            //wifiSSIDReset();
+        }else if(id.indexOf("wifiInterfaceSelect") != -1){
+            if(curRadio == '2.4G')
+                curInterface2G = text;
+            else
+                curInterface5G = text;
+            checkInterface(curRadio);
+			wifiPasswordStrengthCheck();
+        }else if(id.indexOf("wifiChannelSelect") != -1){
+            if(curRadio == '2.4G')
+                curChannel2G = text;
+            else{
+                curChannel5G = text;
+
+				if(curChannel5G == 'Ch 140'){
+					curBandwidth5G = '20MHz';
+				}
+				else if(curChannel5G == 'Ch 132' || curChannel5G == 'Ch 136'){
+					if(curBandwidth5G == '80MHz' || curBandwidth5G == '160MHz'){
+						curBandwidth5G = '40MHz';
+					}
+				}
+				else{
+				}
+
+				if(curBandwidth5G == '160MHz'){
+					document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = "Auto(160/80/40/20MHz)";
+				}
+				else{
+					document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = curBandwidth5G;
+				}
+
+				if( curChannel5G == 'Ch 120' || curChannel5G == 'Ch 124' || curChannel5G == 'Ch 128'
+				 || ((curChannel5G == 'Ch 104' || curChannel5G == 'Ch 100' || curChannel5G == 'Ch 108' || curChannel5G == 'Ch 112') && curBandwidth5G == '160MHz')
+			     || ( curChannel5G == 'Ch 116' && curBandwidth5G != '20MHz'))
+				{
+					show_DFSChannelSelect();
+				}
+			}
+        }else if(id.indexOf("wifiSecuritySelect") != -1){
+            /*if(curRadio == '2.4G'){
+                curSecurity = text;
+                if(curSecurity.indexOf("None") != -1 || curSecurity.indexOf("WPA3-Personal") != -1){
+                    setWPS_functionStatus(true);
+                }else{
+                    setWPS_functionStatus(false);
+                }
+            }else{
+                curSecurity = text;
+            }*/
+			curSecurity = text;
+            wifiSecuritySet(text);
+			if(text == 'WPA3-Personal'){
+				//pop-up inform the user the WPS active will gray out.
+				show_WPA3Select();
+			}
+        }else if(id.indexOf("meshHomeSecuritySelect") != -1){
+            curMeshHomeSecurity = text;
+            meshHomeSecuritySet(text);
+        }else if(id.indexOf("meshGuestSecuritySelect") != -1){
+            curMeshGuestSecurity = text;
+            meshGuestSecuritySet(text);
+        }
+		else if(id.indexOf("wifiModeSelect") != -1){
+			document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping(text);
+			 if(curRadio == '2.4G')
+			 {
+				if(text != '11beg' && (1 == mloEnabled)){
+					show_EditError(i18next.t('wifi_dialog_error5'));
+					document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping('11beg');
+					return;
+				}
+
+				curWiFiMode2G = text;
+				if(wifiModeMapping(text) == '802.11g/b'){
+					//Only support 20MHZ
+					curBandwidth2G = '20MHz';
+					document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = curBandwidth2G;
+				}
+			 }
+			 else
+			 {
+				if(text != '11bea' && (1 == mloEnabled)){
+					show_EditError(i18next.t('wifi_dialog_error5'));
+					document.getElementById(platform + '-wifiModeSelect').innerHTML = wifiModeMapping('11bea');
+					return;
+				}
+
+				if(wifiModeMapping(text) == '802.11n/a'){
+					curBandwidth5G = '40MHz';
+					document.getElementById(platform + '-wifiBandwidthSelect').innerHTML = curBandwidth5G;
+				}
+				else{
+				}
+				curWiFiMode5G = text;
+			 }
+		}
+    }
+//Modal
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function setAltToImgItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+    }
+    function setAriaLabelToInputItem(p_id){
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .cardViewTd { 
+        height: 3.4375rem;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 50px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .pwd_text_td_w{
+        width: 85%;
+    }
+
+	.hidden {
+		display: block;
+	}
+	
+    .ul_dot {padding-left: 80px;}
+    .li_dot {text-align: justify;}
+
+    .xxl_wifi_set_div{margin-right: 5.6rem;}
+    .xxl_td_wd_24_15{width: 24.15%;}
+    .xxl_td_wd_22_46{width: 22.46%;}
+    .xxl_td_wd_6_78{width: 6.78%;}
+
+    .strength {
+      font-weight: bold;
+      padding: 4px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      min-width: 100%;
+	  text-align: center;
+	  margin-top: 5px;
+	  font-size: 0.938em;
+    }
+
+    .weak {
+      color: #fff;
+	  background-color: #e74c3c;
+    }
+
+    .medium {
+      color: #fff;
+	  background-color: #f1c40f;
+    }
+
+    .strong {
+      color: #fff;
+	  background-color: #2ecc71;
+    }
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 50px;
+      margin: 0 0 18px 0;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="col mt-2 bg-white fxCardViewBorder">
+        <div class="row ms-0 me-0 justify-content-between">
+            <div class="col-xxl mt-xxl-0 p-0 xxl_wifi_set_div">
+                <table class="table table-borderless mb-xxl-4" id="xxl-meshHomeSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" id="xxl-wifiMeshHomeSettings" data-i18n="wifi_set_meshHome">Wi-Fi Home Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- MLO start //-->
+                  <tr id="xxl-mlo_tr" class="d-none">
+                    <td class="cardViewTd xxl_td_wd_24_15" data-i18n="wifi_set_mlo">Multi-Link Operation</td>
+                    <td class="cardViewTd xxl_td_wd_22_46">
+                      <input class="switch_check" type="checkbox" id="xxl-wifiMloCheckbox" value="" data-i18n-aria-label="wifi_set_mlo_select">
+                    </td>
+                  </tr>
+                  <!-- MLO end //-->
+                  <!-- Mesh Controller start //-->
+                  <tr id="xxl-meshCtrl_tr" class="d-none">
+                    <td class="cardViewTd" data-i18n="wifi_set_meshCtrl">Mesh Controller</td>
+                    <td class="cardViewTd">
+                      <input class="switch_check" type="checkbox" id="xxl-wifiMeshCtrlCheckbox" value="" data-i18n-aria-label="wifi_set_meshCtrl_select">
+                    </td>
+                  </tr>
+                  <!-- Mesh Controller end //-->
+                </tbody>
+                </table>
+                <table class="table table-borderless" id="xxl-wifiRadioSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="3" scope="row" class="cardViewTitle" data-i18n="wifi_set_radio">Wi-Fi Radio Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="cardViewTd xxl_td_wd_24_15" data-i18n="wifi_radio">Wi-Fi Radio</td>
+                    <td class="cardViewTd xxl_td_wd_22_46">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiRadioSelect">2.4G</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiRadioSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-RadioSelect_24">2.4G</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-RadioSelect_5">5G</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiChannelTd" data-i18n="wifi_set_channel">Wi-Fi Channel</td>
+                    <td class="cardViewTd" id="xxl-wifiChannelSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiChannelSelect">Auto</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiChannelSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xxl-wifiChannelSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiModeTd" data-i18n="wifi_set_mode">Wi-Fi Mode</td>
+                    <td class="cardViewTd" id="xxl-wifiModeSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiModeSelect">802.11be/ax/n/g/b</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xxl-wifiModeSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiBandwidthTd" data-i18n="wifi_set_Bandwidth">Wi-Fi Bandwidth</td>
+                    <td class="cardViewTd" id="xxl-wifiBandwidthSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiBandwidthSelect">Auto(20/40MHz)</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiBandwidthSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xxl-wifiBandwidthSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="col-xxl mt-xxl-0 p-0">
+                <table class="table table-borderless" id="xxl-wifiSSIDSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" id="xxl-wifiSSIDSettings" data-i18n="wifi_set_SSID">Wi-Fi SSID Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="cardViewTd xxl_td_wd_24_15" id="xxl-wifiInterfaceTd" data-i18n="wifi_set_interface">Interface</td>
+                    <td class="cardViewTd xxl_td_wd_22_46" id="xxl-wifiInterfaceSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiInterfaceSelect">2.4G_Main</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiInterfaceSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xxl-wifiInterfaceSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                    <td class="cardViewTd" id="xxl-tmp1"></td>
+                    <td class="cardViewTd" id="xxl-tmp2"></td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" data-i18n="wifi_radio_func">Wi-Fi Radio Function</td>
+                    <td class="cardViewTd">
+                      <input class="switch_check" type="checkbox" id="xxl-wifiRadioCheckbox" value="" data-i18n-aria-label="wifi_radio_func_select">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiSSIDTd" data-i18n="wifi_SSID">SSID</td>
+                    <td class="cardViewTd" id="xxl-wifiSSIDTextTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xxl-wifiSSIDText" data-i18n-aria-label="wifi_SSID_input"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiSecurityTd" data-i18n="wifi_security">Security</td>
+                    <td class="cardViewTd" id="xxl-wifiSecuritySelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-wifiSecuritySelect">WPA3-Personal</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-wifiSecuritySelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-SecuritySelect_WPA3">WPA3-Personal</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-SecuritySelect_WPA23">WPA2-PSK/WPA3</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-SecuritySelect_WPA2">WPA2-PSK</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-SecuritySelect_WPA12">WPA/WPA2-PSK</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-SecuritySelect_NONE">None</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr id="xxl-PasswordTR">
+                    <td class="cardViewTd" id="xxl-wifiPasswordTd" data-i18n="wifi_pass">Password</td>
+                    <td class="cardViewTd" id="xxl-wifiPasswordTextTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="password" class="cardViewInputTextWithLabel pwd_text_td_w" id="xxl-wifiPasswordText" data-i18n-aria-label="wifi_pass_input"></input>
+                      <input class="cardViewInputSubInput" id="xxl-toggleWifiPWD" src="/images/iconPasswordHide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+                      </div>
+					  <label id="xxl-strengthText" class="strength weak"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiMaxNumberTd" data-i18n="wifi_max_clients">Max Number of Connected Clients</td>
+                    <td class="cardViewTd" id="xxl-wifiMaxNumberInputTd">
+                      <div class="cardViewSelect">
+                      <input type="number" class="cardViewInputTextWithLabel" id="xxl-wifiMaxNumberText" value="16" data-i18n-aria-label="wifi_max_clients_input"></input>
+                      <label class="cardViewInputSubLabel">(2 - 64)</label>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-wifiSSIDHiddenTd" data-i18n="wifi_hidden_SSID">SSID Hidden</td>
+                    <td class="cardViewTd" id="xxl-wifiSSIDHiddenCheckTd">
+                      <input class="switch_check" type="checkbox" id="xxl-ssidHiddenCheckbox" value="" data-i18n-aria-label="wifi_hidden_SSID_select">
+                    </td>
+                  </tr>
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row ms-0 me-0 justify-content-end">
+                <button class="inCard_SaveBtn" id="xxl-wifiSetting_BT" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="col-xxl bg-white mt-44 fxCardViewBorder">
+            <div class="row me-0 ms-0 justify-content-between">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="wifi_wps">WPS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="cardViewTd xxl_td_wd_24_15" id="xxl-WPSStatusTitleTd" data-i18n="wifi_wps_func">WPS Function</td>
+                    <td class="cardViewTdWithSwitch xxl_td_wd_22_46">
+                        <input class="switch_check" type="checkbox" id="xxl-WPSStatusCheckBox" value="" data-i18n-aria-label="wifi_wps_func_select">
+                    </td>
+                    <td class="cardViewTd xxl_td_wd_6_78"></td>
+                    <td class="cardViewTd xxl_td_wd_24_15" id="xxl-WPSInputTitleTd" data-i18n="wifi_wps_status">
+                    WPS Status
+                    </td>
+                    <td class="cardViewTd" id="xxl-WPSStatusTextTd" data-i18n="wifi_wps_status_idle">
+                    Idle
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="row ms-0 me-0 justify-content-end">
+                <button class="inCard_SaveBtn" id="xxl-WPSScanBtn" data-i18n="wifi_wps_start">Start WPS</button>
+                <button class="inCard_SaveBtn" id="xxl-WPSSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless" id="xl-meshHomeSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" id="xl-wifiMeshHomeSettings" data-i18n="wifi_set_meshHome">Wi-Fi Home Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- MLO start //-->
+                  <tr id="xl-mlo_tr" class="d-none">
+                    <td class="w-50 cardViewTd" data-i18n="wifi_set_mlo">Multi-Link Operation</td>
+                    <td class="cardViewTd w-50">
+                      <input class="switch_check" type="checkbox" id="xl-wifiMloCheckbox" value="" data-i18n-aria-label="wifi_set_mlo_select">
+                    </td>
+                  </tr>
+                  <!-- MLO end //-->
+                  <!-- Mesh Controller start //-->
+                  <tr id="xl-meshCtrl_tr" class="d-none">
+                    <td class="cardViewTd" data-i18n="wifi_set_meshCtrl">Mesh Controller</td>
+                    <td class="cardViewTd">
+                      <input class="switch_check" type="checkbox" id="xl-wifiMeshCtrlCheckbox" value="" data-i18n-aria-label="wifi_set_meshCtrl_select">
+                    </td>
+                  </tr>
+                  <!-- Mesh Controller end //-->
+                </tbody>
+                </table>
+                <table class="table table-borderless" id="xl-wifiRadioSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="wifi_set_radio">Wi-Fi Radio Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" data-i18n="wifi_radio">Wi-Fi Radio</td>
+                    <td class="w-50">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiRadioSelect">2.4G</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiRadioSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-RadioSelect_24">2.4G</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-RadioSelect_5">5G</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiChannelTd" data-i18n="wifi_set_channel">Wi-Fi Channel</td>
+                    <td class="w-50" id="xl-wifiChannelSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiChannelSelect">Auto</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiChannelSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xl-wifiChannelSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xl-wifiModeTd" data-i18n="wifi_set_mode">Wi-Fi Mode</td>
+                    <td class="w-50" id="xl-wifiModeSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiModeSelect">802.11be/ax/n/g/b</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xl-wifiModeSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiBandwidthTd" data-i18n="wifi_set_Bandwidth">Wi-Fi Bandwidth</td>
+                    <td class="w-50" id="xl-wifiBandwidthSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiBandwidthSelect">Auto(20/40MHz)</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiBandwidthSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xl-wifiBandwidthSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <table class="table table-borderless" id="xl-wifiSSIDSettingsTable">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" id="xl-wifiSSIDSettings" data-i18n="wifi_set_SSID">Wi-Fi SSID Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xl-wifiInterfaceTd" data-i18n="wifi_set_interface">Interface</td>
+                    <td class="w-25" id="xl-wifiInterfaceSelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiInterfaceSelect">2.4G_Main</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiInterfaceSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xl-wifiInterfaceSelectUL">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" data-i18n="wifi_radio_func">Wi-Fi Radio Function</td>
+                    <td class="w-50">
+                      <input class="switch_check" type="checkbox" id="xl-wifiRadioCheckbox" value="" data-i18n-aria-label="wifi_radio_func_select">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiSSIDTd" data-i18n="wifi_SSID">SSID</td>
+                    <td class="w-50" id="xl-wifiSSIDTextTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xl-wifiSSIDText" data-i18n-aria-label="wifi_SSID_input"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiSecurityTd" data-i18n="wifi_security">Security</td>
+                    <td class="w-50" id="xl-wifiSecuritySelectTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-wifiSecuritySelect">WPA3-Personal</button>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-wifiSecuritySelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-SecuritySelect_WPA3">WPA3-Personal</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-SecuritySelect_WPA23">WPA2-PSK/WPA3</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-SecuritySelect_WPA2">WPA2-PSK</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-SecuritySelect_WPA12">WPA/WPA2-PSK</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-SecuritySelect_NONE">None</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr id="xl-PasswordTR">
+                    <td class="w-50 cardViewTd" id="xl-wifiPasswordTd" data-i18n="wifi_pass">Password</td>
+                    <td class="w-50" id="xl-wifiPasswordTextTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="password" class="cardViewInputTextWithLabel pwd_text_td_w" id="xl-wifiPasswordText" data-i18n-aria-label="wifi_pass_input"></input>
+                      <input class="cardViewInputSubInput" id="xl-toggleWifiPWD" src="/images/iconPasswordHide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+                      </div>
+					  <label id="xl-strengthText" class="strength weak"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiMaxNumberTd" data-i18n="wifi_max_clients">Max Number of Connected Clients</td>
+                    <td class="w-50" id="xl-wifiMaxNumberInputTd">
+                      <div class="cardViewSelect">
+                      <input type="number" class="cardViewInputTextWithLabel" id="xl-wifiMaxNumberText" value="16" data-i18n-aria-label="wifi_max_clients_input"></input>
+                      <label class="cardViewInputSubLabel">(2 - 64)</label>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-wifiSSIDHiddenTd" data-i18n="wifi_hidden_SSID">SSID Hidden</td>
+                    <td class="w-50" id="xl-wifiSSIDHiddenCheckTd">
+                      <input class="switch_check" type="checkbox" id="xl-ssidHiddenCheckbox" value="" data-i18n-aria-label="wifi_hidden_SSID_select">
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-wifiSetting_BT" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-44 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="wifi_wps">WPS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-WPSStatusTitleTd" data-i18n="wifi_wps_func">WPS Function</td>
+                    <td class="w-50 cardViewTdWithSwitch">
+                        <input class="switch_check" type="checkbox" id="xl-WPSStatusCheckBox" value="" data-i18n-aria-label="wifi_wps_func_select">
+                    </td>
+                  <tr>
+                  </tr>
+                    <td class="w-50 cardViewTd" id="xl-WPSInputTitleTd" data-i18n="wifi_wps_status">
+                    WPS Status
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-WPSStatusTextTd" data-i18n="wifi_wps_status_idle">
+                    Idle
+                    </td>
+                  </tr>
+                </tbody>
+                </table>                
+                <button class="inCard_SaveBtn" id="xl-WPSSaveBtn" data-i18n="save">Save</button>
+                <button class="inCard_SaveBtn" id="xl-WPSScanBtn" data-i18n="wifi_wps_start">Start WPS</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseWifiRS-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseWifiRS">
+                        <span data-i18n="wifi_set_title">Wi-Fi Settings</span>
+                        <img id="collapseWifiRS-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseWifiRS" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless" id="mobile-meshHomeSettingsTable">
+                            <thead>
+                              <tr>
+                                <th colspan="2" scope="row" class="cardViewTitle" id="mobile-wifiMeshHomeSettings" data-i18n="wifi_set_meshHome">Wi-Fi Home Settings</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <!-- MLO start //-->
+                              <tr id="mobile-mlo_tr" class="d-none">
+                                <td class="cardViewTd" data-i18n="wifi_set_mlo">Multi-Link Operation</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <input class="switch_check" type="checkbox" id="mobile-wifiMloCheckbox" value="" data-i18n-aria-label="wifi_set_mlo_select">
+                                </td>
+                              </tr>
+                              <!-- MLO end //-->
+                              <!-- Mesh Controller start //-->
+                              <tr id="mobile-meshCtrl_tr" class="d-none">
+                                <td class="cardViewTd" data-i18n="wifi_set_meshCtrl">Mesh Controller</td>
+                              </tr>
+                              <tr class="d-none"> <!-- Hide the mesh temporarily.//-->
+                                <td class="cardViewTd">
+                                  <input class="switch_check" type="checkbox" id="mobile-wifiMeshCtrlCheckbox" value="" data-i18n-aria-label="wifi_set_meshCtrl_select">
+                                </td>
+                              </tr>
+                              <!-- Mesh Controller end //-->
+                            </tbody>
+                            </table>
+                            <table class="table table-borderless" id="mobile-wifiRadioSettingsTable">
+                            <thead>
+                              <tr>
+                                <th colspan="2" scope="row" class="cardViewTitle" data-i18n="wifi_set_radio">Wi-Fi Radio Settings</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" data-i18n="wifi_radio">Wi-Fi Radio</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiRadioSelect">2.4G</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiRadioSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-RadioSelect_24">2.4G</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-RadioSelect_5">5G</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" data-i18n="wifi_radio_func">Wi-Fi Radio Function</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiChannelTd" data-i18n="wifi_set_channel">Wi-Fi Channel</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiChannelSelectTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiChannelSelect">Auto</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiChannelSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end" id="mobile-wifiChannelSelectUL">
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiModeTd" data-i18n="wifi_set_mode">Wi-Fi Mode</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiModeSelectTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiModeSelect">802.11be/ax/n/g/b</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end" id="mobile-wifiModeSelectUL">
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiBandwidthTd" data-i18n="wifi_set_Bandwidth">Wi-Fi Bandwidth</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiBandwidthSelectTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiBandwidthSelect">Auto(20/40MHz)</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiBandwidthSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"s><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end" id="mobile-wifiBandwidthSelectUL">
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <table class="table table-borderless" id="mobile-wifiSSIDSettingsTable">
+                            <thead>
+                              <tr>
+                                <th colspan="2" scope="row" class="cardViewTitle" id="mobile-wifiSSIDSettings" data-i18n="wifi_set_SSID">Wi-Fi SSID Settings</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="w-25 cardViewTd" id="mobile-wifiInterfaceTd" data-i18n="wifi_set_interface">Interface</td>
+                              </tr>
+                              <tr>
+                                <td class="w-25" id="mobile-wifiInterfaceSelectTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiInterfaceSelect">2.4G_Main</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiInterfaceSelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end" id="mobile-wifiInterfaceSelectUL">
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+			                    <td class="cardViewTd" data-i18n="wifi_radio_func">Wi-Fi Radio Function</td>
+			                    <td class="cardViewTd">
+			                      <input class="switch_check" type="checkbox" id="mobile-wifiRadioCheckbox" value="" data-i18n-aria-label="wifi_radio_func_select">
+			                    </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiSSIDTd" data-i18n="wifi_SSID">SSID</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiSSIDTextTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="text" class="cardViewInputText" id="mobile-wifiSSIDText" data-i18n-aria-label="wifi_SSID_input"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiSecurityTd" data-i18n="wifi_security">Security</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiSecuritySelectTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-wifiSecuritySelect">WPA3-Personal</button>
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-wifiSecuritySelectRight" data-bs-toggle="dropdown" aria-expanded="false" aria-label="button"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-SecuritySelect_WPA3">WPA3-Personal</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-SecuritySelect_WPA23">WPA2-PSK/WPA3</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-SecuritySelect_WPA2">WPA2-PSK</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-SecuritySelect_WPA12">WPA/WPA2-PSK</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-SecuritySelect_NONE">None</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr id="mobile-PasswordTR1">
+                                <td class="cardViewTd" id="mobile-wifiPasswordTd" data-i18n="wifi_pass">Password</td>
+                              </tr>
+                              <tr id="mobile-PasswordTR2">
+                                <td class="" id="mobile-wifiPasswordTextTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="password" class="cardViewInputTextWithLabel pwd_text_td_w" id="mobile-wifiPasswordText" data-i18n-aria-label="wifi_pass_input"></input>
+                                  <input class="cardViewInputSubInput" id="mobile-toggleWifiPWD" src="/images/iconPasswordHide.svg" type="image" data-i18n-img-alt="login_disable_password_hide_icon">
+                                  </div>
+								  <label id="mobile-strengthText" class="strength weak"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiMaxNumberTd" data-i18n="wifi_max_clients">Max Number of Connected Clients</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiMaxNumberInputTd">
+                                  <div class="cardViewSelect">
+                                  <input type="number" class="cardViewInputTextWithLabel" id="mobile-wifiMaxNumberText" value="16" data-i18n-aria-label="wifi_max_clients_input"></input>
+                                  <label class="cardViewInputSubLabel">(2 - 64)</label>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-wifiSSIDHiddenTd" data-i18n="wifi_hidden_SSID">SSID Hidden</td>
+                              </tr>
+                              <tr>
+                                <td class="" id="mobile-wifiSSIDHiddenCheckTd">
+                                  <input class="switch_check" type="checkbox" id="mobile-ssidHiddenCheckbox" value="" data-i18n-aria-label="wifi_hidden_SSID_select">
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-wifiSetting_BT" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-44 justify-content-between hidden">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseWPS-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseWPS">
+                        <span data-i18n="wifi_wps">WPS</span>
+                        <img id="collapseWPS-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseWPS" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WPSStatusTitleTd" data-i18n="wifi_wps_func">WPS Function</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTdWithSwitch"><input class="switch_check" type="checkbox" id="mobile-WPSStatusCheckBox" value="" data-i18n-aria-label="wifi_wps_func_select"></td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WPSInputTitleTd" data-i18n="wifi_wps_status">
+                                WPS Status
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WPSStatusTextTd" data-i18n="wifi_wps_status_idle">
+                                Idle
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-WPSScanBtn" data-i18n="wifi_wps_start">Start WPS</button>
+                            <button class="inCard_SaveBtn" id="mobile-WPSSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+<!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="login_process_icon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text">Authenticating, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content" id="_dialog_modal_content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="Dialog_Modal" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('wifi_set_title');
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('wifi_set_title');
+            wifiPasswordStrengthCheck();
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+    });
+    document.getElementById("Dialog_Modal").onclick = function(){toggle_dialog_modal();};
+    document.getElementById("xxl-tmp1").style.display = "none";
+    document.getElementById("xxl-tmp2").style.display = "none";
+</script>
+</html>

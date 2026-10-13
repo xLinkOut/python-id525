@@ -60,10 +60,19 @@ class FakeRouter:
     failed_logins: int = 0
     lock_after: int = 3
     token_not_init: int = 0  # how many login attempts answer "Token not init."
-    answers: dict[str, dict[str, Any]] = field(default_factory=dict)
-    """Canned answers for mutating endpoints (default: success)."""
+    answers: dict[str, Any] = field(default_factory=dict)
+    """Canned answers for mutating endpoints (default: success): an object, or
+    a list answered in turn (the last one repeats), as in the capture goldens."""
+    page_fixtures: dict[str, str] = field(default_factory=dict)
+    """Page name -> fixture name to serve (e.g. a synthetic variant)."""
     drop: set[str] = field(default_factory=set)
     """Endpoints that drop the connection instead of answering (e.g. reboot)."""
+
+    def next_answer(self, name: str) -> dict[str, Any] | None:
+        answer = self.answers.get(name)
+        if isinstance(answer, list):
+            return answer.pop(0) if len(answer) > 1 else answer[0] if answer else None
+        return answer
 
     def admin(self) -> FakeSession | None:
         return next((s for s in self.sessions.values() if s.logged_in), None)
@@ -125,7 +134,8 @@ class FakeRouter:
             resp.set_cookie("QSESSIONID", self._new_session().sid)
             return resp
         self._rotate(session)  # the real router invalidates the token on page loads
-        return web.Response(text=load_fixture(f"{name}.html"), content_type="text/html")
+        fixture = self.page_fixtures.get(name, name)
+        return web.Response(text=load_fixture(f"{fixture}.html"), content_type="text/html")
 
     async def api(self, request: web.Request) -> web.Response:
         name = request.match_info["name"]
@@ -178,8 +188,9 @@ class FakeRouter:
             "client_status_retrieve": "client_status.json",
         }.get(name)
         if fixture is None:
-            if name in MUTATING:  # accept writes like a healthy router
-                answer = {"result": True, **self.answers.get(name, {})}
+            canned = self.next_answer(name)
+            if name in MUTATING or canned is not None:  # writes succeed like a healthy router
+                answer = {"result": True, **(canned or {})}
                 return web.json_response({**answer, "RequestVerifyToken": self._rotate(session)})
             return web.Response(status=404)
         data = json.loads(load_fixture(fixture))

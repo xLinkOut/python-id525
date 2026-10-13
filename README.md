@@ -37,6 +37,7 @@ so it is always current.
 |---|---|---:|
 | 🟦 live-verified | observed on a real router (read-only probes) | 10 |
 | 🔵 ui-captured | byte-identical to the router UI, captured offline | 4 |
+| 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 0 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 72 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
@@ -65,17 +66,17 @@ so it is always current.
 | Cellular settings | Change PIN | `req_ChangePIN` | write | 🟧 stub-policy | `cellular.change_pin()` |
 | Cellular settings | PIN lock | `req_PINLockSave` | write | 🟧 stub-policy | `cellular.set_pin_lock()` |
 | Cellular settings | Roaming | `req_ChangeRoaming` | write | ⬜ planned |  |
-| Cellular settings | Router / bridge mode | `req_LanOperationModeSave` | write | ⬜ planned |  |
+| Cellular settings | Router / bridge mode | `req_LanOperationModeSave` | destructive | ⬜ planned |  |
 | Cellular settings | Select operator | `req_RegistingOperators` | write | ⬜ planned |  |
 | Cellular settings | Scan operators | `req_SearchOperators` | action | ⬜ planned |  |
 | Cellular settings | Add APN | `req_addUserApn` | write | ⬜ planned |  |
 | Cellular settings | Edit APN | `req_editUserApn` | write | ⬜ planned |  |
 | Cellular settings | Delete APN | `req_deleteUserApn` | write | ⬜ planned |  |
 | Cellular settings | Select default APN | `req_defaultApnSave` | write | ⬜ planned |  |
-| Cellular settings | Reset APNs | `req_defaultApnReset` | write | ⬜ planned |  |
+| Cellular settings | Reset APNs | `req_defaultApnReset` | destructive | ⬜ planned |  |
 | LAN settings | Page data | `lan-settings.html` | read | 🔹 static | `lan.add_dhcp_reservation()` |
-| LAN settings | LAN / DHCP | `req_LanInternetProtoSave` | write | ⬜ planned |  |
-| LAN settings | Ethernet WAN port | `req_ethWanEnabled` | write | ⬜ planned |  |
+| LAN settings | LAN / DHCP | `req_LanInternetProtoSave` | destructive | ⬜ planned |  |
+| LAN settings | Ethernet WAN port | `req_ethWanEnabled` | destructive | ⬜ planned |  |
 | LAN settings | Add DHCP reservation | `req_LanStaticAddrAdd` | write | 🔵 ui-captured | `lan.add_dhcp_reservation()` |
 | LAN settings | Edit DHCP reservation | `req_LanStaticAddrModify` | write | 🔵 ui-captured | `lan.modify_dhcp_reservation()` |
 | LAN settings | Delete DHCP reservation | `req_LanStaticAddrDelete` | write | 🔵 ui-captured | `lan.delete_dhcp_reservation()` |
@@ -83,7 +84,7 @@ so it is always current.
 | Wi-Fi settings | Wi-Fi | `req_wifiSetting` | write | ⬜ planned |  |
 | Wi-Fi settings | WPS | `req_wpsSetting` | write | ⬜ planned |  |
 | Wi-Fi settings | Start WPS | `req_wpsStartScan` | action | ⬜ planned |  |
-| Wi-Fi settings | WPS state | `req_wpsCheckScan` | read | ⬜ planned |  |
+| Wi-Fi settings | WPS state | `req_wpsCheckScan` | action | ⬜ planned |  |
 | Wi-Fi settings | Stop WPS | `req_wpsStopScan` | action | ⬜ planned |  |
 | Wi-Fi settings | Mesh (commented out) | `req_meshRouterSetting` | write | ▫️ dead-code |  |
 | VoIP settings | Page data | `voip-settings.html` | read | ⬜ planned |  |
@@ -116,9 +117,9 @@ so it is always current.
 | URL filter | Edit URL | `urlfilter_edit` | write | ⬜ planned |  |
 | URL filter | Delete URL | `urlfilter_delete_save` | write | ⬜ planned |  |
 | Account & data usage | Page data | `adm-user.html` | read | ⬜ planned |  |
-| Account & data usage | Change admin password | `set_account_management` | write | ⬜ planned |  |
+| Account & data usage | Change admin password | `set_account_management` | destructive | ⬜ planned |  |
 | Account & data usage | Session timeout | `set_device_management` | write | ⬜ planned |  |
-| Account & data usage | Reset data usage | `reset_data` | write | ⬜ planned |  |
+| Account & data usage | Reset data usage | `reset_data` | destructive | ⬜ planned |  |
 | Account & data usage | Data usage settings | `data_usage_save` | write | ⬜ planned |  |
 | Account & data usage | Battery | `battery_apply` | write | ⬜ planned |  |
 | Account & data usage | Sleep mode | `sleepmode_save` | write | ⬜ planned |  |
@@ -130,7 +131,7 @@ so it is always current.
 | SMS | Send SMS | `req_smsCompose` | action | ⬜ planned |  |
 | Software update | Page data | `adm-sw.html` | read | ⬜ planned |  |
 | Software update | Ask the operator for firmware | `acs_check_update` | action | ⬜ planned |  |
-| Software update | Firmware check progress | `acs_check_update_status` | read | ⬜ planned |  |
+| Software update | Firmware check progress | `acs_check_update_status` | action | ⬜ planned |  |
 | Software update | Install operator firmware | `acs_update_confirm` | destructive | 🟧 stub-unsafe | `software.install_operator_update()` |
 | Software update | Flash firmware | `do_upgrade` | destructive | 🟧 stub-unsafe | `software.upgrade_firmware()` |
 | Software update | Upload firmware / config file | `upload_file` | destructive | 🟧 stub-unsafe | `software.upgrade_firmware()` |
@@ -140,8 +141,8 @@ so it is always current.
 | Backup & reboot | Create config backup (hidden) | `bkupConfig_apply` | action | 🟧 stub-unknown | `system.backup_config()` |
 | Backup & reboot | Restore config backup | `restoreCofig_apply` | destructive | 🟧 stub-unsafe | `system.restore_config()` |
 | Self diagnostics | Page data | `self-diag.html` | read | ⬜ planned |  |
-| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | read | ⬜ planned |  |
-| Self diagnostics | CPU usage | `req_cpuUsageTest` | read | ⬜ planned |  |
+| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | ⬜ planned |  |
+| Self diagnostics | CPU usage | `req_cpuUsageTest` | action | ⬜ planned |  |
 | Ping | Page data | `self-ping.html` | read | ⬜ planned |  |
 | Ping | Ping | `req_pingTest` | action | ⬜ planned |  |
 | Traceroute | Page data | `self-tracert.html` | read | ⬜ planned |  |

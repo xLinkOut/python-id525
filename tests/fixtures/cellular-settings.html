@@ -1,0 +1,3058 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="cellular_title">Cellular</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- GM WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var selectBand = '';
+    var selectBand_xxl = '';
+    var selectBand_xl = '';
+    var selectBand_mobile = '';
+    var platform = '';
+	var platform_o = '';
+    var model = 'IDU';
+    var modeSelected = '4G/5G(Auto)';
+    var mode_list_str = '4G/5G(Auto),4G,5G SA,END';
+    var mode_list = String(mode_list_str).split(",");
+    var scanMode = 'Automatic';
+
+    var bridge_mode = '0';
+    
+    var sim_card_state = "Inserted";
+    var pin_setting = "0";
+    var pin_setting_back = "0";
+    var pin_retry_cnt = 3;
+    var pin_code = "";
+
+    var roaming_status = "1";
+    var scan_network = '';
+    
+    var defaultApnAuthMode = 'NONE';
+    var defaultApnMode = '';
+    var defaultApnIPType = '';
+    var defaultApnModeInit = 0;
+    var defaultApnInfo = '{&quot;active&quot;:1, &quot;profile_handle&quot;:1,&quot;instance&quot;:1,&quot;name&quot;:&quot;profile1&quot;,&quot;apn&quot;:&quot;fwanat.tim.it&quot;,&quot;IPType&quot;:2,&quot;auth&quot;:&quot;NONE&quot;,&quot;user&quot;:&quot;&quot;,&quot;passwd&quot;:&quot;&quot;,&quot;disable&quot;:0}';
+    var defaultApnJson = {};
+    var defaultApnName = '';
+    var user1ApnInfo = '{&quot;active&quot;:0, &quot;profile_handle&quot;:2,&quot;instance&quot;:2,&quot;name&quot;:&quot;Default&quot;,&quot;apn&quot;:&quot;fwavoip.tim.it&quot;,&quot;IPType&quot;:2,&quot;auth&quot;:&quot;NONE&quot;,&quot;user&quot;:&quot;&quot;,&quot;passwd&quot;:&quot;&quot;,&quot;disable&quot;:0}';
+    var user1ApnJson = {};
+    var user2ApnInfo = '{}';
+    var user2ApnJson = {};
+    var user3ApnInfo = '{}';
+    var user3ApnJson = {};
+    var user4ApnInfo = '{}';
+    var user4ApnJson = {};
+    var apnJsonList = [];
+	var jiosim='';
+	var jiovoiceapn='';
+	
+	function decodeHTMLText(msgText){
+	    let textarea = document.createElement("textarea");
+        textarea.innerHTML = msgText.replace(/\r\n/g, "\\r\\n");
+        return textarea.value;
+	}
+	
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("cellular-settings.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseCBS');
+        mobile_CollapsibleAddListener('collapseDAS');
+        mobile_CollapsibleAddListener('collapseUAL');
+        mobile_CollapsibleAddListener('collapsePM');
+        mobile_CollapsibleAddListener('collapsePC');
+        mobile_CollapsibleAddListener('collapseIR');
+        mobile_CollapsibleAddListener('collapseOM');
+
+        counter = 0;
+        saveLoadingListener();
+        saveDialogListener();
+        saveRebootDialogListener();
+        saveEditApnListener();
+        saveAddApnListener();
+        apnJsonList.splice(0,apnJsonList.length);
+        if(defaultApnInfo.length > 2){
+            defaultApnJson = JSON.parse(decodeHTMLText(defaultApnInfo));
+            defaultApnName = decodeURIComponent(defaultApnJson.apn);
+            apnJsonList.push(defaultApnJson);
+        }
+        if(user1ApnInfo.length > 2){
+            user1ApnJson = JSON.parse(decodeHTMLText(user1ApnInfo));
+            apnJsonList.push(user1ApnJson);
+        }
+        if(user2ApnInfo.length > 2){
+            user2ApnJson = JSON.parse(decodeHTMLText(user2ApnInfo));
+            apnJsonList.push(user2ApnJson);
+        }
+        if(user3ApnInfo.length > 2){
+            user3ApnJson = JSON.parse(decodeHTMLText(user3ApnInfo));
+            apnJsonList.push(user3ApnJson);
+        }
+        if(user4ApnInfo.length > 2){
+            user4ApnJson = JSON.parse(decodeHTMLText(user4ApnInfo));
+            apnJsonList.push(user4ApnJson);
+        }
+        
+        if(defaultApnModeInit == 0){
+            defaultApnMode = i18next.t('cellular_Automatic');
+        }else{
+            defaultApnMode = i18next.t('cellular_Manual');
+        }
+        if(defaultApnJson.IPType == 0){
+            defaultApnIPType = i18next.t('cellular_IPv4');
+        }else if(defaultApnJson.IPType == 1){
+            defaultApnIPType = i18next.t('cellular_IPv6');
+        }else{
+            defaultApnIPType = i18next.t('cellular_IPv4v6');
+        }
+//console.log("defaultApnJson: " + JSON.stringify(defaultApnJson) );
+/*
+for(var i=0 ; i<apnJsonList.length ; i++){
+    //console.log(apnJsonList[i].apn);
+}
+*/
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    
+    function response_print(response){
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);        
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+    
+    function toggle_addApn_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_AddApn_modal'));
+        _myModal.toggle();
+    }
+    function saveAddApnListener() {
+        var myModalEl = document.getElementById('_AddApn_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function toggle_editApn_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_EditApn_modal'));
+        _myModal.toggle();
+    }
+    function saveEditApnListener() {
+        var myModalEl = document.getElementById('_EditApn_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+
+    function toggle_reboot_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_reboot_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveRebootDialogListener() {
+        var myModalEl = document.getElementById('_reboot_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+    function initJS_function(pf){
+        document.getElementById(pf + "-AT_ScanModeSelect").onclick = function(){selectObj(pf + '-cellularScanModeSelect', i18next.t('cellular_Automatic'));};
+		document.getElementById(pf + "-ML_ScanModeSelect").onclick = function(){selectObj(pf + '-cellularScanModeSelect', i18next.t('cellular_Manual'));};
+        document.getElementById(pf + "-ApnAuth_NONE").onclick = function(){selectObj(pf + '-cellularApnAuthModeSelect', i18next.t('cellular_meth_none'));};
+        document.getElementById(pf + "-ApnAuth_PAPCHAP").onclick = function(){selectObj(pf + '-cellularApnAuthModeSelect', i18next.t('cellular_meth_papchap'));};
+        document.getElementById(pf + "-ApnAuth_CHAP").onclick = function(){selectObj(pf + '-cellularApnAuthModeSelect', i18next.t('cellular_meth_chap'));};
+        document.getElementById(pf + "-ApnAuth_PAP").onclick = function(){selectObj(pf + '-cellularApnAuthModeSelect', i18next.t('cellular_meth_pap'));};
+        document.getElementById(pf + "-ConType_IPv4").onclick = function(){selectObj(pf + '-cellularConTypeSelect', i18next.t('cellular_IPv4'));};
+        document.getElementById(pf + "-ConType_IPv6").onclick = function(){selectObj(pf + '-cellularConTypeSelect', i18next.t('cellular_IPv6'));};
+        document.getElementById(pf + "-ConType_IPv4v6").onclick = function(){selectObj(pf + '-cellularConTypeSelect', i18next.t('cellular_IPv4v6'));};
+        document.getElementById(pf + "-OP_Routing").onclick = function(){selectObj(pf + '-cellularOperationModeSelect', i18next.t('cellular_routing_mode'));};
+        document.getElementById(pf + "-OP_Bridge").onclick = function(){selectObj(pf + '-cellularOperationModeSelect', i18next.t('cellular_bridge_mode'));};
+		
+		dropdownItemKeyboardNavigation(pf + "-AT_ScanModeSelect");
+		dropdownItemKeyboardNavigation(pf + "-ML_ScanModeSelect");
+		dropdownItemKeyboardNavigation(pf + "-ApnAuth_NONE");
+		dropdownItemKeyboardNavigation(pf + "-ApnAuth_PAPCHAP");
+		dropdownItemKeyboardNavigation(pf + "-ApnAuth_CHAP");
+		dropdownItemKeyboardNavigation(pf + "-ApnAuth_PAP");
+		dropdownItemKeyboardNavigation(pf + "-ConType_IPv4");
+		dropdownItemKeyboardNavigation(pf + "-ConType_IPv6");
+		dropdownItemKeyboardNavigation(pf + "-ConType_IPv4v6");
+		dropdownItemKeyboardNavigation(pf + "-OP_Routing");
+		dropdownItemKeyboardNavigation(pf + "-OP_Bridge");
+
+        document.getElementById(pf + "-cellularNetworkModeSaveBtn").onclick = function(){netModeSave();};
+        document.getElementById(pf + "-cellularNetworkModeScanBtn").onclick = function(){searchOperators();};
+        document.getElementById(pf + "-cellularOperationSaveBtn").onclick = function(){operationSave();};
+        document.getElementById(pf + "-roamingSaveBtn").onclick = function(){changeRoamingSave();};
+        document.getElementById(pf + "-cellularChangePINSaveBtn").onclick = function(){changePINSave();};
+        document.getElementById(pf + "-cellularPINSaveBtn").onclick = function(){pinLockSave();};
+        document.getElementById(pf + "-cellularApnSaveBtn").onclick = function(){defaultAPNSave();};
+        //document.getElementById(pf + "-cellularApnResetBtn").onclick = function(){defaultAPNReset();};
+        document.getElementById(pf + "-cellularApnPasswordText").oninput = function(){defaultAPNpasswordInput();};
+        document.getElementById(pf + "-toggleApnPWD").onclick = function(){hidePass_toggle(pf + '-toggleApnPWD',pf + '-cellularApnPasswordText');};
+        document.getElementById(pf + "-cellularApnAddBtn").onclick = function(){apnAdd();};
+        document.getElementById(pf + "-PINStatusCheckBox").onclick = function(){checkPinStatus();};
+        document.getElementById(pf + "-RoamingCheckBox").onclick = function(){checkRoamingStatus();};
+        document.getElementById(pf + "-cellularConfirmPINText").oninput = function(){maxLeng(pf + '-cellularConfirmPINText',4);};
+        document.getElementById(pf + "-cellularNewPINText").oninput = function(){maxLeng(pf + '-cellularNewPINText',4);};
+        document.getElementById(pf + "-cellularOldPINText").oninput = function(){maxLeng(pf + '-cellularOldPINText',4);};
+        document.getElementById(pf + "-cellularPINText").oninput = function(){maxLeng(pf + '-cellularPINText',4);};
+        document.getElementById(pf + "-cellularApnUsernameText").oninput = function(){defaultAPNusernameInput();};
+        document.getElementById(pf + "-cellularApnNameText").oninput = function(){defaultAPNnameInput();};
+        document.getElementById(pf + "-cellularApnProfileText").oninput = function(){defaultAPNprofileInput();};
+
+        document.getElementById("_dialog_modal_Btn").onclick = function(){toggle_dialog_modal();};
+        document.getElementById("_reboot_dialog_btn").onclick = function(){reloadCurrentPage();};
+        document.getElementById("_AddApn_modal_btn").onclick = function(){apnAddSave();};
+        document.getElementById("_EditApn_modal_btn").onclick = function(){apnEditSave();};
+        document.getElementById("toggleEditApnPWD").onclick = function(){hidePass_toggle('toggleEditApnPWD','_EditApnPasswordText');};
+        document.getElementById("toggleApnPWD").onclick = function(){hidePass_toggle('toggleApnPWD','_AddApnPasswordText');};
+
+        document.getElementById("inModalAddApnAuth_NONE").onclick = function(){selectObj('addAuthTypeSelect', i18next.t('cellular_meth_none'));};
+        document.getElementById("inModalAddApnAuth_PAPCHAP").onclick = function(){selectObj('addAuthTypeSelect', i18next.t('cellular_meth_papchap'));};
+        document.getElementById("inModalAddApnAuth_CHAP").onclick = function(){selectObj('addAuthTypeSelect', i18next.t('cellular_meth_chap'));};
+        document.getElementById("inModalAddApnAuth_PAP").onclick = function(){selectObj('addAuthTypeSelect', i18next.t('cellular_meth_pap'));};
+        document.getElementById("inModalAddConType_IPv4").onclick = function(){selectObj('inModalConTypeSelect', i18next.t('cellular_IPv4'));};
+        document.getElementById("inModalAddConType_IPv6").onclick = function(){selectObj('inModalConTypeSelect', i18next.t('cellular_IPv6'));};
+        document.getElementById("inModalAddConType_IPv4v6").onclick = function(){selectObj('inModalConTypeSelect', i18next.t('cellular_IPv4v6'));};
+
+		dropdownItemKeyboardNavigation("inModalAddApnAuth_NONE");
+		dropdownItemKeyboardNavigation("inModalAddApnAuth_PAPCHAP");
+		dropdownItemKeyboardNavigation("inModalAddApnAuth_CHAP");
+		dropdownItemKeyboardNavigation("inModalAddApnAuth_PAP");
+		dropdownItemKeyboardNavigation("inModalAddConType_IPv4");
+		dropdownItemKeyboardNavigation("inModalAddConType_IPv6");
+		dropdownItemKeyboardNavigation("inModalAddConType_IPv4v6");
+		
+        document.getElementById("editApnAuth_NONE").onclick = function(){selectObj('editAuthTypeSelect', i18next.t('cellular_meth_none'));};
+        document.getElementById("editApnAuth_PAPCHAP").onclick = function(){selectObj('editAuthTypeSelect', i18next.t('cellular_meth_papchap'));};
+        document.getElementById("editApnAuth_CHAP").onclick = function(){selectObj('editAuthTypeSelect', i18next.t('cellular_meth_chap'));};
+        document.getElementById("editApnAuth_PAP").onclick = function(){selectObj('editAuthTypeSelect', i18next.t('cellular_meth_pap'));};
+        document.getElementById("editConType_IPv4").onclick = function(){selectObj('editConTypeSelect', i18next.t('cellular_IPv4'));};
+        document.getElementById("editConType_IPv6").onclick = function(){selectObj('editConTypeSelect', i18next.t('cellular_IPv6'));};
+        document.getElementById("editConType_IPv4v6").onclick = function(){selectObj('editConTypeSelect', i18next.t('cellular_IPv4v6'));};
+
+		dropdownItemKeyboardNavigation("editApnAuth_NONE");
+		dropdownItemKeyboardNavigation("editApnAuth_PAPCHAP");
+		dropdownItemKeyboardNavigation("editApnAuth_CHAP");
+		dropdownItemKeyboardNavigation("editApnAuth_PAP");
+		dropdownItemKeyboardNavigation("editConType_IPv4");
+		dropdownItemKeyboardNavigation("editConType_IPv6");
+		dropdownItemKeyboardNavigation("editConType_IPv4v6");
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+        selectObj_init(platform);
+/*
+        if(defaultApnJson.apn === undefined){
+            document.getElementById(platform+"-cellularApnNameText").value = '';
+        }else{
+            document.getElementById(platform+"-cellularApnNameText").value = defaultApnJson.apn;
+        }
+*/
+        if(defaultApnJson.apn === undefined){
+            document.getElementById(platform+"-cellularApnNameText").value = '';
+        }else{
+            document.getElementById(platform+"-cellularApnNameText").value = decodeURIComponent(defaultApnJson.apn);
+        }
+        if(defaultApnJson.name === undefined){
+            document.getElementById(platform+"-cellularApnProfileText").value = '';
+        }else{
+            document.getElementById(platform+"-cellularApnProfileText").value = decodeURIComponent(defaultApnJson.name);
+        }
+        if(defaultApnJson.user === undefined){
+            document.getElementById(platform+"-cellularApnUsernameText").value = '';
+        }else{
+            document.getElementById(platform+"-cellularApnUsernameText").value = decodeURIComponent(defaultApnJson.user);
+        }
+        if(defaultApnJson.passwd === undefined){
+            document.getElementById(platform+"-cellularApnPasswordText").value = '';
+        }else{
+            document.getElementById(platform+"-cellularApnPasswordText").value = decodeURIComponent(defaultApnJson.passwd);
+        }
+        initApnListTable(apnJsonList, sim_card_state);
+        //initApnListSelect(apnJsonList);
+        initPinStatus(sim_card_state);
+		initAPN(sim_card_state);
+		
+        if(roaming_status == 1){
+            document.getElementById(platform + "-RoamingCheckBox").checked = true;
+        }else{
+            document.getElementById(platform + "-RoamingCheckBox").checked = false;
+        }
+
+        if(model == 'MiFi'){
+            document.getElementById(platform + "-bridgeMode_li").style.display = 'none';
+        }
+
+    }
+
+    function selectObj_init (platform) {
+        selectObj(platform + "-cellularModeSelect",modeSelected);//modeSelected get from CGI, ignore for B01W008
+        //defaultApnAuthMode get from CGI
+        if(defaultApnJson.auth == 'NONE'){
+            selectObj(platform + "-cellularApnAuthModeSelect", i18next.t('cellular_meth_none'));
+        }else if(defaultApnJson.auth == 'PAPCHAP'){
+            selectObj(platform + "-cellularApnAuthModeSelect", i18next.t('cellular_meth_papchap'));
+        }else if(defaultApnJson.auth == 'CHAP'){
+            selectObj(platform + "-cellularApnAuthModeSelect", i18next.t('cellular_meth_chap'));
+        }else if(defaultApnJson.auth == 'PAP'){
+            selectObj(platform + "-cellularApnAuthModeSelect", i18next.t('cellular_meth_pap'));
+        }else{
+            selectObj(platform + "-cellularApnAuthModeSelect", i18next.t('cellular_meth_none'));
+        }
+        //selectObj(platform + "-cellularApnNetworkSelect",defaultApnMode);//defaultApnMode get from CGI
+        selectObj(platform + "-cellularConTypeSelect",defaultApnIPType);
+        if(bridge_mode == '0'){
+            selectObj(platform + "-cellularOperationModeSelect", i18next.t('cellular_routing_mode'));
+        }else{
+            selectObj(platform + "-cellularOperationModeSelect", i18next.t('cellular_bridge_mode'));
+        }
+        //scanMode get from CGI
+        if(scanMode == 'Automatic'){
+            selectObj(platform + "-cellularScanModeSelect",i18next.t('cellular_Automatic'));
+        }else{
+            selectObj(platform + "-cellularScanModeSelect",i18next.t('cellular_Manual'));
+        }
+    }
+
+    function reloadCurrentPage(){
+        toggle_reboot_dialog_modal();
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 500);
+    }
+
+    function defaultAPNSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        	document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title1');
+            document.getElementById('_dialog_modal_text').innerHTML = data_json.error;
+            document.getElementById('_dialog_modal_warning').innerHTML = "";
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            toggle_dialog_modal();
+			return;
+        }else {
+        }
+        toggle_reboot_dialog_modal();
+        //setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function defaultAPNSave(){
+        if(defaultApnJson.apn === undefined || defaultApnJson.apn.length == 0){
+            show_EditError(i18next.t('cellular_apn_error1'));
+            toggle_dialog_modal();
+        }else if(defaultApnJson.apn.length > 32){
+            show_EditError(i18next.t('cellular_apn_error2'));
+            toggle_dialog_modal();
+        }else if( !validateCommonAPN(defaultApnJson.apn) ){
+            show_EditError(i18next.t('cellular_apn_error3'));
+            toggle_dialog_modal();
+        }else if(decodeURIComponent(defaultApnJson.name).length == 0){
+            show_EditError(i18next.t('cellular_apn_error4'));
+        }else if(decodeURIComponent(defaultApnJson.name).length > 32){
+            show_EditError(i18next.t('cellular_apn_error5'));
+        }else{
+            document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+            toggle_modal();
+            
+            //prepare json data
+            const req = defaultApnJson; //create javascript object;
+            req.name = decodeURIComponent(defaultApnJson.name);
+            req.user = decodeURIComponent(defaultApnJson.user);
+            req.passwd = decodeURIComponent(defaultApnJson.passwd);
+            req.apn = decodeURIComponent(defaultApnJson.apn);
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+            //req.DefaultApnMode = defaultApnMode;
+            req.DefaultApnMode = 'Manual';
+
+            if(defaultApnIPType == 'IPv4')
+                req.IPType = 0;
+            else if(defaultApnIPType == 'IPv6')
+                req.IPType = 1;
+            else
+                req.IPType = 2;
+
+            //console.log("req:" + JSON.stringify(req));
+            do_fetch_api("POST", "/cgi-bin/cgi/req_defaultApnSave.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(defaultAPNSave_response).catch(response_print);
+        }
+    }
+
+	function defaultAPNReset_response(data_json){
+		//console.log("res: " + JSON.stringify(data_json));
+		if(!data_json.result){
+			document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title2');
+			document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des2');
+			document.getElementById('_dialog_modal_warning').innerHTML = "";
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+			toggle_dialog_modal();
+			return;
+		}else {
+		}
+		toggle_reboot_dialog_modal();
+	}
+
+	function defaultAPNReset(){
+		document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des3');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+		do_fetch_api("POST", "/cgi-bin/cgi/req_defaultApnReset.cgi", req)
+		.then(response => {setTimeout(toggle_modal,1000); return response}).then(defaultAPNReset_response).catch(response_print);
+	}
+
+    function pinLockSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function pinLockSave(){
+        if(pin_setting_back == pin_setting){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title3');
+            document.getElementById('_dialog_modal_text').innerHTML = "";
+            document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des4');
+            
+            toggle_dialog_modal();
+        }else{
+            document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+            toggle_modal();
+            
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+            if(pin_setting == 1)
+                req.pin_setting = "1";
+            else
+                req.pin_setting = "0";
+            req.pin_code = pin_code;
+
+            //console.log("req:" + JSON.stringify(req));
+
+            do_fetch_api("POST", "/cgi-bin/cgi/req_PINLockSave.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(pinLockSave_response).catch(response_print);
+        }
+    }
+
+    function toggle_nwScan_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_nwScan_modal'));
+        _myModal.toggle();
+    }
+    function saveNwScanListener() {
+        var myModalEl = document.getElementById('_nwScan_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function operatorRegister_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function operatorRegister(idx){
+    	var network = String(scan_network).split(';');
+    	var data = String(network[idx]).split(',');
+        var status = data[2];
+        var mcc = data[0];
+        var mnc = data[1];
+        var description = data[3];
+        var type = data[4];
+        var mnc_includes_pcs_digit = data[5];
+    	//console.log("description: "+description);
+		//console.log("status: "+status);
+		var status_ind = status & 48;
+		if(status_ind == 16)
+		{
+			document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title4');
+			document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des5');
+			document.getElementById('_dialog_modal_Btn').innerHTML = i18next.t('ok');
+			toggle_dialog_modal();
+			return;
+		}
+
+        document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des6');
+        toggle_modal();
+	    
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.mcc = mcc;
+        req.mnc = mnc;
+        req.type = type;
+        req.mnc_includes_pcs_digit = mnc_includes_pcs_digit;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_RegistingOperators.cgi", req)
+        .then(response => {setTimeout(toggle_modal,1000); return response}).then(operatorRegister_response).catch(response_print);
+
+    }
+
+    function insert_operators_data(operatorArray){
+        var tbodyOpList = document.getElementById(platform + '-tbodyOperatorsList');
+        var tbodyOpListCon = '';
+        var tbodyOpListAll = '';
+        var actionIcon = '';
+
+        count = operatorArray.length-1;
+
+        tbodyOpList.innerHTML = '';
+        for(var i=0 ; i<count ; i++)
+        {
+            var data = String(operatorArray[i]).split(',');
+            var status = data[2];
+            var mcc = data[0];
+            var mnc = data[1];
+            var description = data[3];
+            var type = data[4];
+            var mnc_includes_pcs_digit = data[5];
+
+            if(type == "5")
+            {
+                type = "3G";
+            }
+            else if(type == "8")
+            {
+                type = "4G";
+            }
+            else if(type == "12")
+            {
+                type = "5G";
+            }
+            else
+            {
+                type = "Other";
+            }
+
+            if(mcc.length == 1)
+            {
+                mcc = "00"+mcc;
+            }
+            else if(mcc.length == 2)
+            {
+                mcc = "0"+mcc;
+            }
+
+            if(mnc.length == 1)
+            {
+                mnc = "0"+mnc;
+            }
+
+            if(mnc_includes_pcs_digit == 1)//3 digits
+            {
+                if(mnc.length == 2)
+                {
+                    mnc = "0"+mnc;
+                }
+            }
+
+            var status_ind = status & 48;
+            if(status_ind == 16)
+                status = "Forbidden";
+            else if(status_ind == 32)//Not forbidden
+            {
+                var status_tmp = status & 3;
+                if(status_tmp == 1){
+                    var status_Preferred = status & 192;
+                    if(status_Preferred == 64){
+                        status = "Current Serving";
+                    }else{
+                        status = "Available";
+                    }
+                }
+                else if(status_tmp == 2){
+                    status = "Available";
+                }else{
+                    status = "Unknown";
+                }
+            }
+            else
+            {
+                status = "Unknown";
+            }
+
+            if(platform != 'mobile'){
+                tbodyOpListCon = '<tr class="cardViewTableTR">';
+            }else{
+                tbodyOpListCon = '<tr class="cardViewTableTR" id="scan_tr'+i+'">';
+            }
+            tbodyOpListCon = tbodyOpListCon + '<td class="cardViewTableTD"><label>'+status+'</label></td>';
+            tbodyOpListCon = tbodyOpListCon + '<td class="cardViewTableTD"><label>'+description+'</label></td>';
+            if(platform != 'mobile'){
+                tbodyOpListCon = tbodyOpListCon + '<td class="cardViewTableTD"><label>'+mcc+'-'+mnc+'</label></td>';
+                tbodyOpListCon = tbodyOpListCon + '<td class="cardViewTableTD"><label>'+type+'</label></td>';
+            }
+
+            if(platform != 'mobile'){
+                if(status == "Current Serving"){
+                    actionIcon = '<button class="btn" id="Regbtn' +i+ '" disabled><img src="/images/iconConnectNetworkDisable.svg" alt="'+ i18next.t('cellular_sim_serving') +'"></button>';
+                }else if(status == "Available"){
+                    if(sim_card_state != 'SIM Locked' && sim_card_state != 'No SIM'){
+                        actionIcon = '<button class="btn" id="Regbtn' +i+ '"><img src="/images/iconConnectNetwork.svg" alt="'+ i18next.t('cellular_sim_Available') +'"></button>';
+                    }else{
+                        actionIcon = '<button class="btn" id="Regbtn' +i+ '" disabled><img src="/images/iconConnectNetworkDisable.svg" alt="'+ i18next.t('cellular_nosim') +'"></button>';
+                    }
+                }else{
+                    actionIcon = '<button class="btn" id="Regbtn' +i+ '" disabled><img src="/images/iconForbidden.svg" alt="'+ i18next.t('cellular_sim_forbidden') +'"></button>';
+                }
+                tbodyOpListCon = tbodyOpListCon + '<td class="cardViewTableTD"><label>' + actionIcon + '</label></td>';
+            }
+            tbodyOpListAll += tbodyOpListCon;
+        }
+        tbodyOpList.innerHTML = tbodyOpListAll;
+		for(var i=0 ; i<count ; i++)(function(i){
+            if(platform != 'mobile'){
+                document.getElementById("Regbtn"+i).style = "padding:0";
+            }
+            if((sim_card_state != 'SIM Locked' && sim_card_state != 'No SIM') || (data[2]&48) == 16){
+                if(platform == 'mobile'){
+                    document.getElementById("scan_tr"+i).onclick = function(){showDialog(i);};
+                }
+                if(platform != 'mobile'){
+                    document.getElementById("Regbtn"+i).onclick = function(){operatorRegister(i);};
+                }
+            }
+        })(i);
+    }
+    function showDialog(idx){
+        var network = String(scan_network).split(';');
+        var data = String(network[idx]).split(',');
+        var status = data[2];
+        var mcc = data[0];
+        var mnc = data[1];
+        var description = data[3];
+        var type = data[4];
+        var mnc_includes_pcs_digit = data[5];
+        if(type == "5")
+        {
+            type = "3G";
+        }
+        else if(type == "8")
+        {
+            type = "4G";
+        }
+        else if(type == "12")
+        {
+            type = "5G";
+        }
+        else
+        {
+            type = "Other";
+        }
+
+        if(mcc.length == 1)
+        {
+            mcc = "00"+mcc;
+        }
+        else if(mcc.length == 2)
+        {
+            mcc = "0"+mcc;
+        }
+
+        if(mnc.length == 1)
+        {
+            mnc = "0"+mnc;
+        }
+
+        if(mnc_includes_pcs_digit == 1)//3 digits
+        {
+            if(mnc.length == 2)
+            {
+                mnc = "0"+mnc;
+            }
+        }
+
+        var status_ind = status & 48;
+        if(status_ind == 16)
+            status = i18next.t('cellular_sim_forbidden');
+        else if(status_ind == 32)//Not forbidden
+        {
+            var status_tmp = status & 3;
+            if(status_tmp == 1){
+                var status_Preferred = status & 192;
+                if(status_Preferred == 64){
+                    status = i18next.t('cellular_sim_serving');
+                }else{
+                    status = i18next.t('cellular_sim_Available');
+                }
+            }
+            else if(status_tmp == 2){
+                status = i18next.t('cellular_sim_Available');
+            }else{
+                status = i18next.t('cellular_sim_Unknown');
+            }
+        }
+        else
+        {
+            status = i18next.t('cellular_sim_Unknown');
+        }
+        toggle_nwScan_modal();
+        document.getElementById('nwScan_Status').innerHTML = status;
+        if(status != "Available"){
+            document.getElementById('nwScanActionBtn').disabled = true;
+        }else{
+            document.getElementById('nwScanActionBtn').disabled = false;
+        }
+        document.getElementById('nwScan_CellularNetwork').innerHTML = description;
+        document.getElementById('nwScan_MCCMNC').innerHTML = mcc+'-'+mnc;
+        document.getElementById('nwScan_CellularType').innerHTML = type;
+        
+        document.getElementById('nwScanActionBtn').onclick = () => {
+            toggle_nwScan_modal();
+            operatorRegister(idx);
+        };
+    
+    }
+    function searchOperators_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+        }else {
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            scan_network = data_json.scan_network;
+            if(scan_network != "" && scan_network.length > 5)
+            {
+                if( scan_network != "No Avaiable Networks")
+                {
+                    var network = String(scan_network).split(';');
+                    insert_operators_data(network);
+                }
+                else
+                {}
+            }
+			document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title5');
+			document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des7');
+			document.getElementById('_dialog_modal_Btn').innerHTML = i18next.t('ok');
+			toggle_dialog_modal();
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 60000);
+        }
+    }
+    function searchOperators(){
+        document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des8');
+        toggle_modal();
+        
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_SearchOperators.cgi", req)
+        <!-- .then(searchOperators_response).catch(response_print); -->
+        .then(response => {setTimeout(toggle_modal,1000); return response}).then(searchOperators_response).catch(response_print);
+    }
+
+    function changeRoamingSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function changeRoamingSave(){
+            document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+            toggle_modal();
+            
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+            req.roaming_status = roaming_status;
+
+            //console.log("req:" + JSON.stringify(req));
+
+            do_fetch_api("POST", "/cgi-bin/cgi/req_ChangeRoaming.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(changeRoamingSave_response).catch(response_print);
+    }
+
+    function changePINSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+        }else {
+            do_logout();
+        }
+    }
+    function changePINSave(){
+        var old_pin = document.getElementById(platform + "-cellularOldPINText").value;
+        var new_pin = document.getElementById(platform + "-cellularNewPINText").value;
+        var confirm_pin = document.getElementById(platform + "-cellularConfirmPINText").value;
+        if(new_pin != confirm_pin){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title3');
+            document.getElementById('_dialog_modal_text').innerHTML = "";
+            document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des9');
+            
+            toggle_dialog_modal();
+        }else{
+            document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+            toggle_modal();
+            
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+            req.old_pin = old_pin;
+            req.new_pin = new_pin;
+
+            //console.log("req:" + JSON.stringify(req));
+
+            do_fetch_api("POST", "/cgi-bin/cgi/req_ChangePIN.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(changePINSave_response).catch(response_print);
+        }
+    }
+    
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        document.getElementById('_dialog_modal_Btn').onclick = toggle_dialog_modal;
+    }
+    function netModeSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 2000);
+        }else {
+            //setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);// for need reboot device
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 2000);
+        }
+    }
+/*
+    function pre_netModeSave(){
+        document.getElementById('_dialog_modal_header').innerHTML = "Change Network Mode";
+        document.getElementById('_dialog_modal_text').innerHTML = "Are you sure?<br>Changing the network mode will cause the device to reboot.";
+        document.getElementById('_dialog_modal_Btn').onclick = () => {
+        	document.getElementById('_dialog_modal_Btn').onclick = toggle_dialog_modal;
+            netModeSave();
+            toggle_dialog_modal();//hide
+        };
+        toggle_dialog_modal();//show
+    }
+*/
+    function netModeSave(){
+      document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+      toggle_modal();
+      
+      //prepare json data
+      const req = {}; //create javascript object;
+      req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+      if(modeSelected === '4G/5G(Auto)'){
+        req.modeSelected = '80';
+      }else if(modeSelected === '4G'){
+        req.modeSelected = '16';
+      }else if(modeSelected === '5G SA'){
+        req.modeSelected = '64';
+      }else{//NSA
+        req.modeSelected = '80';
+      }
+
+      //console.log("req:" + JSON.stringify(req));
+/*
+      do_fetch_api("POST", "/cgi-bin/cgi/req_CellularModeSelection.cgi", req)
+        .then(response => {
+			setTimeout(() => {
+				document.getElementById('_modal_text').innerHTML = "Rebooting, please wait.";
+			},1000);
+			return response
+		})
+        .then(netModeSave_response)
+        .catch(response_print)
+        .finally(() => {
+				//console.log("Redirect to login page.");
+				setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+			});
+*/
+      do_fetch_api("POST", "/cgi-bin/cgi/req_CellularModeSelection.cgi", req)
+        .then(response => {
+			return response
+		})
+        .then(netModeSave_response)
+        .catch(response_print);
+    }
+
+    function operationSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            //document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+        }else {            
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+        }
+    }
+    function operationSave(){
+      document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des1');
+      toggle_modal();
+      
+      //prepare json data
+      const req = {}; //create javascript object;
+      req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+      if(document.getElementById(platform + '-cellularOperationModeSelect').innerHTML === i18next.t('cellular_routing_mode')){
+        req.modeSelectType = "Routing";
+      }else{
+        req.modeSelectType = "Bridge";
+      }
+      req.macSelectType = 'Auto';
+
+      //console.log("req:" + JSON.stringify(req));
+
+      do_fetch_api("POST", "/cgi-bin/cgi/req_LanOperationModeSave.cgi", req)
+      .then(response => {setTimeout(toggle_modal,1000); return response}).then(operationSave_response).catch(response_print);
+    }
+
+    function initApnListTable(apnArray, simStatus){
+        var tbodyApnList = document.getElementById(platform + '-tbodyApnList');
+        var tbodyApnListCon = '';
+        var tbodyApnListAll = '';
+        var editIcon = '';
+        var deleteIcon = '';
+        tbodyApnList.innerHTML = '';
+        for(var i=0 ; i<apnArray.length ; i++)
+        {
+            tbodyApnListCon = '<tr class="cardViewTableTR">';
+            if(apnArray[i].disable == 0){
+                tbodyApnListCon = tbodyApnListCon + '<td class="cardViewTableTD"><label><img src="/images/iconStatusOn.svg" alt="'+ i18next.t('cellular_enable_alt') +'">Enabled</label></td>';
+            }else{
+                tbodyApnListCon = tbodyApnListCon + '<td class="cardViewTableTD"><label><img src="/images/iconStatusOff.svg" alt="'+ i18next.t('cellular_disable_alt') +'">Disabled</label></td>';
+            }
+            if(i == 0){
+                editIcon = '<img src="/images/ic_editDisable.svg" alt="'+ i18next.t('cellular_dis_apn_edit_alt') +'">';
+                deleteIcon = '<img src="/images/ic_deleteDisable.svg" alt="'+ i18next.t('cellular_dis_apn_del_alt') +'">';
+            }else{
+				if(simStatus=="No SIM")
+				{
+					editIcon = '<button class="btn" id="ApnEditBtn'+i+'" disabled><img src="/images/ic_editDisable.svg" alt="'+ i18next.t('cellular_dis_apn_edit_alt') +'"></button>';
+					deleteIcon = '<button class="btn" id="ApnDelBtn'+i+'" disabled><img src="/images/ic_deleteDisable.svg" alt="'+ i18next.t('cellular_dis_apn_del_alt') +'"></button>';
+				}
+				else
+				{				
+					editIcon = '<button class="btn" id="ApnEditBtn'+i+'"><img src="/images/ic_edit.svg" alt="'+ i18next.t('cellular_apn_edit_alt') +'"></button>';
+					deleteIcon = '<button class="btn" id="ApnDelBtn'+i+'"><img src="/images/ic_delete.svg" alt="'+ i18next.t('cellular_apn_del_alt') +'"></button>';
+				}
+            }
+            if(platform != 'mobile'){
+                tbodyApnListCon = tbodyApnListCon + '<td class="cardViewTableTD"><label>' + apnArray[i].apn + '</label></td>';
+                var IPType_str = 'IPv4';
+                if(apnArray[i].IPType == 0){
+                    IPType_str = 'IPv4';
+                }else if(apnArray[i].IPType == 1){
+                    IPType_str = 'IPv6';
+                }else{
+                    IPType_str = 'IPv4 & IPv6';
+                }
+                tbodyApnListCon = tbodyApnListCon + '<td class="cardViewTableTD"><label>' + IPType_str + '</label></td>';
+            }
+            tbodyApnListCon = tbodyApnListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+            
+            tbodyApnListAll += tbodyApnListCon;
+        }
+        tbodyApnList.innerHTML = tbodyApnListAll;
+        for(var i=1 ; i<apnArray.length ; i++)(function(i){
+            document.getElementById("ApnEditBtn"+i).onclick = function(){apnEdit(i);};
+            document.getElementById("ApnDelBtn"+i).onclick = function(){pre_apnDelete(i);};
+        })(i);
+    }
+
+    function checkRoamingStatus() {
+        if(document.getElementById(platform+"-RoamingCheckBox").checked)
+            roaming_status = 1;
+        else
+            roaming_status = 0;
+    }
+
+    function checkDefaultApnStatus() {
+        if(document.getElementById(platform + "-apnStatusCheckBox").checked){
+            defaultApnJson.disable = 0;
+        }else{
+            defaultApnJson.disable = 1;
+        }
+    }
+    function checkPinStatus() {
+        if(document.getElementById(platform+"-PINStatusCheckBox").checked)
+            pin_setting = 1;
+        else
+            pin_setting = 0;
+    }
+    function initPinStatus(pinStatus) {
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+        checkPinSaveBtn(pin_code.length);
+
+        document.getElementById(platform + "-cellularPINText").value = pin_code;
+        if(pin_setting == 1)
+            document.getElementById(platform + "-PINStatusCheckBox").checked = true;
+        else
+            document.getElementById(platform + "-PINStatusCheckBox").checked = false;
+
+        if(pin_setting_back == 0){
+            document.getElementById(platform + '-OldPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularOldPINText").disabled = true;
+            document.getElementById(platform + '-NewPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularNewPINText").disabled = true;
+            document.getElementById(platform + '-ConfirmPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularConfirmPINText").disabled = true;
+            document.getElementById(platform + "-cellularChangePINSaveBtn").disabled = true;
+        }
+
+        switch(pinStatus)
+        {		
+            case "PIN Locked":
+            case "PIN2 Locked":
+            //document.getElementById("PUKCard").style.display = "block";
+            var msg = "";
+            var tryCount = "10";
+            
+                if(pin_retry_cnt == 0){
+                    document.getElementById(platform + "-PINInputErrorText").style.display = "block";
+                    document.getElementById(platform + "-PINInputErrorText").innerHTML = i18next.t('cellular_pin_error1');
+                    document.getElementById(platform + "-cellularPINTextDiv").style = "border-bottom:1px solid var(--errorColor);";
+                    document.getElementById(platform + "-cellularPINText").style = "color: var(--errorColor);";
+                }
+            
+            break;
+        
+            case "Inserted":
+            case "Disconnected":
+            case "Connected":
+            case "Connected (Roaming)":
+            
+                if(pin_retry_cnt < 3){
+                    document.getElementById(platform + "-PINInputErrorText").style.display = "block";
+                    document.getElementById(platform + "-PINInputErrorText").innerHTML = i18next.t('cellular_pin_error2', {count: pin_retry_cnt});
+                    document.getElementById(platform + "-cellularPINTextDiv").style = "border-bottom:1px solid var(--errorColor);";
+                    document.getElementById(platform + "-cellularPINText").style = "color: var(--errorColor);";
+                }
+            break;
+            
+            case "Enter PIN":
+            case "Enter PIN2":
+            //Need to EnterPin
+                if(pin_retry_cnt < 3){
+                    document.getElementById(platform + "-PINInputErrorText").style.display = "block";
+                    document.getElementById(platform + "-PINInputErrorText").innerHTML = i18next.t('cellular_pin_error2', {count: pin_retry_cnt});
+                    document.getElementById(platform + "-cellularPINTextDiv").style = "border-bottom:1px solid var(--errorColor);";
+                    document.getElementById(platform + "-cellularPINText").style = "color: var(--errorColor);";
+                }
+            break;
+            
+            case "PUK Locked":
+            {
+                
+            }
+            break;
+            
+            case "SIM Locked":
+            default:
+            //NoSimCard
+            document.getElementById(platform + '-PINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularPINText").disabled = true;
+            document.getElementById(platform + '-PINStatusTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-PINStatusCheckBox").disabled = true;
+            
+            document.getElementById(platform + '-OldPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularOldPINText").disabled = true;
+            document.getElementById(platform + '-NewPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularNewPINText").disabled = true;
+            document.getElementById(platform + '-ConfirmPINInputTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + "-cellularConfirmPINText").disabled = true;
+            document.getElementById(platform + "-cellularChangePINSaveBtn").disabled = true;
+            
+            break;
+        }
+    }
+	
+	function initAPN(simStatus)
+	{
+		if(simStatus=="No SIM")
+		{
+			document.getElementById(platform + "-cellularApnSaveBtn").disabled = true;
+			document.getElementById(platform + "-cellularApnAddBtn").disabled = true;			
+			document.getElementById(platform + "-cellularApnAddBtn").style = "color: var(--disabledText);";
+			document.getElementById(platform + "-cellularApnAddBtn_img").src = "/images/iconAddNewDisable.svg";
+		}
+		else
+		{
+			document.getElementById(platform + "-cellularApnSaveBtn").disabled = false;
+			document.getElementById(platform + "-cellularApnAddBtn").disabled = false;			
+			document.getElementById(platform + "-cellularApnAddBtn").style = "";
+			document.getElementById(platform + "-cellularApnAddBtn_img").src = "/images/iconAddNew.svg";
+		}
+	}	
+
+    function checkScanMode(scanMode) {
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        if(scanMode == 'Automatic'){
+            document.getElementById(platform + "-cellularNetworkModeSelectTitleTd").style.display = 'table-cell';
+            document.getElementById(platform + "-cellularNetworkModeSelectTd").style.display = 'table-cell';
+            document.getElementById(platform + "-cellularNetworkModeSaveBtn").style.display = 'inline-block';
+            document.getElementById(platform + "-cellularNetworkModeScanBtn").style.display = 'none';
+            document.getElementById(platform + "-cellularNetworkModeScanTable").style.display = 'none';
+            if(platform == 'xxl'){
+                document.getElementById(platform + "-cellularTmp1Td").style.display = 'none';
+                document.getElementById(platform + "-cellularTmp2Td").style.display = 'none';
+            }
+        }else{
+            document.getElementById(platform + "-cellularNetworkModeSelectTitleTd").style.display = 'none';
+            document.getElementById(platform + "-cellularNetworkModeSelectTd").style.display = 'none';
+            document.getElementById(platform + "-cellularNetworkModeSaveBtn").style.display = 'none';
+            document.getElementById(platform + "-cellularNetworkModeScanBtn").style.display = 'inline-block';
+            document.getElementById(platform + "-cellularNetworkModeScanTable").style.display = 'table';
+            if(platform == 'xxl'){
+                document.getElementById(platform + "-cellularTmp1Td").style.display = 'table-cell';
+                document.getElementById(platform + "-cellularTmp2Td").style.display = 'table-cell';
+            }
+        }
+        if(mode_list.length > 2){
+            document.getElementById(platform + "-ModeSelectDiv").style.display = 'block';
+            document.getElementById(platform + "-ModeSelectLabel").style.display = 'none';
+            document.getElementById(platform + "-cellularNetworkModeSaveBtn").disabled = false;
+			var modeSelectUL = document.getElementById(platform + "-ModeSelectUL");
+			var tmp_str = '';
+            for(var i=0 ; i<(mode_list.length-1) ; i++){
+                tmp_str = tmp_str + '<li><a class="dropdown-item" href="#" id="'+platform+'ModeSelectLi'+i+'">'+mode_list[i]+'</a></li>';
+            }
+            modeSelectUL.innerHTML = tmp_str;
+            for(var i=0 ; i<(mode_list.length-1) ; i++)(function(i){
+                document.getElementById(platform+'ModeSelectLi'+i).onclick = function(){selectObj(platform+"-cellularModeSelect",mode_list[i]);};
+				dropdownItemKeyboardNavigation(platform+'ModeSelectLi'+i);
+            })(i);
+        }else{
+            document.getElementById(platform + "-ModeSelectDiv").style.display = 'none';
+            document.getElementById(platform + "-ModeSelectLabel").style.display = 'block';
+            document.getElementById(platform + "-cellularNetworkModeSaveBtn").disabled = true;
+            document.getElementById(platform + "-ModeSelectLabel").innerHTML = mode_list[0];
+        }
+    }
+/* Change select object text when selected item(s) */
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+
+        selectItem.innerHTML = text;
+        if(id.indexOf("cellularModeSelect") != -1){
+            modeSelected = text;
+        }else if(id.indexOf("cellularApnNetworkSelect") != -1){
+            checkApnNetwork(text);
+            defaultApnMode = text;
+        }else if(id.indexOf("cellularConTypeSelect") != -1){
+            if(text == 'IPv4')
+                defaultApnJson.IPType = 0;
+            else if(text == 'IPv6')
+                defaultApnJson.IPType = 1;
+            else
+                defaultApnJson.IPType = 2;
+            defaultApnIPType = text;
+        }else if(id.indexOf("cellularApnAuthModeSelect") != -1){
+            if(text == i18next.t('cellular_meth_none')){
+                defaultApnJson.auth = 'NONE';
+                defaultApnAuthMode = 'NONE';
+                //checkApnAuth('NONE');
+            }else if(text == i18next.t('cellular_meth_papchap')){
+                defaultApnJson.auth = 'PAPCHAP';
+                defaultApnAuthMode = 'PAPCHAP';
+                //checkApnAuth('PAPCHAP');
+            }else if(text == i18next.t('cellular_meth_chap')){
+                defaultApnJson.auth = 'CHAP';
+                defaultApnAuthMode = 'CHAP';
+                //checkApnAuth('CHAP');
+            }else if(text == i18next.t('cellular_meth_pap')){
+                defaultApnJson.auth = 'PAP';
+                defaultApnAuthMode = 'PAP';
+                //checkApnAuth('PAP');
+            }else{
+                defaultApnJson.auth = 'NONE';
+                defaultApnAuthMode = 'NONE';
+                //checkApnAuth('NONE');
+            }
+        }else if(id.indexOf("cellularScanModeSelect") != -1){
+            var tmp_mode;
+            if(text == i18next.t('cellular_Automatic')){
+                tmp_mode = 'Automatic';
+            }else{
+                tmp_mode = 'Manual';
+            }
+            checkScanMode(tmp_mode);
+            scanMode = tmp_mode;
+        }
+    }
+
+    function defaultAPNnameInput() {
+        defaultApnJson.apn = document.getElementById(platform + "-cellularApnNameText").value;
+    }
+    function defaultAPNprofileInput() {
+        defaultApnJson.name = document.getElementById(platform + "-cellularApnProfileText").value;
+    }
+    function defaultAPNusernameInput() {
+        defaultApnJson.user = document.getElementById(platform + "-cellularApnUsernameText").value;
+    }
+    function defaultAPNpasswordInput() {
+        defaultApnJson.passwd = document.getElementById(platform + "-cellularApnPasswordText").value;
+    }
+
+    function checkApnNetwork(apnNetwork) {
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        if(apnNetwork == 'Automatic'){
+            document.getElementById(platform + '-cellularConTypeSelectTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + '-cellularConTypeSelect').disabled = true;
+            document.getElementById(platform + '-cellularConTypeSelectRight').disabled = true;
+            document.getElementById(platform + '-cellularApnNameTextTitleTd').style = "color: var(--disabledText);";
+            /*
+            document.getElementById(platform + '-cellularApnNameTextTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + '-cellularApnNameText').disabled = true;
+            */
+        }else{
+            document.getElementById(platform + '-cellularConTypeSelectTitleTd').style = "color: var(--headingText);";
+            document.getElementById(platform + '-cellularConTypeSelect').disabled = false;
+            document.getElementById(platform + '-cellularConTypeSelectRight').disabled = false;
+            document.getElementById(platform + '-cellularApnNameTextTitleTd').style = "color: var(--headingText);";
+            /*
+            document.getElementById(platform + '-cellularApnNameTextTitleTd').style = "color: var(--headingText);";
+            document.getElementById(platform + '-cellularApnNameText').disabled = false;
+            */
+        }
+    }
+
+    function maxLeng(id, leng) {
+        if (document.getElementById(id).value.length > leng) {
+            document.getElementById(id).value = document.getElementById(id).value.slice(0,leng); 
+        }
+        if(id.indexOf("cellularPINText") != -1){
+            pin_code = document.getElementById(id).value;
+            checkPinSaveBtn(document.getElementById(id).value.length);
+        }
+    }
+    function hidePass_toggle(toggleid, id)
+    {
+        var password_eye = document.getElementById(toggleid);
+        var password_input = document.getElementById(id);
+        if(password_input.type === "password")
+        {
+            password_input.type = "text";
+            password_eye.src = "/images/ic_login_show.svg";
+        }
+        else if(password_input.type === "text")
+        {
+            password_input.type = "password";
+            password_eye.src = "/images/ic_login_hide.svg";
+        }
+    }
+    function checkPinSaveBtn(leng) {
+        if(leng == 4){
+            document.getElementById(platform + "-cellularPINSaveBtn").disabled = false;
+        }else{
+            document.getElementById(platform + "-cellularPINSaveBtn").disabled = true;
+        }
+    }
+/*    
+    function defaultAPNnameInput() {
+        defaultApnJson.apn = document.getElementById(platform + "-cellularApnNameText").value;
+    }
+*/
+    var currentAddApn = {};
+    function apnAdd_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title1');
+            document.getElementById('_dialog_modal_text').innerHTML = data_json.error;
+            document.getElementById('_dialog_modal_warning').innerHTML = "";
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            toggle_dialog_modal();
+			return;
+        }else {
+        }
+        toggle_reboot_dialog_modal();
+        //setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function apnAdd(){
+    //console.log("Apn Add!!!!!!!!!!");
+        if(apnJsonList.length >= 5){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title6');
+            document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des10');
+            toggle_dialog_modal();
+        }else{
+            document.getElementById('_AddApn_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+            document.getElementById('_AddApnStatusCheckBox').checked = true;
+            toggle_addApn_modal();
+        }
+    }
+    function apnAddSave(){
+        toggle_addApn_modal();
+        for(var i=0 ; i<apnJsonList.length ; i++){
+            //console.log(apnJsonList[i].apn);
+            if(document.getElementById('addApnNameText').value == decodeURIComponent(apnJsonList[i].apn)){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des12');
+                toggle_dialog_modal();
+                return;
+            }
+        }
+        if(document.getElementById('addAuthTypeSelect').innerHTML != i18next.t('cellular_meth_none') && 
+            (document.getElementById('_AddApnUsernameText').value.length <= 0 || document.getElementById('_AddApnPasswordText').value.length <= 0)){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+            document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+            document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des13');
+            toggle_dialog_modal();
+            return;
+        }
+        if(document.getElementById('addApnNameText').value.length > 0){
+            if(document.getElementById('addApnNameText').value.length > 32){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error2');
+                toggle_dialog_modal();
+            }else if(!validateCommonAPN(document.getElementById('addApnNameText').value)){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error2');
+                toggle_dialog_modal();
+            }else{
+                //prepare json data
+                const req = {}; //create javascript object;
+                req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+                if(document.getElementById('_AddApnStatusCheckBox').checked)
+                    req.disable = 0;
+                else
+                    req.disable = 1;
+                req.name = document.getElementById('_AddApnProfileText').value;
+                req.apn = document.getElementById('addApnNameText').value;
+                if(document.getElementById('addAuthTypeSelect').innerHTML == i18next.t('cellular_meth_none')){
+                    req.auth = 'NONE';
+                }else if(document.getElementById('addAuthTypeSelect').innerHTML == i18next.t('cellular_meth_papchap')){
+                    req.auth = 'PAPCHAP';
+                }else if(document.getElementById('addAuthTypeSelect').innerHTML == i18next.t('cellular_meth_chap')){
+                    req.auth = 'CHAP';
+                }else if(document.getElementById('addAuthTypeSelect').innerHTML == i18next.t('cellular_meth_pap')){
+                    req.auth = 'PAP';
+                }else{
+                    req.auth = 'NONE';
+                }
+                req.user = document.getElementById('_AddApnUsernameText').value;
+                req.passwd = document.getElementById('_AddApnPasswordText').value;
+                var IPType_str = document.getElementById('inModalConTypeSelect').innerHTML;
+                switch(IPType_str){
+                case 'IPv4':
+                    req.IPType = 0;
+                break;
+                case 'IPv6':
+                    req.IPType = 1;
+                break;
+                default:
+                    req.IPType = 2;
+                break;
+                }
+                
+                document.getElementById('_modal_text').innerHTML = i18next.t('cellular_dialog_err_des14', {apn: req.apn});
+                toggle_modal();
+
+                //console.log("req:" + JSON.stringify(req));
+
+                do_fetch_api("POST", "/cgi-bin/cgi/req_addUserApn.cgi", req)
+                .then(response => {setTimeout(toggle_modal,1000); return response}).then(apnAdd_response).catch(response_print);
+            }
+        }else{
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+            document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+            document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des15');
+            toggle_dialog_modal();
+        }
+    }
+    
+    var currentEditApn = {};
+    function apnEdit_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title1');
+            document.getElementById('_dialog_modal_text').innerHTML = data_json.error;
+            document.getElementById('_dialog_modal_warning').innerHTML = "";
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            toggle_dialog_modal();
+			return;		
+        }else {
+        }
+        toggle_reboot_dialog_modal();
+        //setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function apnEdit(apnArrayIdx){
+    //console.log("Apn Edit!!!!!!!!!! " + apnArrayIdx);
+        document.getElementById('_EditApn_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+        if(apnJsonList[apnArrayIdx].disable == 0)
+            document.getElementById('_EditApnStatusCheckBox').checked = true;
+        else
+            document.getElementById('_EditApnStatusCheckBox').checked = false;
+        document.getElementById('_EditApnProfileText').value = decodeURIComponent(apnJsonList[apnArrayIdx].name);
+        document.getElementById('_EditApnNameText').value = decodeURIComponent(apnJsonList[apnArrayIdx].apn);
+        document.getElementById('_EditApnUsernameText').value = decodeURIComponent(apnJsonList[apnArrayIdx].user);
+        document.getElementById('_EditApnPasswordText').value = decodeURIComponent(apnJsonList[apnArrayIdx].passwd);
+        document.getElementById('editAuthTypeSelect').innerHTML = apnJsonList[apnArrayIdx].auth;
+        if(apnJsonList[apnArrayIdx].auth == 'NONE'){
+            document.getElementById('editAuthTypeSelect').innerHTML = i18next.t('cellular_meth_none');
+        }else if(apnJsonList[apnArrayIdx].auth == 'PAPCHAP'){
+            document.getElementById('editAuthTypeSelect').innerHTML = i18next.t('cellular_meth_papchap');
+        }else if(apnJsonList[apnArrayIdx].auth == 'CHAP'){
+            document.getElementById('editAuthTypeSelect').innerHTML = i18next.t('cellular_meth_chap');
+        }else if(apnJsonList[apnArrayIdx].auth == 'PAP'){
+            document.getElementById('editAuthTypeSelect').innerHTML = i18next.t('cellular_meth_pap');
+        }else{
+            document.getElementById('editAuthTypeSelect').innerHTML = i18next.t('cellular_meth_none');
+        }
+        switch(apnJsonList[apnArrayIdx].IPType){
+        case 0:
+            document.getElementById('editConTypeSelect').innerHTML = 'IPv4';
+        break;
+        case 1:
+            document.getElementById('editConTypeSelect').innerHTML = 'IPv6';
+        break;
+        default:
+            document.getElementById('editConTypeSelect').innerHTML = 'IPv4 & IPv6';
+        break;
+        }
+        toggle_editApn_modal();
+        
+        //prepare json data
+        currentEditApn = {};
+        currentEditApn = apnJsonList[apnArrayIdx];
+
+        //console.log("currentEditApn:" + JSON.stringify(currentEditApn));
+    }
+    function apnEditSave(){
+        //prepare json data
+        for(var i=0 ; i<apnJsonList.length ; i++){
+            //console.log(JSON.stringify(apnJsonList[i]));
+            if(currentEditApn.instance == apnJsonList[i].instance){
+                continue;
+            }
+            if(document.getElementById('_EditApnNameText').value === decodeURIComponent(apnJsonList[i].apn)){
+                toggle_editApn_modal();
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title7');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error6');
+                toggle_dialog_modal();
+                return;
+            }
+        }
+        const req = currentEditApn; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        if(document.getElementById('_EditApnStatusCheckBox').checked)
+            req.disable = 0;
+        else
+            req.disable = 1;
+        var IPType_str = document.getElementById('editConTypeSelect').innerHTML;
+        switch(IPType_str){
+            case 'IPv4':
+                req.IPType = 0;
+            break;
+            case 'IPv6':
+                req.IPType = 1;
+            break;
+            default:
+                req.IPType = 2;
+            break;
+        }
+        req.name = document.getElementById('_EditApnProfileText').value;
+        req.apn = document.getElementById('_EditApnNameText').value;
+        req.user = document.getElementById('_EditApnUsernameText').value;
+        req.passwd = document.getElementById('_EditApnPasswordText').value;
+        if(document.getElementById('editAuthTypeSelect').innerHTML == i18next.t('cellular_meth_none')){
+            req.auth = 'NONE';
+        }else if(document.getElementById('editAuthTypeSelect').innerHTML == i18next.t('cellular_meth_papchap')){
+            req.auth = 'PAPCHAP';
+        }else if(document.getElementById('editAuthTypeSelect').innerHTML == i18next.t('cellular_meth_chap')){
+            req.auth = 'CHAP';
+        }else if(document.getElementById('editAuthTypeSelect').innerHTML == i18next.t('cellular_meth_pap')){
+            req.auth = 'PAP';
+        }else{
+            req.auth = 'NONE';
+        }
+
+        toggle_editApn_modal();
+
+        if(document.getElementById('_EditApnNameText').value.length > 0 && document.getElementById('_EditApnProfileText').value.length > 0){
+            if(req.apn.length > 32){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error2');
+                toggle_dialog_modal();
+            }else if(!validateCommonAPN(req.apn)){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error3');
+                toggle_dialog_modal();
+            }else if(req.name.length > 32){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_apn_error4');
+                toggle_dialog_modal();
+            }else if(req.auth != 'NONE' && 
+            (req.user.length <= 0 || req.passwd.length <= 0)){
+                document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+                document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+                document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des13');
+                toggle_dialog_modal();
+            }else{
+                document.getElementById('_modal_text').innerHTML = i18next.t('cellular_apn_des3', {apn: currentEditApn.apn});
+                toggle_modal();
+
+                //console.log("req:" + JSON.stringify(req));
+
+                do_fetch_api("POST", "/cgi-bin/cgi/req_editUserApn.cgi", req)
+                .then(response => {setTimeout(toggle_modal,1000); return response}).then(apnEdit_response).catch(response_print);
+            }
+        }else if(document.getElementById('_EditApnProfileText').value.length <= 0){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+            document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+            document.getElementById('_dialog_modal_warning').innerHTML =  i18next.t('cellular_apn_error7');
+            toggle_dialog_modal();
+        }else{
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title8');
+            document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_dialog_err_des11');
+            document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('cellular_dialog_err_des15');
+            toggle_dialog_modal();
+        }
+
+    }
+    function apnDelete_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title1');
+            document.getElementById('_dialog_modal_text').innerHTML = data_json.error;
+            document.getElementById('_dialog_modal_warning').innerHTML = "";
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+            toggle_dialog_modal();
+			return;			
+        }else {
+        }
+        toggle_reboot_dialog_modal();
+        //setTimeout(() => {window.location.href = "/cgi-bin/cm/cellular-settings.html";}, 1000);
+    }
+    function apnDelete(apnArrayIdx){
+        document.getElementById('_modal_text').innerHTML = i18next.t('cellular_apn_des1', {apn: apnJsonList[apnArrayIdx].apn});
+        toggle_modal();
+        
+        //prepare json data
+        const req = apnJsonList[apnArrayIdx]; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_deleteUserApn.cgi", req)
+        .then(response => {setTimeout(toggle_modal,1000); return response}).then(apnDelete_response).catch(response_print);
+
+    }
+    function pre_apnDelete(apnArrayIdx){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('cellular_dialog_err_title9');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('cellular_apn_des2', {apn: apnJsonList[apnArrayIdx].apn});
+        document.getElementById('_dialog_modal_Btn').onclick = () => {
+        	document.getElementById('_dialog_modal_Btn').onclick = toggle_dialog_modal;
+            apnDelete(apnArrayIdx);
+            toggle_dialog_modal();//hide
+        };
+        toggle_dialog_modal();//show
+    }
+    
+    function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .w85 {
+        width:85%!important;
+    }
+    .note_p {
+        margin-top: 17px;
+        margin-bottom: 0;
+        float: left;
+        text-align: left;
+        color: var(--warningColor);
+        font: italic normal 300 12px/14px Roboto;
+    }
+	.mb12{
+        margin-bottom:12px;
+    }
+
+    .fxCardViewBorder .inCard_ScanBtn {
+      background-color: var(--warningColor);
+      color: var(--whiteColor);
+      font: normal normal 500 16px/19px Roboto;
+      border: none;
+      cursor: pointer;
+      border-radius: 24px;
+      text-align: center;
+    }
+    .fxCardViewBorder .inCard_ScanBtn:disabled{
+      background-color: var(--disabledText);
+    }
+    .fxCardViewBorder .inCard_ScanBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .apn_modal_wh{
+        width: 733px;
+        height: 900px;
+    }
+    .modal-body .cardViewSelect{ 
+        width: 100%!important;
+    }
+    
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .apn_modal_wh{
+        width: 733px!important;
+        height: 677px!important;
+    }
+    .modal-body .cardViewSelect{ 
+        width: 50%!important;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+    .fxCardViewBorder .inCard_ScanBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 12px 12px 12px 0;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_net_select">Cellular Network Selection</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-25 cardViewTd" id="xxl-cellularScanModeSelectTitleTd" data-i18n="cellular_scan_mode">Scan Mode</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-cellularScanModeSelect" data-i18n="cellular_Automatic">Automatic</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-AT_ScanModeSelect" data-i18n="cellular_Automatic">Automatic</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ML_ScanModeSelect" data-i18n="cellular_Manual">Manual</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularNetworkModeSelectTitleTd" data-i18n="cellular_net_select2">Network Selection</td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularNetworkModeSelectTd">
+                      <div class="cardViewSelect" id="xxl-ModeSelectDiv">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-cellularModeSelect">5G SA</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-cellularModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xxl-ModeSelectUL">
+                        </ul>
+                      </div>
+                        <label class="cardViewText" id="xxl-ModeSelectLabel">5G SA</label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularTmp1Td"></td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularTmp2Td"></td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xxl-cellularNetworkModeSaveBtn" data-i18n="save">Save</button>
+                <button class="inCard_ScanBtn" id="xxl-cellularNetworkModeScanBtn" data-i18n="scan">Scan</button>
+                <table class="table table-borderless cardViewTable" id="xxl-cellularNetworkModeScanTable">
+                <thead>
+                  <tr>
+                    <th colspan="5" scope="row"  scope="row"  class="">
+                      <label class="cardViewTitle" data-i18n="cellular_available_net">Available Cellular Networks</label>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_Status">Status</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_CellNet">Cellular Network</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_MCCMNC">MCC-MNC</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_CellType">Cellular Type</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_Actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xxl-tbodyOperatorsList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_apn_set">Default APN Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+<!--
+                  <tr>
+                    <td class="w-25 cardViewTd">APN Status</td>
+                    <td class="w-25 cardViewTdWithSwitch">
+                      <input class="switch_check" type="checkbox" onchange="checkDefaultApnStatus()" id="xxl-apnStatusCheckBox" value="">
+                    </td>
+                  </tr>
+-->
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xxl-cellularApnProfileTextTitleTd" data-i18n="cellular_apn_profile">APN Profile</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xxl-cellularApnProfileText" data-i18n-aria-label="cellular_apn_profile"></input>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularApnNameTextTitleTd" data-i18n="cellular_apn">APN</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xxl-cellularApnNameText" data-i18n-aria-label="cellular_apn"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="cellular_Auth_method">Authentication Method</td>
+                    <td class="cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-cellularApnAuthModeSelect">NONE</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-ApnAuth_NONE" data-i18n="cellular_meth_none">NONE</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ApnAuth_PAPCHAP" data-i18n="cellular_meth_papchap">PAPCHAP</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ApnAuth_CHAP" data-i18n="cellular_meth_chap">CHAP</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ApnAuth_PAP" data-i18n="cellular_meth_pap">PAP</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularApnUsernameTextTitleTd" data-i18n="cellular_user">Username</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xxl-cellularApnUsernameText" data-i18n-aria-label="cellular_user"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xl-cellularConTypeSelectTitleTd" data-i18n="cellular_IPType">IP Type</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-cellularConTypeSelect">IPv4 & IPv6</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-cellularConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-ConType_IPv4" data-i18n="cellular_IPv4">IPv4</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ConType_IPv6" data-i18n="cellular_IPv6">IPv6</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-ConType_IPv4v6" data-i18n="cellular_IPv4v6">IPv4 & IPv6</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-cellularApnPasswordTextTitleTd" data-i18n="cellular_password">Password</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="password" class="cardViewInputTextWithLabel w85" id="xxl-cellularApnPasswordText" data-i18n-aria-label="cellular_password"></input>
+                      <input class="cardViewInputSubInput" id="xxl-toggleApnPWD" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="cellular_pwd_hide_alt">
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xxl-cellularApnSaveBtn" data-i18n="save">Save</button>
+                <!-- <button class="inCard_SaveBtn" id="xxl-cellularApnResetBtn">Reset to Default APN</button> -->
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row"  class="">
+                      <label class="cardViewTitle" data-i18n="cellular_apn_list">Additional APN List</label>
+                      <button class="cardViewTitleBtn" id="xxl-cellularApnAddBtn"><img src="" id="xxl-cellularApnAddBtn_img" data-i18n-img-alt="cellular_apn_add_alt"><span data-i18n="add_entry"> Add Entry</span></button>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_status">APN Status</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_apn">APN</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_ipType">IP Type</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xxl-tbodyApnList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_pin_manage">PIN Management</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-PINStatusTitleTd" data-i18n="cellular_pin_lock">PIN Lock</td>
+                    <td class="w-50 cardViewTdWithSwitch">
+                    <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="xxl-PINStatusCheckBox"  value="">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xxl-PINInputTitleTd">
+                    <span data-i18n="cellular_pin">PIN</span>
+                    <label class="cardViewInputErrorText" id="xxl-PINInputErrorText">apple</label>
+                    </td>
+                    <td class="cardViewTd">
+                      <div class="cardViewSelect" id="xxl-cellularPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xxl-cellularPINText" data-i18n-aria-label="cellular_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr class="cardViewTr">
+                    <td class="cardViewTd"></td>
+                    <td>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>                
+                <button class="inCard_SaveBtn" id="xxl-cellularPINSaveBtn" data-i18n="save">Save</button>
+            </div>
+            <div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_pin_set">SIM PIN Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-OldPINInputTitleTd" data-i18n="cellular_old_pin">
+                    Old PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xxl-cellularOldPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xxl-cellularOldPINText" data-i18n-aria-label="cellular_old_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-NewPINInputTitleTd" data-i18n="cellular_new_pin">
+                    New PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xxl-cellularNewPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xxl-cellularNewPINText" data-i18n-aria-label="cellular_new_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-ConfirmPINInputTitleTd" data-i18n="cellular_confirm_new_pin">
+                    Confirm New PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xxl-cellularConfirmPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xxl-cellularConfirmPINText" data-i18n-aria-label="cellular_confirm_new_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <p class="note_p" data-i18n="cellular_pin_set_des">
+                    Note: After successful PIN change, device will logout.
+                </p>
+                <button class="inCard_SaveBtn" id="xxl-cellularChangePINSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_roaming_set">Roaming Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-PINStatusTitleTd" data-i18n="cellular_International_roaming">International Roaming</td>
+                    <td class="w-50 cardViewTdWithSwitch">
+                    <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="xxl-RoamingCheckBox" checked value="">
+                    </td>
+                  </tr>
+                </tbody>
+                </table>                
+                <br><br>
+                <button class="inCard_SaveBtn" id="xxl-roamingSaveBtn" data-i18n="save">Save</button>
+            </div>
+            <div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_operation_mode">Operation Mode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-OperationInputTitleTd" data-i18n="cellular_operation_mode">
+                    Operation Mode
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" >
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-cellularOperationModeSelect">Routing Mode</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-cellularOperationModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-OP_Routing" data-i18n="cellular_routing_mode">Routing Mode</a></li>
+                          <li id="xxl-bridgeMode_li"><a class="dropdown-item" href="#" id="xxl-OP_Bridge" data-i18n="cellular_bridge_mode">Bridge Mode</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <br><br>                
+                <button class="inCard_SaveBtn" id="xxl-cellularOperationSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_net_select">Cellular Network Selection</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="cellular_scan_mode">Scan Mode</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" >
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-cellularScanModeSelect">Automatic</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-AT_ScanModeSelect" data-i18n="cellular_Automatic">Automatic</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ML_ScanModeSelect" data-i18n="cellular_Manual">Manual</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" id="xl-cellularNetworkModeSelectTitleTd" data-i18n="cellular_net_select2">Network Selection</td>
+                    <td class="w-50 cardViewTd" id="xl-cellularNetworkModeSelectTd">
+                      <div class="cardViewSelect" id="xl-ModeSelectDiv">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-cellularModeSelect">5G SA</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-cellularModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" id="xl-ModeSelectUL">
+                        </ul>
+                      </div>
+                        <label class="cardViewText" id="xl-ModeSelectLabel">5G SA</label>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-cellularNetworkModeSaveBtn" data-i18n="save">Save</button>
+                <button class="inCard_ScanBtn" id="xl-cellularNetworkModeScanBtn" data-i18n="scan">Scan</button>
+                <table class="table table-borderless cardViewTable" id="xl-cellularNetworkModeScanTable">
+                <thead>
+                  <tr>
+                    <th colspan="5" scope="row"  class="">
+                      <label class="cardViewTitle" data-i18n="cellular_available_net">Available Cellular Networks</label>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_Status">Status</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_CellNet">Cellular Network</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_MCCMNC">MCC-MNC</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_CellType">Cellular Type</label></td>
+                    <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_Actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xl-tbodyOperatorsList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_apn_set">Default APN Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+<!--
+                  <tr>
+                    <td class="w-50 cardViewTd">APN Status</td>
+                    <td class="cardViewTdWithSwitch">
+                      <input class="switch_check" type="checkbox" onchange="checkDefaultApnStatus()" id="xl-apnStatusCheckBox" value="">
+                    </td>
+                  </tr>
+-->
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-cellularApnProfileTextTitleTd" data-i18n="cellular_apn_profile">APN Profile</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect"  id="">
+                      <input type="text" class="cardViewInputText" id="xl-cellularApnProfileText" data-i18n-aria-label="cellular_apn_profile"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-cellularApnNameTextTitleTd" data-i18n="cellular_apn">APN</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" >
+                    <input type="text" class="cardViewInputText" id="xl-cellularApnNameText" data-i18n-aria-label="cellular_apn"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" data-i18n="cellular_Auth_method">Authentication Method</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" >
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-cellularApnAuthModeSelect">NONE</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-ApnAuth_NONE" data-i18n="cellular_meth_none">NONE</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ApnAuth_PAPCHAP" data-i18n="cellular_meth_papchap">PAPCHAP</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ApnAuth_CHAP" data-i18n="cellular_meth_chap">CHAP</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ApnAuth_PAP" data-i18n="cellular_meth_pap">PAP</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cardViewTd" id="xl-cellularConTypeSelectTitleTd" data-i18n="cellular_IPType">IP Type</td>
+                    <td class="cardViewTd">
+                      <div class="cardViewSelect" >
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-cellularConTypeSelect">IPv4 & IPv6</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-cellularConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-ConType_IPv4" data-i18n="cellular_IPv4">IPv4</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ConType_IPv6" data-i18n="cellular_IPv6">IPv6</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-ConType_IPv4v6" data-i18n="cellular_IPv4v6">IPv4 & IPv6</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-cellularApnUsernameTextTitleTd" data-i18n="cellular_user">Username</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" >
+                    <input type="text" class="cardViewInputText" id="xl-cellularApnUsernameText" data-i18n-aria-label="cellular_user"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-cellularApnPasswordTextTitleTd" data-i18n="cellular_password">Password</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect"  id="">
+                      <input type="password w85" class="cardViewInputTextWithLabel" id="xl-cellularApnPasswordText" data-i18n-aria-label="cellular_password"></input>
+                      <input class="cardViewInputSubInput" id="xl-toggleApnPWD" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="cellular_pwd_hide_alt">
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>                
+                <button class="inCard_SaveBtn" id="xl-cellularApnSaveBtn" data-i18n="save">Save</button>
+                <!-- <button class="inCard_SaveBtn" id="xl-cellularApnResetBtn" >Reset to Default APN</button> -->
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row"  class="">
+                      <label class="cardViewTitle" data-i18n="cellular_apn_list">Additional APN List</label>
+                      <button class="cardViewTitleBtn" id="xl-cellularApnAddBtn"><img src="" id="xl-cellularApnAddBtn_img" data-i18n-img-alt="cellular_apn_add_alt"><span data-i18n="add_entry"> Add Entry</span></button>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="cellular_apn_list_status">APN Status</label></td>
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="cellular_apn_list_apn">APN</label></td>
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="cellular_apn_list_ipType">IP Type</label></td>
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="cellular_apn_list_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xl-tbodyApnList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_pin_manage">PIN Management</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-PINStatusTitleTd" data-i18n="cellular_pin_lock">PIN Lock</td>
+                    <td class="w-50 cardViewTdWithSwitch"><input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="xl-PINStatusCheckBox"  value=""></td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-PINInputTitleTd">
+                    <span data-i18n="cellular_pin">PIN</span>
+                    <br><label class="cardViewInputErrorText" id="xl-PINInputErrorText"></label>
+                    </td>
+                    <td class="w-50">
+                      <div class="cardViewSelect" id="xl-cellularPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xl-cellularPINText" data-i18n-aria-label="cellular_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-cellularPINSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_pin_set">SIM PIN Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-OldPINInputTitleTd" data-i18n="cellular_old_pin">
+                    Old PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xl-cellularOldPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xl-cellularOldPINText" data-i18n-aria-label="cellular_old_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-NewPINInputTitleTd" data-i18n="cellular_new_pin">
+                    New PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xl-cellularNewPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xl-cellularNewPINText" data-i18n-aria-label="cellular_new_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-ConfirmPINInputTitleTd" data-i18n="cellular_confirm_new_pin">
+                    Confirm New PIN
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="xl-cellularConfirmPINTextDiv">
+                      <input type="number" class="cardViewInputText" id="xl-cellularConfirmPINText" data-i18n-aria-label="cellular_confirm_new_pin"></input>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <p class="note_p" data-i18n="cellular_pin_set_des">
+                    Note: After successful PIN change, device will logout.
+                </p>
+                <button class="inCard_SaveBtn" id="xl-cellularChangePINSaveBtn" data-i18n="save" >Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  scope="row"  class="cardViewTitle" data-i18n="cellular_roaming_set">Roaming Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-PINStatusTitleTd" data-i18n="cellular_International_roaming">International Roaming</td>
+                    <td class="w-50 cardViewTdWithSwitch">
+                    <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="xl-RoamingCheckBox" checked value="">
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-roamingSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+              <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row"  class="cardViewTitle" data-i18n="cellular_operation_mode">Operation Mode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-OperationInputTitleTd" data-i18n="cellular_operation_mode">
+                    Operation Mode
+                    </td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-cellularOperationModeSelect">Routing Mode</button>
+                        <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-cellularOperationModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-OP_Routing" data-i18n="cellular_routing_mode">Routing Mode</a></li>
+                          <li id="xl-bridgeMode_li"><a class="dropdown-item" href="#" id="xl-OP_Bridge" data-i18n="cellular_bridge_mode">Bridge Mode</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-cellularOperationSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseCBS-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseCBS">
+                        <span data-i18n="cellular_net_select">Cellular Network Selection</span>
+                        <img id="collapseCBS-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseCBS" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr class="cardViewTr">
+                                <td class="cardViewTd" data-i18n="cellular_scan_mode">Scan Mode</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-cellularScanModeSelect">Automatic</button>
+                                    <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-AT_ScanModeSelect" data-i18n="cellular_Automatic">Automatic</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ML_ScanModeSelect" data-i18n="cellular_Manual">Manual</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-cellularNetworkModeSelectTitleTd" data-i18n="cellular_net_select2">Network Selection</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-cellularNetworkModeSelectTd">
+                                  <div class="cardViewSelect" id="mobile-ModeSelectDiv">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-cellularModeSelect">5G SA</button>
+                                    <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-cellularModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end" id="mobile-ModeSelectUL">
+                                    </ul>
+                                  </div>
+                                    <label class="cardViewText" id="mobile-ModeSelectLabel">5G SA</label>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-cellularNetworkModeSaveBtn" data-i18n="save">Save</button>
+                            <button class="inCard_ScanBtn" id="mobile-cellularNetworkModeScanBtn" data-i18n="scan">Scan</button>
+                            <table class="table table-borderless cardViewTable" id="mobile-cellularNetworkModeScanTable">
+                            <thead>
+                              <tr>
+                                <th colspan="5" scope="row"  class="">
+                                  <label class="cardViewTitle" data-i18n="cellular_available_net">Available Cellular Networks</label>
+                                </th>
+                              </tr>
+                              <tr class="cardViewTableFirstTR">
+                                <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_Status">Status</label></td>
+                                <td class="cardViewTableFirstTD"><label data-i18n="cellular_available_CellNet">Cellular Network</label></td>
+                                <!-- <td class="cardViewTableFirstTD"><label>Actions</label></td> -->
+                              </tr>
+                            </thead>
+                            <tbody id="mobile-tbodyOperatorsList">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>             
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseDAS-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseDAS">
+                        <span data-i18n="cellular_apn_set">Default APN Settings</span>
+                        <img id="collapseDAS-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseDAS" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+<!--
+                              <tr>
+                                <td class="cardViewTd">APN Status</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTdWithSwitch">
+                                  <input class="switch_check" type="checkbox" onchange="checkDefaultApnStatus()" id="mobile-apnStatusCheckBox" value="">
+                                </td>
+                              </tr>
+-->
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-cellularApnProfileTextTitleTd" data-i18n="cellular_apn_profile">APN Profile</td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect"  id="">
+                                  <input type="text" class="cardViewInputText" id="mobile-cellularApnProfileText" data-i18n-aria-label="cellular_apn_profile"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-cellularApnNameTextTitleTd" data-i18n="cellular_apn">APN</td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect">
+                                <input type="text" class="cardViewInputText" id="mobile-cellularApnNameText" data-i18n-aria-label="cellular_apn"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-cellularApnUsernameTextTitleTd" data-i18n="cellular_user">Username</td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect">
+                                <input type="text" class="cardViewInputText" id="mobile-cellularApnUsernameText" data-i18n-aria-label="cellular_user"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-cellularApnPasswordTextTitleTd" data-i18n="cellular_password">Password</td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="password w85" class="cardViewInputTextWithLabel" id="mobile-cellularApnPasswordText" data-i18n-aria-label="cellular_password"></input>
+                                  <input class="cardViewInputSubInput" id="mobile-toggleApnPWD" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="cellular_pwd_hide_alt">
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd" data-i18n="cellular_Auth_method">Authentication Method</td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-cellularApnAuthModeSelect">NONE</button>
+                                    <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-ApnAuth_NONE" data-i18n="cellular_meth_none">NONE</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ApnAuth_PAPCHAP" data-i18n="cellular_meth_papchap">PAPCHAP</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ApnAuth_CHAP" data-i18n="cellular_meth_chap">CHAP</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ApnAuth_PAP" data-i18n="cellular_meth_pap">PAP</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-cellularConTypeSelectTitleTd" data-i18n="cellular_IPType">IP Type</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-cellularConTypeSelect">IPv4 & IPv6</button>
+                                    <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-cellularConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-ConType_IPv4" data-i18n="cellular_IPv4">IPv4</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ConType_IPv6" data-i18n="cellular_IPv6">IPv6</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-ConType_IPv4v6" data-i18n="cellular_IPv4v6">IPv4 & IPv6</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>                
+                            <!-- <button class="inCard_SaveBtn" id="mobile-cellularApnResetBtn" >Reset to Default APN</button> -->
+                            <button class="inCard_SaveBtn" id="mobile-cellularApnSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>   
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseUAL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseUAL">
+                        <span data-i18n="cellular_apn_list">Additional APN List</span>
+                        <img id="collapseUAL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseUAL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+                              <tr>
+                                <th colspan="5" scope="row"  class="">
+                                  <button class="cardViewTitleBtn" id="mobile-cellularApnAddBtn"><img src="/images/iconAddNew.svg" id="mobile-cellularApnAddBtn_img" data-i18n-img-alt="cellular_apn_add_alt"><span data-i18n="add_entry"> Add Entry</span></button>
+                                </th>
+                              </tr>
+                              <tr class="cardViewTableFirstTR">
+                                <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_status">APN Status</label></td>
+                                <td class="cardViewTableFirstTD"><label data-i18n="cellular_apn_list_actions">Actions</label></td>
+                              </tr>
+                            </thead>
+                            <tbody id="mobile-tbodyApnList">
+                            </tbody>
+                            </table>                
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapsePM-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapsePM">
+                        <span data-i18n="cellular_pin_manage">PIN Management</span>
+                        <img id="collapsePM-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapsePM" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PINStatusTitleTd" data-i18n="cellular_pin_lock">PIN Lock</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTdWithSwitch"><input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="mobile-PINStatusCheckBox"  value=""></td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PINInputTitleTd">
+                                <span data-i18n="cellular_pin">PIN</span>
+                                <br><label class="cardViewInputErrorText" id="mobile-PINInputErrorText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect" id="mobile-cellularPINTextDiv">
+                                  <input type="number" class="cardViewInputText" id="mobile-cellularPINText" data-i18n-aria-label="cellular_pin"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>                
+                            <button class="inCard_SaveBtn" id="mobile-cellularPINSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapsePC-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapsePC">
+                        <span data-i18n="cellular_pin_set">SIM PIN Settings</span>
+                        <img id="collapsePC-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapsePC" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-OldPINInputTitleTd" data-i18n="cellular_old_pin">
+                                Old PIN
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect" id="mobile-cellularOldPINTextDiv">
+                                  <input type="number" class="cardViewInputText" id="mobile-cellularOldPINText" data-i18n-aria-label="cellular_old_pin"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-NewPINInputTitleTd" data-i18n="cellular_new_pin">
+                                New PIN
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect" id="mobile-cellularNewPINTextDiv">
+                                  <input type="number" class="cardViewInputText" id="mobile-cellularNewPINText" data-i18n-aria-label="cellular_new_pin"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-ConfirmPINInputTitleTd" data-i18n="cellular_confirm_new_pin">
+                                Confirm New PIN
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect" id="mobile-cellularConfirmPINTextDiv">
+                                  <input type="number" class="cardViewInputText" id="mobile-cellularConfirmPINText" data-i18n-aria-label="cellular_confirm_new_pin"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <p class="note_p" data-i18n="cellular_pin_set_des">
+                                Note: After successful PIN change, device will logout.
+                            </p>
+                            <button class="inCard_SaveBtn" id="mobile-cellularChangePINSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIR-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIR">
+                        <span data-i18n="cellular_roaming_set">Roaming Settings</span>
+                        <img id="collapseIR-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIR" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PINStatusTitleTd" data-i18n="cellular_International_roaming">International Roaming</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTdWithSwitch">
+                                <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="mobile-RoamingCheckBox" checked value="">
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>                
+                            <button class="inCard_SaveBtn" id="mobile-roamingSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseOM-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseOM">
+                        <span data-i18n="cellular_operation_mode">Operation Mode</span>
+                        <img id="collapseOM-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseOM" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-OperationInputTitleTd" data-i18n="cellular_operation_mode">
+                                Operation Mode
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-cellularOperationModeSelect">Routing Mode</button>
+                                    <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-cellularOperationModeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-OP_Routing" data-i18n="cellular_routing_mode">Routing Mode</a></li>
+                                      <li id="mobile-bridgeMode_li"><a class="dropdown-item" href="#" id="mobile-OP_Bridge" data-i18n="cellular_bridge_mode">Bridge Mode</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>                
+                            <button class="inCard_SaveBtn" id="mobile-cellularOperationSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+    <!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text">Authenticating, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_modal_Btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_reboot_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" id="_reboot_modal_content">
+                <div class="modal-header">
+                    <label class="modal-title dialog_modal_header" id="_reboot_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <label class="dialog_modal_text" id="_reboot_dialog_modal_text" data-i18n="cellular_set_apn_reboot">
+                        Modifying APN configuration<br>may need to reboot to take effect.
+                    </label>
+                    <br><br>
+                    <label class="dialog_modal_warning" id="_reboot_dialog_modal_warning"></label>
+                    <button class="inModal_Btn" id="_reboot_dialog_btn" data-i18n="ok">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade dialog_modal" id="_EditApn_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content apn_modal_wh">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_EditApn_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn_list_status">APN Status</div>
+                        <div class="p-2 w-50 flex-fill inModalDivWithSwitch">
+                            <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="_EditApnStatusCheckBox" value="">
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn_profile">APN Profile</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <input class="cardViewInputText" id="_EditApnProfileText" data-i18n-aria-label="cellular_apn_profile"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn">APN</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <input class="cardViewInputText" id="_EditApnNameText" data-i18n-aria-label="cellular_apn"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_user">Username</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <input class="cardViewInputText" id="_EditApnUsernameText" data-i18n-aria-label="cellular_user"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_password">Password</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="">
+                          <input type="password w85" class="cardViewInputTextWithLabel" id="_EditApnPasswordText" data-i18n-aria-label="cellular_password"></input>
+                          <input class="cardViewInputSubInput" id="toggleEditApnPWD" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="cellular_pwd_hide_alt">
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_Auth_method">Authentication Method</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="editAuthTypeSelect">NONE</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="editAuthTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="editApnAuth_NONE" data-i18n="cellular_meth_none">NONE</a></li>
+                              <li><a class="dropdown-item" href="#" id="editApnAuth_PAPCHAP" data-i18n="cellular_meth_papchap">PAPCHAP</a></li>
+                              <li><a class="dropdown-item" href="#" id="editApnAuth_CHAP" data-i18n="cellular_meth_chap">CHAP</a></li>
+                              <li><a class="dropdown-item" href="#" id="editApnAuth_PAP" data-i18n="cellular_meth_pap">PAP</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_IPType">IP Type</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="editConTypeSelect">IPv4 & IPv6</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="editConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="editConType_IPv4" data-i18n="cellular_IPv4">IPv4</a></li>
+                              <li><a class="dropdown-item" href="#" id="editConType_IPv6" data-i18n="cellular_IPv6">IPv6</a></li>
+                              <li><a class="dropdown-item" href="#" id="editConType_IPv4v6" data-i18n="cellular_IPv4v6">IPv4 & IPv6</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="_EditApn_modal_btn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_AddApn_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content apn_modal_wh">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_AddApn_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn_list_status">APN Status</div>
+                        <div class="p-2 w-50 flex-fill inModalDivWithSwitch">
+                            <input class="switch_check" type="checkbox" data-i18n-aria-label="checkbox_btn" id="_AddApnStatusCheckBox" value="">
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn_profile">APN Profile</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <input class="cardViewInputText" id="_AddApnProfileText" data-i18n-aria-label="cellular_apn_profile"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_apn">APN</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="addApnNameTextDiv">
+                            <input class="cardViewInputText" id="addApnNameText" data-i18n-aria-label="cellular_apn"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_user">Username</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <input class="cardViewInputText" id="_AddApnUsernameText" data-i18n-aria-label="cellular_user"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_password">Password</div>
+                        <div class="p-2 w-50 flex-fill  cardViewSelect" id="">
+                          <input type="password w85" class="cardViewInputTextWithLabel" id="_AddApnPasswordText" data-i18n-aria-label="cellular_password"></input>
+                          <input class="cardViewInputSubInput" id="toggleApnPWD" src="/images/ic_login_hide.svg" type="image" data-i18n-img-alt="cellular_pwd_hide_alt">
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_Auth_method">Authentication Method</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="addAuthTypeSelect">NONE</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="addAuthTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="inModalAddApnAuth_NONE" data-i18n="cellular_meth_none">NONE</a></li>
+                              <li><a class="dropdown-item" href="#" id="inModalAddApnAuth_PAPCHAP" data-i18n="cellular_meth_papchap">PAPCHAP</a></li>
+                              <li><a class="dropdown-item" href="#" id="inModalAddApnAuth_CHAP" data-i18n="cellular_meth_chap">CHAP</a></li>
+                              <li><a class="dropdown-item" href="#" id="inModalAddApnAuth_PAP" data-i18n="cellular_meth_pap">PAP</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_IPType">IP Type</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="inModalConTypeSelect">IPv4 & IPv6</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="inModalAddConType_IPv4" data-i18n="cellular_IPv4">IPv4</a></li>
+                              <li><a class="dropdown-item" href="#" id="inModalAddConType_IPv6" data-i18n="cellular_IPv6">IPv6</a></li>
+                              <li><a class="dropdown-item" href="#" id="inModalAddConType_IPv4v6" data-i18n="cellular_IPv4v6">IPv4 & IPv6</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="_AddApn_modal_btn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_nwScan_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content nwScan_modal_wh">
+                <div class="modal-header">
+                    <label class="modal-title dialog_modal_header" id="_nwScan_modal_header" data-i18n="cellular_net_info">Cellular Network Information</label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_available_Status">Status</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="nwScan_Status"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_available_CellNet">Cellular Network</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="nwScan_CellularNetwork"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_available_MCCMNC">MCC-MNC</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="nwScan_MCCMNC"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap mb12">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="cellular_available_CellType">Cellular Type</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="nwScan_CellularType"></label>
+                        </div>
+                    </div>
+                    <button class="inModal_Btn" id="nwScanActionBtn" data-i18n="cellular_register">Register</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--/form-->   
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        if(inited == 0){
+            bodyLoad();
+            if(sim_card_state == 'SIM Locked' || sim_card_state == 'No SIM'){
+                document.getElementById("_mainContentTitle").innerHTML = i18next.t('cell_set_title')+"<p id='_mainContentTitle_p'>"+i18next.t('cellular_sub_title')+"</p>";
+                document.getElementById("_mainContentTitle_p").style = "margin-top: .5rem;margin-bottom: 0;margin-left: 1rem;float: right;text-align: left;color: var(--warningColor);font: normal normal 500 20px/24px Roboto;";
+            }else{
+                document.getElementById("_mainContentTitle").innerHTML = i18next.t('cell_set_title');
+            }
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_reboot_dialog_modal");
+            set_EAA_ToItem("_EditApn_modal");
+            set_EAA_ToItem("_AddApn_modal");
+            set_EAA_ToItem("_nwScan_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            if(sim_card_state == 'SIM Locked' || sim_card_state == 'No SIM'){
+                document.getElementById("_mainContentTitle").innerHTML = i18next.t('cell_set_title')+"<p id='_mainContentTitle_p'>"+i18next.t('cellular_sub_title')+"</p>";
+                document.getElementById("_mainContentTitle_p").style = "margin-top: .5rem;margin-bottom: 0;margin-left: 1rem;float: right;text-align: left;color: var(--warningColor);font: normal normal 500 20px/24px Roboto;";
+            }else{
+                document.getElementById("_mainContentTitle").innerHTML = i18next.t('cell_set_title');
+            }
+            selectObj_init (platform);
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_reboot_dialog_modal");
+            set_EAA_ToItem("_EditApn_modal");
+            set_EAA_ToItem("_AddApn_modal");
+            set_EAA_ToItem("_nwScan_modal");
+        }
+    });
+    document.getElementById("xxl-cellularTmp1Td").style.display = 'none';
+	document.getElementById("xxl-cellularTmp2Td").style.display = 'none';
+	document.getElementById("_reboot_modal_content").style = 'height: 300px;';
+	
+</script>
+</html>

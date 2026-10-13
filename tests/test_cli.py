@@ -86,7 +86,7 @@ async def test_section_read(server: TestServer, router: FakeRouter) -> None:
 
 @pytest.mark.usefixtures("credentials")
 async def test_write_needs_the_write_flag(server: TestServer, router: FakeRouter) -> None:
-    argv = ["lan", "delete-dhcp-reservation", "--index", "2"]
+    argv = ["lan", "delete-dhcp-reservation", "--index", "7"]
     with pytest.raises(Id525ReadOnlyError):
         await run(cli_args(server, *argv))
     assert router.calls == []

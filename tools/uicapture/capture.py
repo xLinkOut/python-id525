@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import copy
 import hashlib
 import json
 import os
@@ -26,8 +27,10 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from id525.endpoints import Endpoint, Kind
+
 from .browser import guarded_context
-from .mockrouter import TOKEN_PREFIX, MockRouter
+from .mockrouter import TOKEN_PREFIX, MockRouter, Recorded
 from .scenarios import SCENARIOS, Scenario
 
 if TYPE_CHECKING:
@@ -39,10 +42,11 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "tests" / "fixtures"
 GOLDEN = ROOT / "tests" / "golden"
 DEFAULT_ASSETS = ROOT.parent / "research" / "raw"
-BACKGROUND = {"token_query", "login_query"}
-"""Calls the UI makes on its own (page load, session watchdog)."""
 TOKEN_PLACEHOLDER = "<TOKEN>"  # noqa: S105
-SEND_TIMEOUT = 5.0
+FIRST_SEND_TIMEOUT = 5.0
+SETTLE = 1.5
+"""A flow is over once no new request arrived for this long."""
+MAX_FLOW = 30.0
 REFUSE_WAIT = 1.5
 
 
@@ -61,9 +65,44 @@ def normalise(body: bytes, tokens: list[str]) -> str:
     return text
 
 
-def fixture_digest(page: str) -> str:
+def fixture_digest(fixture: str) -> str:
     """Return the SHA-256 of a page fixture (goldens go stale when it changes)."""
-    return hashlib.sha256((FIXTURES / f"{page}.html").read_bytes()).hexdigest()
+    return hashlib.sha256((FIXTURES / f"{fixture}.html").read_bytes()).hexdigest()
+
+
+def classify(recorded: list[Recorded]) -> tuple[list[Recorded], list[str]]:
+    """Split a flow into mutating requests (compared) and the rest (informative)."""
+    mutating, other = [], []
+    for request in recorded:
+        try:
+            kind = Endpoint(request.endpoint).info.kind
+        except ValueError:
+            msg = f"the UI called {request.endpoint}, which is not in id525.endpoints"
+            raise CaptureError(msg) from None
+        if kind.mutating:
+            mutating.append(request)
+        elif kind is not Kind.SESSION:
+            other.append(request.endpoint)
+    return mutating, other
+
+
+async def collect(mock: MockRouter, mark: int, *, refused: bool) -> list[Recorded]:
+    """Wait for the flow to finish and return the requests it made."""
+    started = time.monotonic()
+    if refused:
+        await asyncio.sleep(REFUSE_WAIT)
+        return mock.requests[mark:]
+    seen, last_change = mark, None
+    while time.monotonic() - started < MAX_FLOW:
+        mutating, _ = classify(mock.requests[mark:])
+        if len(mock.requests) != seen:
+            seen, last_change = len(mock.requests), time.monotonic()
+        if mutating and last_change is not None and time.monotonic() - last_change >= SETTLE:
+            break
+        if not mutating and time.monotonic() - started > FIRST_SEND_TIMEOUT:
+            break
+        await asyncio.sleep(0.05)
+    return mock.requests[mark:]
 
 
 async def run_scenario(
@@ -73,6 +112,9 @@ async def run_scenario(
     page = await context.new_page()
     errors: list[str] = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
+    mock.answers = copy.deepcopy(scenario.answers)
+    fixture = scenario.fixture or scenario.page.value
+    mock.page_fixtures = {scenario.page.value: fixture}
     try:
         await page.goto(f"/cgi-bin/cm/{scenario.page}.html")
         await page.wait_for_function(
@@ -81,35 +123,33 @@ async def run_scenario(
         )
         mark = len(mock.requests)
         await scenario.drive(page, scenario.inputs)
-        deadline = time.monotonic() + (REFUSE_WAIT if scenario.refused else SEND_TIMEOUT)
-        sent = []
-        while time.monotonic() < deadline:
-            sent = [r for r in mock.requests[mark:] if r.endpoint not in BACKGROUND]
-            if sent and not scenario.refused:
-                break
-            await asyncio.sleep(0.05)
+        flow = await collect(mock, mark, refused=scenario.refused)
         ui_message: str = await page.evaluate(
             "() => (document.getElementById('_dialog_modal_warning') || {}).textContent || ''"
         )
     finally:
         await page.close()
+        mock.answers = {}
+        mock.page_fixtures = {}
 
     if log.blocked or log.blocked_websockets:
         msg = f"{scenario.name}: guards blocked {log.blocked + log.blocked_websockets}"
         raise CaptureError(msg)
-    if scenario.refused:
-        if sent:
-            msg = f"{scenario.name}: the UI was expected to refuse but sent {sent}"
+    mutating, other = classify(flow)
+    if scenario.refused and mutating:
+        msg = f"{scenario.name}: the UI was expected to refuse but sent {mutating}"
+        raise CaptureError(msg)
+    if scenario.fixture and scenario.fixture.startswith("synthetic/") and not scenario.synthetic:
+        msg = f"{scenario.name}: uses a synthetic fixture, so it must set synthetic=True"
+        raise CaptureError(msg)
+    if not scenario.refused:
+        if scenario.endpoint.value not in [r.endpoint for r in mutating]:
+            msg = f"{scenario.name}: no {scenario.endpoint} call; got {mutating} {errors}"
             raise CaptureError(msg)
-        body = None
-    else:
-        if [r.endpoint for r in sent] != [scenario.endpoint.value]:
-            msg = f"{scenario.name}: expected one {scenario.endpoint} call, got {sent} {errors}"
+        bad_type = [r for r in mutating if r.content_type != "application/json"]
+        if bad_type:
+            msg = f"{scenario.name}: unexpected content type in {bad_type}"
             raise CaptureError(msg)
-        if sent[0].content_type != "application/json":
-            msg = f"{scenario.name}: unexpected content type {sent[0].content_type}"
-            raise CaptureError(msg)
-        body = normalise(sent[0].body, mock.tokens)
     return {
         "scenario": scenario.name,
         "page": scenario.page.value,
@@ -118,11 +158,17 @@ async def run_scenario(
         "call": scenario.call,
         "inputs": scenario.inputs,
         "call_kwargs": scenario.call_kwargs,
+        "answers": scenario.answers,
         "refused": scenario.refused,
-        "body": body,
+        "fixture": fixture,
+        "synthetic": scenario.synthetic,
+        "requests": [
+            {"endpoint": r.endpoint, "body": normalise(r.body, mock.tokens)} for r in mutating
+        ],
+        "other_calls": other,
         "ui_message": ui_message.strip() if scenario.refused else "",
         "notes": scenario.notes,
-        "fixture_sha256": fixture_digest(scenario.page.value),
+        "fixture_sha256": fixture_digest(fixture),
     }
 
 
@@ -140,6 +186,11 @@ async def capture(scenarios: list[Scenario], assets: Path) -> list[dict[str, Any
     return records
 
 
+def render(record: dict[str, Any]) -> str:
+    """Serialise a golden record."""
+    return json.dumps(record, indent=2, ensure_ascii=False) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -150,6 +201,11 @@ def main(argv: list[str] | None = None) -> int:
         help="local copy of the router UI static files (js/...)",
     )
     parser.add_argument("scenarios", nargs="*", help="scenario names (default: all)")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="re-capture and fail if any golden differs (writes nothing)",
+    )
     args = parser.parse_args(argv)
     if not (args.assets / "js" / "scriptGeneric.js").is_file():
         print(f"error: no router UI scripts under {args.assets}/js", file=sys.stderr)
@@ -161,10 +217,20 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     chosen = [by_name[n] for n in args.scenarios] if args.scenarios else SCENARIOS
     GOLDEN.mkdir(parents=True, exist_ok=True)
+    differ = []
     for record in asyncio.run(capture(chosen, args.assets)):
         path = GOLDEN / f"{record['scenario']}.json"
-        path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
-        print(f"{record['scenario']}: {record['body'] or 'refused by the UI'}")
+        content = render(record)
+        if args.check:
+            if not path.exists() or path.read_text() != content:
+                differ.append(record["scenario"])
+            continue
+        path.write_text(content)
+        sent = [f"{r['endpoint']} {r['body']}" for r in record["requests"]]
+        print(f"{record['scenario']}: {sent or 'refused by the UI'}")
+    if args.check:
+        print(f"{len(chosen) - len(differ)} goldens identical, {len(differ)} differ: {differ}")
+        return 1 if differ else 0
     return 0
 
 

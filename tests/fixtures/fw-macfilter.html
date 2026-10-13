@@ -1,0 +1,1552 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="macFilter_title">MAC Address Filter</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = '';
+	var platform_o = '';
+	var mac_filter_state = "0";
+	var mac_filter_mode = "0";
+	var delete_instance = "";
+	var enable = "0";
+	var mode = "0";
+	var mac_array = [];
+	var client_list_array = [];
+	var g_edit_host_name_instance = "";
+	var tmp = "[]";
+	var mac_filter_rules = JSON.parse( tmp.replace(/&quot;/g,'"') );
+	var clients_info = '{ &quot;client_list&quot;: [ { &quot;hostName&quot;: &quot;host-01&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:01&quot;, &quot;ip&quot;: &quot;192.168.224.92&quot;, &quot;intf&quot;: &quot;Ethernet&quot; }, { &quot;hostName&quot;: &quot;host-02&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:04&quot;, &quot;ip&quot;: &quot;192.168.224.57&quot;, &quot;intf&quot;: &quot;WiFi 2.4G&quot; }, { &quot;hostName&quot;: &quot;host-03&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:05&quot;, &quot;ip&quot;: &quot;192.168.224.210&quot;, &quot;intf&quot;: &quot;WiFi 5G&quot; }, { &quot;hostName&quot;: &quot;host-04&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:06&quot;, &quot;ip&quot;: &quot;192.168.224.44&quot;, &quot;intf&quot;: &quot;WiFi 2.4G&quot; }, { &quot;hostName&quot;: &quot;N\/A&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:07&quot;, &quot;ip&quot;: &quot;192.168.224.202&quot;, &quot;intf&quot;: &quot;WiFi 5G&quot; }, { &quot;hostName&quot;: &quot;host-06&quot;, &quot;mac&quot;: &quot;02:00:5e:00:00:03&quot;, &quot;ip&quot;: &quot;192.168.224.33&quot;, &quot;intf&quot;: &quot;Ethernet&quot; } ] }';
+	var client_list_entries = JSON.parse( clients_info.replace(/&quot;/g,'"') );
+	var filed_allow_hostname_letter = "letters, numbers, and the characters hyphen (-) and period (.)"
+
+	function isValidInput(str)
+	{
+	  const regex = /^[A-Za-z0-9-.]+$/;
+	  return regex.test(str);
+	}
+    function bodyLoad()
+	{
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("fw-macfilter.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}')
+			.then(update_content)
+			.catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIAF');
+        mobile_CollapsibleAddListener('collapseIAFL');
+        mobile_CollapsibleAddListener('collapseConnected');
+		saveLoadingListener();
+		saveAddAddrListener();
+		saveDialogListener();
+		saveDeleteListener();
+		saveStatusListener();
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+	function initJS_function(pf){
+		document.getElementById(pf + "-macfilter_switch").onchange = function(){switch_status();};
+		document.getElementById(pf + "-filterMode_white").onclick = function(){selectObj(pf + '-filterMode', i18next.t('macFilter_mode_whitelist'));};
+		document.getElementById(pf + "-filterMode_black").onclick = function(){selectObj(pf + '-filterMode', i18next.t('macFilter_mode_blacklist'));};
+		document.getElementById(pf + "-save_status").onclick = function(){save_status();};
+		// document.getElementById(pf + "-mac_filter_List").style = 'display: none;';
+		document.getElementById("maclist_select").style = 'border:none; width:100%;';
+		document.getElementById(pf + "-addNewBtn").onclick = function(){toggle_AddAddr_modal();};
+		if(pf != "mobile")
+		{
+			document.getElementById(pf + "-MaxLimtLabel").style = 'float: right; padding: 5px 15px;';
+			document.getElementById(pf + "-sortDevNameBtn").onclick = function(){sortDevName();};
+			document.getElementById(pf + "-sortMACBtn").onclick = function(){sortMAC();};
+		}
+		document.getElementById("select_AddNew").onclick = function(){selectObj('select_available', i18next.t('macFilter_addNew'));};
+		document.getElementById("select_FromAvailable").onclick = function(){selectObj('select_available', i18next.t('macFilter_fromAvailable'));};
+		document.getElementById("add_ruleBtn").onclick = function(){add_rule();};
+		document.getElementById("inModal_Btn_toggle_dialog_modal").onclick = function(){toggle_dialog_modal();};
+		document.getElementById("inModal_Btn_delete_rule_save").onclick = function(){delete_rule_save();};
+		document.getElementById("inModal_Btn_toggle_status_save").onclick = function(){toggle_status_save();};
+		document.getElementById("inModal_Btn_add_connected_save").onclick = function(){add_connected_save();};
+		document.getElementById("inModal_Btn_edit_client_list_save").onclick = function(){edit_client_list_save();};
+		document.getElementById("inModal_Btn_edit_rule_save").onclick = function(){edit_rule_save();};
+		
+		dropdownItemKeyboardNavigation(pf + "-filterMode_white");
+		dropdownItemKeyboardNavigation(pf + "-filterMode_black");
+		dropdownItemKeyboardNavigation("select_AddNew");
+		dropdownItemKeyboardNavigation("select_FromAvailable");
+    }
+    function onScreenWidthChange()
+	{
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+		if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+		document.getElementById("maclist_select").style = 'border:none; width:100%;';
+		var maclistSelect=document.getElementById("maclist_select");
+		var inner="";
+		for(var i = 0; i < client_list_entries.client_list.length; i++ )
+		{
+			inner=inner+'<option value=i>' + client_list_entries.client_list[i].mac + '</option>';
+		}
+		maclistSelect.innerHTML=inner;
+
+		selectObj_init(platform);
+		if(mac_filter_state == "1")
+		{
+			document.getElementById(platform + "-macfilter_switch").checked = true;
+			// document.getElementById(platform + "-mac_filter_List").style.display = "block";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+		}
+        else
+		{
+			document.getElementById(platform + "-macfilter_switch").checked = false;
+			// document.getElementById(platform + "-mac_filter_List").style.display = "none";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+		}
+		if(document.getElementById("select_available").innerHTML == i18next.t('macFilter_addNew'))
+		{
+			document.getElementById("device_title").style = "color: var(--headingText);";
+            document.getElementById("device_input").disabled = false;
+			document.getElementById("mac_title").style = "color: var(--headingText);";
+            document.getElementById("mac_input").disabled = false;
+			<!-- document.getElementById("select_title").style = "color: var(--disabledText);"; -->
+            <!-- document.getElementById("select_input").disabled = true; -->
+			document.getElementById("maclist_title").style = "color: var(--disabledText);";
+            document.getElementById("maclist_select").disabled = true;
+		}
+		else
+		{
+			document.getElementById("device_title").style = "color: var(--disabledText);";
+            document.getElementById("device_input").disabled = true;
+			document.getElementById("mac_title").style = "color: var(--disabledText);";
+            document.getElementById("mac_input").disabled = true;
+			<!-- document.getElementById("select_title").style = "color: var(--headingText);"; -->
+            <!-- document.getElementById("select_input").disabled = false; -->
+			document.getElementById("maclist_title").style = "color: var(--headingText);";
+            document.getElementById("maclist_select").disabled = false;
+		}
+
+		mac_array = [];
+		for(var i = 0; i < mac_filter_rules.length; i++ )
+        {
+            var createJosn = {};
+            createJosn.index = i+1;
+            createJosn.instance = mac_filter_rules[i].instance;
+            createJosn.description = mac_filter_rules[i].description;
+            createJosn.macAddress = mac_filter_rules[i].macAddress;
+            mac_array.push( createJosn );
+        }
+
+		client_list_array = [];
+		for(var i = 0; i < client_list_entries.client_list.length; i++ )
+        {
+            var createJosn = {};
+            createJosn.connected_index = i;
+            createJosn.connected_hostName = client_list_entries.client_list[i].hostName;
+            createJosn.connected_mac = client_list_entries.client_list[i].mac;
+            createJosn.connected_ip = client_list_entries.client_list[i].ip;
+            createJosn.connected_intf = client_list_entries.client_list[i].intf;
+            client_list_array.push( createJosn );
+        }
+
+		if(mac_filter_rules.length >= 10)
+		{
+			document.getElementById(platform + "-addNewBtn").style = "color: var(--disabledText);";
+			document.getElementById(platform + "-addNewBtn").disabled = true;
+			document.getElementById(platform + '-addNewImg').src="/images/iconAddNewDisable.svg";
+			document.getElementById(platform + "-MaxLimtLabel").style = "float: right; padding: 5px 15px;; color: var(--errorColor);";
+		}
+
+		initMacListTable(mac_array);
+		initClientListTable(client_list_array);
+    }
+
+    function selectObj_init(platform) {
+        if(mac_filter_mode == "1")
+		{
+			selectObj(platform + '-filterMode', i18next.t('macFilter_mode_whitelist'));
+		}
+		else
+		{
+			selectObj(platform + '-filterMode', i18next.t('macFilter_mode_blacklist'));
+		}
+    }
+
+	function switch_status()
+	{
+        if(document.getElementById(platform + "-macfilter_switch").checked)
+		{
+			// document.getElementById(platform + "-mac_filter_List").style.display = "block";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+		}
+        else
+		{
+			// document.getElementById(platform + "-mac_filter_List").style.display = "none";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+		}
+    }
+	function update_content(data_json)
+	{
+		document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+	}
+	function initMacListTable(entries)
+	{
+		var tbodystaticAddrList = document.getElementById(platform + '-tbodystaticAddrList');
+        var tbodystaticAddrListCon = '';
+        var tbodystaticAddrListAll = '';
+        var deleteIcon = '';
+        tbodystaticAddrList.innerHTML = '';
+		for(var i = 0; i < entries.length; i++)
+        {
+			<!-- createJosn.index = i+1; -->
+            <!-- createJosn.instance = mac_filter_rules[i].instance; -->
+            <!-- createJosn.description = mac_filter_rules[i].description; -->
+            <!-- createJosn.macAddress = mac_filter_rules[i].macAddress; -->
+
+			var dev = entries[i].description;
+			var mac = entries[i].macAddress;
+			var mac = entries[i].macAddress;
+			var instance = entries[i].instance;
+			tbodystaticAddrListCon = '<tr class="cardViewTableTR">';
+
+			if(platform != 'mobile')
+			{
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-30 cardViewTableTD"><label>' +dev+ '</label></td>';
+			}
+            <!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-30 cardViewTableTD"><label>' +dev+ '</label></td>'; -->
+            tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-30 cardViewTableTD"><label>' +mac+ '</label></td>';
+			if(platform == 'mobile')
+			{
+				<!-- detailInfo = '<button class="btn" id="more_info_macfilter_' + i + '"><img src="/images/iconMore.svg"></button>'; -->
+				editIcon = '<button class="btn" id="edit_rule_' + i + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('macFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="delete_rule_' + i + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('macFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + i + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="delete_rule_' + i + '"><img src="/images/ic_delete.svg"></button>';
+				<!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + detailInfo + editIcon + deleteIcon + '</label></td>'; -->
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+			else
+			{
+				editIcon = '<button class="btn" id="edit_rule_' + i + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('macFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="delete_rule_' + i + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('macFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + i + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="delete_rule_' + i + '"><img src="/images/ic_delete.svg"></button>';
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+
+            tbodystaticAddrListCon += '</tr>';
+            tbodystaticAddrListAll += tbodystaticAddrListCon;
+		}
+        tbodystaticAddrList.innerHTML = tbodystaticAddrListAll;
+		for(var i = 0; i < entries.length; i++)(function(i){
+            document.getElementById("edit_rule_"+i).onclick = function(){edit_rule(i);};
+            document.getElementById("delete_rule_"+i).onclick = function(){delete_rule(i);};
+        })(i);
+	}
+	function more_info_macfilter(index)
+	{
+		document.getElementById('_more_macfilter_devname').innerHTML = decodeURIComponent(mac_array[index].dev);
+		document.getElementById('_more_macfilter_macaddr').innerHTML = mac_array[index].mac;
+
+        toggle_MoreInfo_macfilter_modal();
+    }
+	function initClientListTable(entries)
+	{
+		var tbodyClientList = document.getElementById(platform + '-tbodyClientList');
+		var tbodyClientListCon = '';
+		var tbodystaticAddrListAll = '';
+		var tbodyClientListAll = '';
+		var addIcon = '';
+		tbodyClientList.innerHTML = '';
+
+		for(var i = 0; i < entries.length; i++)
+		{
+			var index = i;
+			<!-- var alignName = decodeURIComponent(entries[i].Align_name); -->
+			var hostName = decodeURIComponent(entries[i].connected_hostName);
+			var ip = entries[i].connected_ip;
+			var mac = entries[i].connected_mac;
+			var interf = entries[i].connected_intf;
+			tbodyClientListCon = '<tr class="cardViewTableTR">';
+
+			<!-- if(alignName.length != 0) -->
+			<!-- { -->
+				<!-- tbodyClientListCon = tbodyClientListCon + '<td class="w-30 cardViewTableTD"><label>' +alignName+ '</label></td>'; -->
+			<!-- } -->
+			<!-- else -->
+			<!-- { -->
+				tbodyClientListCon = tbodyClientListCon + '<td class="w-30 cardViewTableTD"><label>' +hostName+ '</label></td>';
+			<!-- } -->
+			if(platform == 'mobile')
+			{
+				addIcon = '<button class="btn" id="add_connected_' + index + '"><img src="/images/ic_add.svg" alt="' +i18next.t('macFilter_set_add_alt')+ '"></button>';
+//				addIcon = '<button class="btn" id="add_connected_' + index + '"><img src="/images/ic_add.svg"></button>';
+				tbodyClientListCon = tbodyClientListCon + '<td class="cardViewTableTD"><label>' + addIcon + '</label></td>';
+			}
+			else
+			{
+				tbodyClientListCon = tbodyClientListCon + '<td class="w-30 cardViewTableTD"><label>' +mac+ '</label></td>';
+				tbodyClientListCon = tbodyClientListCon + '<td class="w-30 cardViewTableTD"><label>' +ip+ '</label></td>';
+				tbodyClientListCon = tbodyClientListCon + '<td class="w-30 cardViewTableTD"><label>' +interf+ '</label></td>';
+				addIcon = '<button class="btn" id="add_connected_' + index + '"><img src="/images/ic_add.svg" alt="' +i18next.t('macFilter_set_add_alt')+ '"></button>';
+//				addIcon = '<button class="btn" id="add_connected_' + index + '"><img src="/images/ic_add.svg"></button>';
+				tbodyClientListCon = tbodyClientListCon + '<td class="cardViewTableTD"><label>' + addIcon + '</label></td>';
+			}
+			tbodyClientListCon += '</tr>';
+			tbodyClientListAll += tbodyClientListCon;
+		}
+		tbodyClientList.innerHTML = tbodyClientListAll;
+		for(var i = 0; i < entries.length; i++)(function(i){
+            <!-- document.getElementById("edit_client_list_"+i).onclick = function(){edit_client_list(i);}; -->
+            document.getElementById("add_connected_"+i).onclick = function(){add_connected(i);};
+        })(i);
+	}
+	function addrMore(index)
+	{
+		var tmp_align = decodeURIComponent(client_list[index].Align_name);
+		var tmp_host = decodeURIComponent(client_list[index].Host_name);
+		if(tmp_align.length != 0)
+			document.getElementById('_more_hostname').innerHTML = tmp_align;
+		else
+			document.getElementById('_more_hostname').innerHTML = tmp_host;
+		document.getElementById('_more_mac_address').innerHTML = client_list[index].MAC;
+		document.getElementById('_more_ip_address').innerHTML = client_list[index].IP_address;
+		document.getElementById('_more_interface').innerHTML = client_list[index].Interface;
+
+        toggle_MoreInfo_modal();
+    }
+	function add_connected(index)
+	{
+		add_instance = index;
+		toggle_add_connected_modal();
+	}
+	function add_connected_save()
+	{
+		toggle_add_connected_modal();
+		var clientMac = document.getElementById("mac_input");
+		if(isMACExist(client_list_entries.client_list[add_instance].mac, mac_array))
+		{
+			popup_error(i18next.t('macFilter_err_des5'));
+			return;
+		}
+		document.getElementById('modal_AddMACfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.description = "AddFromConnectedClients";
+		req.clientMac = client_list_entries.client_list[add_instance].mac;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/macfilter_add.cgi", req)
+			.then(response_add_macfilter).catch(response_print);
+	}
+	function edit_client_list(index)
+	{
+		var tmp_align = decodeURIComponent(client_list[index].Align_name);
+		var tmp_host = decodeURIComponent(client_list[index].Host_name);
+		if(tmp_align.length != 0)
+			document.getElementById('edit_host_input').value = tmp_align;
+		else
+			document.getElementById('edit_host_input').value = tmp_host;
+		g_edit_host_name_instance = index;
+		toggle_edit_host();
+	}
+	function edit_client_list_save()
+	{
+		toggle_edit_host();
+		document.getElementById('modal_AddMACfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.mac = client_list[g_edit_host_name_instance].MAC;
+		req.align_name = document.getElementById('edit_host_input').value;;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/set_host_name.cgi", req)
+			.then(response_add_macfilter).catch(response_print);
+	}
+	function save_status()
+	{
+		if(document.getElementById(platform + "-filterMode").innerHTML == i18next.t('macFilter_mode_whitelist'))
+		{
+			mode = "1"
+		}
+		else
+		{
+			mode = "0"
+		}
+		if(document.getElementById(platform + "-macfilter_switch").checked)
+		{
+			enable = "1";
+			if(mac_array.length == 0 && mode == "1")
+			{
+				document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+				document.getElementById('_dialog_modal_text').innerHTML = "";
+				document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('macFilter_err_des1');
+				toggle_dialog_modal();
+				return;
+			}
+		}
+		else
+		{
+			enable = "0";
+		}
+		
+		if(enable === "1")
+		{
+			toggle_status_modal();
+		}
+		else
+		{
+			document.getElementById('modal_AddMACfilter').style = "display: none";
+			document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+			toggle_modal();
+
+			<!-- //prepare json data -->
+			const req = {}; //create javascript object;
+			req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+			<!-- req.MF_Fun = "enable"; -->
+			req.mf_value = enable;
+			req.mode = mode;
+			//console.log("req = " + JSON.stringify(req));
+			do_fetch_api("POST", "/cgi-bin/cgi/macfilter_save.cgi", req)
+				.then(response_add_macfilter).catch(response_print);
+		}
+		
+	}
+	function toggle_status_save()
+	{
+		toggle_status_modal();
+		document.getElementById('modal_AddMACfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		<!-- //prepare json data -->
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		<!-- req.MF_Fun = "enable"; -->
+		req.mf_value = enable;
+		req.mode = mode;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/macfilter_save.cgi", req)
+			.then(response_add_macfilter).catch(response_print);
+	}
+	
+	function response_add_macfilter(data_json)
+	{
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-macfilter.html";}, 1000);
+    }
+	function response_print(response)
+	{
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+    }
+	function toggle_modal()
+	{
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img()
+	{
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener()
+	{
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function selectObj(id, text) {
+        var selectItem = document.getElementById(id);
+        selectItem.innerHTML = text;
+		if(document.getElementById("select_available").innerHTML == i18next.t('macFilter_addNew'))
+		{
+			document.getElementById("device_title").style = "color: var(--headingText);";
+            document.getElementById("device_input").disabled = false;
+			document.getElementById("mac_title").style = "color: var(--headingText);";
+            document.getElementById("mac_input").disabled = false;
+			<!-- document.getElementById("select_title").style = "color: var(--disabledText);"; -->
+            <!-- document.getElementById("select_input").disabled = true; -->
+			document.getElementById("maclist_title").style = "color: var(--disabledText);";
+            document.getElementById("maclist_select").disabled = true;
+		}
+		else
+		{
+			document.getElementById("device_title").style = "color: var(--disabledText);";
+			document.getElementById("device_input").value = "";
+            document.getElementById("device_input").disabled = true;
+			document.getElementById("mac_title").style = "color: var(--disabledText);";
+			document.getElementById("mac_input").value = "";
+            document.getElementById("mac_input").disabled = true;
+			<!-- document.getElementById("select_title").style = "color: var(--headingText);"; -->
+            <!-- document.getElementById("select_input").disabled = false; -->
+			document.getElementById("maclist_title").style = "color: var(--headingText);";
+            document.getElementById("maclist_select").disabled = false;
+		}
+    }
+	function toggle_AddAddr_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_AddMACfilter'));
+        _myModal.toggle();
+    }
+	function saveAddAddrListener() {
+        var myModalEl = document.getElementById('modal_AddMACfilter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function popup_error(msg)
+	{
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+	function isMACExist(clientMac, entries)
+	{
+		for(var i = 0; i < entries.length; i++)
+        {
+			var mac = entries[i].macAddress.toUpperCase();
+			if(clientMac.toUpperCase() == mac)
+			{
+                return true;
+            }
+		}
+        return false;
+    }
+	function add_rule()
+	{
+		toggle_AddAddr_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		if(document.getElementById("select_available").innerHTML == i18next.t('macFilter_addNew'))
+		{
+			var desc_value = document.getElementById("device_input");
+			var clientMac = document.getElementById("mac_input");
+			if(checkEmpty(desc_value))
+			{
+				popup_error(i18next.t('macFilter_err_des3'));
+				return;
+			}
+			if(checkEmpty(clientMac))
+			{
+				popup_error(i18next.t('macFilter_err_des4'));
+				return;
+			}
+			if(isMACExist(clientMac.value, mac_array))
+			{
+				popup_error(i18next.t('macFilter_err_des5'));
+				return;
+			}
+			if(!checkMACFormat(clientMac.value))
+			{
+				popup_error(i18next.t('macFilter_err_des2'));
+				return;
+			}
+			if(isValidInput(desc_value.value) == false)
+			{
+				popup_error(i18next.t('macFilter_err_des6', {letter: filed_allow_hostname_letter}));
+				return false;
+			}
+			if( desc_value.value.length > 32 )
+			{
+				popup_error(i18next.t('macFilter_err_des7'));
+				return false;
+			}
+			req.description = desc_value.value;
+			req.clientMac = clientMac.value;
+		}
+		else
+		{
+			var sel = document.getElementById("maclist_select");
+			var clientMac = sel.options[sel.selectedIndex].text;
+			if(isMACExist(clientMac, mac_array))
+			{
+				popup_error(i18next.t('macFilter_err_des5'));
+				return;
+			}
+			req.description = "AddFromConnectedClients";
+			req.clientMac = clientMac;
+		}
+
+		document.getElementById('modal_AddMACfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/macfilter_add.cgi", req)
+			.then(response_add_macfilter).catch(response_print);		
+	}
+	function edit_rule(index)
+	{
+		edit_instance = mac_array[index].instance;
+		document.getElementById('edit_device_input').value = mac_array[index].description;;
+		document.getElementById('edit_mac_input').value = mac_array[index].macAddress;
+        toggle_edit_modal();
+    }
+	function edit_rule_save()
+	{
+		toggle_edit_modal();
+		var desc_value = document.getElementById("edit_device_input");
+		var clientMac = document.getElementById("edit_mac_input");
+		if(checkEmpty(desc_value))
+		{
+			popup_error(i18next.t('macFilter_err_des3'));
+			return;
+		}
+		if(checkEmpty(clientMac))
+		{
+			popup_error(i18next.t('macFilter_err_des4'));
+			return;
+		}
+		if(isMACExist(clientMac.value, mac_array))
+		{
+			popup_error(i18next.t('macFilter_err_des5'));
+			return;
+		}
+		if(!checkMACFormat(clientMac.value))
+		{
+			popup_error(i18next.t('macFilter_err_des2'));
+			return;
+		}
+		if(isValidInput(desc_value.value) == false)
+		{
+			popup_error(i18next.t('macFilter_err_des6', {letter: filed_allow_hostname_letter}));
+			return false;
+		}
+		if( desc_value.value.length > 32 )
+		{
+			popup_error("Device Name is invalid. The maximum length of Device Name is 32.");
+			return false;
+		}
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.edit_instance = edit_instance;
+		req.desc = document.getElementById("edit_device_input").value;
+		req.clientMac = document.getElementById("edit_mac_input").value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/macfilter_edit.cgi", req)
+			.then(response_add_macfilter).catch(response_print);
+	}
+	function delete_rule(instance)
+	{
+		toggle_delete_modal()
+		delete_instance = mac_array[instance].instance;;
+	}
+	function delete_rule_save()
+	{
+		<!-- var clientMac = mac_array[delete_instance].mac; -->
+
+		toggle_delete_modal();
+		document.getElementById('modal_AddMACfilter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('macFilter_save_loading');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.del_instance = delete_instance;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/macfilter_delete.cgi", req)
+            .then(response_add_macfilter).catch(response_print);
+	}
+	var sortMACStatus = 1;
+	var sortDevNameStatus = 1;
+	function sortDevName()
+	{
+        sortDevNameStatus = sortDevNameStatus%2;
+        pageIdx = 0;
+        sortMACStatus = 1;
+        document.getElementById(platform + '-sortMACImg').src="/images/iconSort.svg";
+		switch(sortDevNameStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortDevNameImg').src="/images/iconA-Z.svg";
+				mac_array.sort(function(a, b) {
+					if(a.dev < b.dev) { return -1; }
+					if(a.dev > b.dev) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortDevNameImg').src="/images/iconZ-A.svg";
+				mac_array.sort(function(a, b) {
+					if(a.dev > b.dev) { return -1; }
+					if(a.dev < b.dev) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initMacListTable(mac_array);
+        sortDevNameStatus++;
+    }
+	function sortMAC()
+	{
+        sortMACStatus = sortMACStatus%2;
+        pageIdx = 0;
+        sortDevNameStatus = 1;
+        document.getElementById(platform + '-sortDevNameImg').src="/images/iconSort.svg";
+		switch(sortMACStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortMACImg').src="/images/iconA-Z.svg";
+				mac_array.sort(function(a, b) {
+					if(a.dev < b.dev) { return -1; }
+					if(a.dev > b.dev) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortMACImg').src="/images/iconZ-A.svg";
+				mac_array.sort(function(a, b) {
+					if(a.dev > b.dev) { return -1; }
+					if(a.dev < b.dev) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initMacListTable(mac_array);
+        sortMACStatus++;
+    }
+	function toggle_delete_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_delete'));
+        _myModal.toggle();
+    }
+	function saveDeleteListener() {
+        var myModalEl = document.getElementById('modal_delete');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_status_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_filter_status'));
+        _myModal.toggle();
+    }
+	function saveStatusListener() {
+        var myModalEl = document.getElementById('modal_filter_status');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_add_connected_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_add_connected'));
+        _myModal.toggle();
+    }
+	function saveAddConnectedListener() {
+        var myModalEl = document.getElementById('modal_add_connected');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_edit_host(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_edit_host'));
+        _myModal.toggle();
+    }
+	function saveEditHostListener() {
+        var myModalEl = document.getElementById('modal_edit_host');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_edit_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_edit_MACfilter'));
+        _myModal.toggle();
+    }
+	function saveEditListener() {
+        var myModalEl = document.getElementById('modal_edit_MACfilter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfoListener() {
+        var myModalEl = document.getElementById('_MoreInfo_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_MoreInfo_macfilter_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_macfilter_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfo_macfilter_Listener() {
+        var myModalEl = document.getElementById('_MoreInfo_macfilter_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.dialog_modal .modal-content{
+		width:720px;
+		height:420px;
+	}
+	.model_width{
+		width:100%;
+	}
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.dialog_modal .modal-content{
+		width:720px;
+		height:460px;
+	}
+	.model_width{
+		width:50%;
+	}
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+		<div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="macFilter_clients">Connected Clients</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    <tr class="cardViewTableFirstTR">
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_hostName">Host Name</label></td>
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_macAddr">MAC Address</label></td>
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_ipAddr">IP Address</label></td>
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_interface">Interface</label></td>
+						<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+					</tr>
+                </tbody>
+				<tbody id="xxl-tbodyClientList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="macFilter_title">MAC Address Filter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="macFilter_func">MAC Address Filter Function</td>
+                    <td class="w-25">
+					  <input class="switch_check" type="checkbox" id="xxl-macfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					<td class="w-25 cardViewTd" id="xxl-filterMode_title" data-i18n="macFilter_mode">Filter Mode</td>
+					<td class="w-25">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-filterMode">Whitelist</button>
+                        <button id="xxl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+							<li><a class="dropdown-item" href="#" id="xxl-filterMode_white" data-i18n="macFilter_mode_whitelist">Whitelist</a></li>
+							<li><a class="dropdown-item" href="#" id="xxl-filterMode_black" data-i18n="macFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xxl-save_status" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xxl-mac_filter_List">
+			<div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+				<table class="table table-borderless cardViewTable">
+				<thead>
+				<tr>
+					<th colspan="5" scope="row" class="">
+					  <label class="cardViewTitle" data-i18n="macFilter_list">MAC Address Filter List</label>
+						<button class="cardViewTitleBtn" id="xxl-addNewBtn">
+							<img src="/images/iconAddNew.svg" id="xxl-addNewImg" data-i18n-img-alt="macFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+						</button>
+					  <label class="cardViewTd" id="xxl-MaxLimtLabel" data-i18n="macFilter_maxLimit">Max Limit: 10</label>
+					</th>
+                 </tr>
+				 <tr class="cardViewTableFirstTR">
+					<td class="w-30 cardViewTableFirstTD">
+						<label data-i18n="macFilter_devName">Device Name</label>
+						<button class="cardViewSortBtn" id="xxl-sortDevNameBtn"><img id="xxl-sortDevNameImg" src="/images/iconSort.svg" data-i18n-img-alt="macFilter_set_sortName"></button>
+					</td>
+					<td class="w-30 cardViewTableFirstTD">
+						<label data-i18n="macFilter_macAddr">MAC Address</label>
+						<button class="cardViewSortBtn" id="xxl-sortMACBtn"><img id="xxl-sortMACImg" src="/images/iconSort.svg" data-i18n-img-alt="macFilter_set_sortMac"></button>
+					</td>
+                    <td class="w-30 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+                  </tr>
+				</thead>
+				<tbody id="xxl-tbodystaticAddrList">
+                </tbody>
+				</table>
+			</div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+		<div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="macFilter_clients">Connected Clients</th>
+                  </tr>
+                </thead>
+					<tbody>
+					  <tr>
+						<tr class="cardViewTableFirstTR">
+							<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_hostName">Host Name</label></td>
+							<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_macAddr">MAC Address</label></td>
+							<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_ipAddr">IP Address</label></td>
+							<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_interface">Interface</label></td>
+							<td class="w-20 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+						</tr>
+					  </tr>
+					</tbody>
+					<tbody id="xl-tbodyClientList">
+					</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="macFilter_title">MAC Address Filter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="macFilter_func">MAC Address Filter Function</td>
+                    <td class="w-25">
+                      <input class="switch_check" type="checkbox" id="xl-macfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					<td class="w-25 cardViewTd" id="xl-filterMode_title" data-i18n="macFilter_mode">Filter Mode</td>
+					<td class="w-25">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-filterMode">Whitelist</button>
+                        <button id="xl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+							<li><a class="dropdown-item" href="#" id="xl-filterMode_white" data-i18n="macFilter_mode_whitelist">Whitelist</a></li>
+							<li><a class="dropdown-item" href="#" id="xl-filterMode_black" data-i18n="macFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-save_status" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xl-mac_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+					<th colspan="5" scope="row" class="">
+					  <label class="cardViewTitle" data-i18n="macFilter_list">MAC Address Filter List</label>
+						<button class="cardViewTitleBtn" id="xl-addNewBtn">
+							<img src="/images/iconAddNew.svg" id="xl-addNewImg" data-i18n-img-alt="macFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+						</button>
+					  <label class="cardViewTd" id="xl-MaxLimtLabel" data-i18n="macFilter_maxLimit">Max Limit: 10</label>
+					</th>
+                  </tr>
+				  <tr class="cardViewTableFirstTR">
+					<td class="w-30 cardViewTableFirstTD">
+						<label data-i18n="macFilter_devName">Device Name</label>
+						<button class="cardViewSortBtn" id="xl-sortDevNameBtn"><img id="xl-sortDevNameImg" src="/images/iconSort.svg" data-i18n-img-alt="macFilter_set_sortName"></button>
+					</td>
+					<td class="w-30 cardViewTableFirstTD">
+						<label data-i18n="macFilter_macAddr">MAC Address</label>
+						<button class="cardViewSortBtn" id="xl-sortMACBtn"><img id="xl-sortMACImg" src="/images/iconSort.svg" data-i18n-img-alt="macFilter_set_sortMac"></button>
+					</td>
+                    <td class="w-30 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xl-tbodystaticAddrList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+		<div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseConnected-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseConnected">
+                        <span data-i18n="macFilter_clients">Connected Clients</span>
+                        <img id="collapseConnected-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseConnected" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+								<tr class="cardViewTableFirstTR">
+									<td class="w-50 cardViewTableFirstTD"><label data-i18n="macFilter_hostName">Host Name</label></td>
+									<!-- <td class="w-20 cardViewTableFirstTD"><label>MAC Address</label></td> -->
+									<!-- <td class="w-20 cardViewTableFirstTD"><label>IP Address</label></td> -->
+									<!-- <td class="w-20 cardViewTableFirstTD"><label>Interface</label></td> -->
+									<td class="w-50 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+								</tr>
+                            </thead>
+							<tbody id="mobile-tbodyClientList">
+							</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAF-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAF">
+                        <span data-i18n="macFilter_title">MAC Address Filter</span>
+                        <img id="collapseIAF-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAF" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="w-25 cardViewTd" data-i18n="macFilter_func">MAC Address Filter Function</td>
+							</tr>
+							<tr>
+								<td>
+									<input class="switch_check" type="checkbox" id="mobile-macfilter_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+							<tr>
+								<td class="w-25 cardViewTd" id="mobile-filterMode_title" data-i18n="macFilter_mode">Filter Mode</td>
+							</tr>
+							<tr>
+								<td>
+									<div class="cardViewSelect">
+										<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-filterMode">Whitelist</button>
+										<button id="mobile-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+											<span class="visually-hidden"></span>
+										</button>
+										<ul class="dropdown-menu dropdown-menu-lg-end">
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_white" data-i18n="macFilter_mode_whitelist">Whitelist</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_black" data-i18n="macFilter_mode_blacklist">Blacklist</a></li>
+										</ul>
+									</div>
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-save_status" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-mac_filter_List">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAFL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAFL">
+                        <span data-i18n="macFilter_list">MAC Address Filter List</span>
+                        <img id="collapseIAFL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAFL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+								<tr>
+									<th colspan="2" scope="row" class="">
+										<button class="cardViewTitleBtn" id="mobile-addNewBtn">
+											<img src="/images/iconAddNew.svg" id="mobile-addNewImg" data-i18n-img-alt="macFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+										</button>
+										<label class="cardViewTd" id="mobile-MaxLimtLabel" data-i18n="macFilter_maxLimit">Max Limit: 10</label>
+									</th>
+								</tr>
+								<tr class="cardViewTableFirstTR">
+									<td class="w-50 cardViewTableFirstTD">
+										<label data-i18n="macFilter_macAddr">MAC Address</label>
+									</td>
+									<td class="w-50 cardViewTableFirstTD"><label data-i18n="macFilter_actions">Actions</label></td>
+								</tr>
+                            </thead>
+                            <tbody id="mobile-tbodystaticAddrList">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade dialog_modal" id="modal_AddMACfilter">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="macFilter_addNew_title">Add New MAC Address Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="macFilter_addNew_form">New / From Available</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="select_available" data-i18n="macFilter_addNew">Add New</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="select_AddNew" data-i18n="macFilter_addNew">Add New</a></li>
+                              <li><a class="dropdown-item" href="#" id="select_FromAvailable" data-i18n="macFilter_fromAvailable">From Available</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="device_title" data-i18n="macFilter_devName">Device Name</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="">
+                            <input class="cardViewInputText" id="device_input" data-i18n-aria-label="macFilter_devName"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="mac_title" data-i18n="macFilter_macAddr">MAC Address</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="">
+                            <input class="cardViewInputText" id="mac_input" data-i18n-aria-label="macFilter_macAddr"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="maclist_title" data-i18n="macFilter_select_from">Select From Available</div>
+						<div class="p-2 flex-fill cardViewSelect model_width">
+							<select id="maclist_select" onchange="" aria-label="macFilter_select_from"></select>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="add_ruleBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="inModal_Btn_toggle_dialog_modal" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_delete" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header" data-i18n="macFilter_dialog_del_title">Delete MAC Address Filter</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="macFilter_dialog_del_des">Are you sure you want to delete "MAC Address Filter" rule?</label>
+					<button class="inModal_Btn" id="inModal_Btn_delete_rule_save" data-i18n="delete">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_filter_status" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header" data-i18n="macFilter_dialog_enable_title">Enable MAC Address Filter</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="macFilter_dialog_enable_des">Are you sure to enable this feature?</label>
+					<button class="inModal_Btn" id="inModal_Btn_toggle_status_save" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_add_connected" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header" data-i18n="macFilter_dialog_add_title">Add MAC Address Filter</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="macFilter_dialog_add_des">Are you sure you want to add "MAC Address Filter" rule?</label>
+                    <!-- <br><br> -->
+					<!-- <label class="dialog_modal_warning" id="_dialog_modal_warning"></label> -->
+					<button class="inModal_Btn" id="inModal_Btn_add_connected_save" data-i18n="add">Add</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_edit_host">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="macFilter_dialog_edit_host_title">Modify Host Name</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_device_title" data-i18n="macFilter_hostName">Host Name</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <input class="cardViewInputText" id="edit_host_input" data-i18n-aria-label="macFilter_hostName"></input>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="inModal_Btn_edit_client_list_save" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_edit_MACfilter">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="macFilter_dialog_edit_title">Modify MAC Address Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_device_title" data-i18n="macFilter_devName">Device Name</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="">
+                            <input class="cardViewInputText" id="edit_device_input" data-i18n-aria-label="macFilter_devName"></input>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_mac_title" data-i18n="macFilter_macAddr">MAC Address</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="">
+                            <input class="cardViewInputText" id="edit_mac_input" data-i18n-aria-label="macFilter_macAddr"></input>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="inModal_Btn_edit_rule_save" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="macFilter_clients">Connected Clients</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="macFilter_hostName">Host Name</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_more_hostname"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="macFilter_macAddr">MAC Address</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_more_mac_address"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="macFilter_ipAddr">IP Address</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_more_ip_address"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="macFilter_interface">Interface</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_more_interface"></label>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_macfilter_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="macFilter_list">MAC Address Filter List</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="macFilter_devName">Device Name</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_macfilter_devname"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="macFilter_macAddr">MAC Address</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_macfilter_macaddr"></label>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("modal_AddMACfilter");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("modal_delete");
+            set_EAA_ToItem("modal_filter_status");
+            set_EAA_ToItem("modal_add_connected");
+            set_EAA_ToItem("modal_edit_host");
+            set_EAA_ToItem("modal_edit_MACfilter");
+            set_EAA_ToItem("_MoreInfo_modal");
+            set_EAA_ToItem("_MoreInfo_macfilter_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_MAC_Filter');
+            selectObj_init(platform);
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("modal_AddMACfilter");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("modal_delete");
+            set_EAA_ToItem("modal_filter_status");
+            set_EAA_ToItem("modal_add_connected");
+            set_EAA_ToItem("modal_edit_host");
+            set_EAA_ToItem("modal_edit_MACfilter");
+            set_EAA_ToItem("_MoreInfo_modal");
+            set_EAA_ToItem("_MoreInfo_macfilter_modal");
+        }
+    });
+</script>
+</html>

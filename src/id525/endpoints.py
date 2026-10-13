@@ -38,7 +38,9 @@ class Kind(StrEnum):
     WRITE = "write"
     """Changes persistent configuration."""
     DESTRUCTIVE = "destructive"
-    """Interrupts service or loses data (reboot, factory reset, firmware)."""
+    """Can cut off the controlling host or lose data (reboot, LAN / bridge /
+    WAN-port changes, admin password, counter or APN resets...): every call
+    needs ``confirm=True``."""
 
     @property
     def mutating(self) -> bool:
@@ -54,6 +56,9 @@ class Status(StrEnum):
     UI_CAPTURED = "ui-captured"
     """Implemented; request bytes proven identical to the router's own web UI,
     captured offline by running the UI code against a local mock."""
+    UI_CAPTURED_SYNTHETIC = "ui-captured-synthetic"
+    """As ``ui-captured``, but starting from invented page data (the real dump
+    had e.g. no table rows), so the types of existing entries are assumed."""
     STATIC = "static"
     """Implemented from reading the UI code only (no capture)."""
     PLANNED = "planned"
@@ -70,7 +75,12 @@ class Status(StrEnum):
     @property
     def implemented(self) -> bool:
         """Return True if the client may call the endpoint."""
-        return self in (Status.LIVE_VERIFIED, Status.UI_CAPTURED, Status.STATIC)
+        return self in (
+            Status.LIVE_VERIFIED,
+            Status.UI_CAPTURED,
+            Status.UI_CAPTURED_SYNTHETIC,
+            Status.STATIC,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -280,7 +290,7 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "adm-sw", _A, _TODO, "adm-sw.html:452", "Ask the operator for firmware"
     ),
     _E.ACS_CHECK_UPDATE_STATUS: EndpointInfo(
-        "adm-sw", _R, _TODO, "adm-sw.html:459", "Firmware check progress"
+        "adm-sw", _A, _TODO, "adm-sw.html:459", "Firmware check progress"
     ),
     _E.ACS_UPDATE_CONFIRM: EndpointInfo(
         "adm-sw", _D, _UNSAFE, "adm-sw.html:533", "Install operator firmware"
@@ -300,12 +310,12 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "adm-backup", _D, _UNSAFE, "adm-backup.html:332", "Restore config backup"
     ),
     _E.SET_ACCOUNT: EndpointInfo(
-        "adm-user", _W, _TODO, "adm-user.html:440", "Change admin password"
+        "adm-user", _D, _TODO, "adm-user.html:440", "Change admin password"
     ),
     _E.SET_DEVICE_MANAGEMENT: EndpointInfo(
         "adm-user", _W, _TODO, "adm-user.html:482", "Session timeout"
     ),
-    _E.RESET_DATA: EndpointInfo("adm-user", _W, _TODO, "adm-user.html:518", "Reset data usage"),
+    _E.RESET_DATA: EndpointInfo("adm-user", _D, _TODO, "adm-user.html:518", "Reset data usage"),
     _E.DATA_USAGE_SAVE: EndpointInfo(
         "adm-user", _W, _TODO, "adm-user.html:541", "Data usage settings"
     ),
@@ -327,7 +337,7 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "cellular-settings", _W, _TODO, "cellular-settings.html:863", "Roaming"
     ),
     _E.OPERATION_MODE: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:996", "Router / bridge mode"
+        "cellular-settings", _D, _TODO, "cellular-settings.html:996", "Router / bridge mode"
     ),
     _E.REGISTER_OPERATOR: EndpointInfo(
         "cellular-settings", _W, _TODO, "cellular-settings.html:586", "Select operator"
@@ -348,11 +358,11 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "cellular-settings", _W, _TODO, "cellular-settings.html:467", "Select default APN"
     ),
     _E.APN_DEFAULT_RESET: EndpointInfo(
-        "cellular-settings", _W, _TODO, "cellular-settings.html:493", "Reset APNs"
+        "cellular-settings", _D, _TODO, "cellular-settings.html:493", "Reset APNs"
     ),
-    _E.LAN_SAVE: EndpointInfo("lan-settings", _W, _TODO, "lan-settings.html:563", "LAN / DHCP"),
+    _E.LAN_SAVE: EndpointInfo("lan-settings", _D, _TODO, "lan-settings.html:563", "LAN / DHCP"),
     _E.ETH_WAN: EndpointInfo(
-        "lan-settings", _W, _TODO, "lan-settings.html:600", "Ethernet WAN port"
+        "lan-settings", _D, _TODO, "lan-settings.html:600", "Ethernet WAN port"
     ),
     _E.DHCP_RESERVATION_ADD: EndpointInfo(
         "lan-settings", _W, _CAPT, "lan-settings.html:826", "Add DHCP reservation"
@@ -366,7 +376,7 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.WIFI_SETTING: EndpointInfo("wifi-settings", _W, _TODO, "wifi-settings.html:1386", "Wi-Fi"),
     _E.WPS_SETTING: EndpointInfo("wifi-settings", _W, _TODO, "wifi-settings.html:1432", "WPS"),
     _E.WPS_START: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1462", "Start WPS"),
-    _E.WPS_CHECK: EndpointInfo("wifi-settings", _R, _TODO, "wifi-settings.html:1506", "WPS state"),
+    _E.WPS_CHECK: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1506", "WPS state"),
     _E.WPS_STOP: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1530", "Stop WPS"),
     _E.MESH_SETTING: EndpointInfo(
         "wifi-settings", _W, _DEAD, "wifi-settings.html:1388", "Mesh (commented out)"
@@ -410,9 +420,9 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
         "fw-urlfilter", _W, _TODO, "fw-urlfilter.html:520", "Delete URL"
     ),
     _E.DIAG_CONNECTED: EndpointInfo(
-        "self-diag", _R, _TODO, "self-diag.html:221", "Interfaces connected"
+        "self-diag", _A, _TODO, "self-diag.html:221", "Interfaces connected"
     ),
-    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _R, _TODO, "self-diag.html:276", "CPU usage"),
+    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _TODO, "self-diag.html:276", "CPU usage"),
     _E.PING: EndpointInfo("self-ping", _A, _TODO, "self-ping.html:166", "Ping"),
     _E.TRACEROUTE: EndpointInfo("self-tracert", _A, _TODO, "self-tracert.html:182", "Traceroute"),
 }

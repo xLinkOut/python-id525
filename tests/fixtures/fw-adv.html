@@ -1,0 +1,596 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="fw_adv_title">Advanced Firewall Settings</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = "";
+	var platform_o = "";
+	var level_apply = 2;
+	var vpn_status ="1";
+
+	function bodyLoad() {
+        <!-- /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */ -->
+        menuOnLoad("fw-adv.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        <!-- /* Add your onload function call here: Start */ -->
+        mobile_CollapsibleAddListener('collapseUPNP', true);
+        mobile_CollapsibleAddListener('collapseVPN');
+		saveLoadingListener();
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        <!-- /* Add your onload function call here: End */ -->
+    }
+	function initJS_function(pf){
+		//document.getElementById(pf + "-allow_switch").onchange = function(){switch_allow_status();};
+		document.getElementById(pf + "-vpn_switch").onchange = function(){switch_vpn_status();};
+		document.getElementById(pf + "-fw_level_apply_btn").onclick = function(){fw_level_apply();};
+		document.getElementById(pf + "-vpn_apply_btn").onclick = function(){vpn_apply();};
+		document.getElementById("toggle_dialog_modal_btn").onclick = function(){toggle_dialog_modal();};
+		document.getElementById(pf + "-fw_level_a").onclick = function(){selectObj(pf + '-fw_level', i18next.t('fw_adv_sel_h'));};
+		document.getElementById(pf + "-fw_level_b").onclick = function(){selectObj(pf + '-fw_level', i18next.t('fw_adv_sel_m'));};
+		document.getElementById(pf + "-fw_level_c").onclick = function(){selectObj(pf + '-fw_level', i18next.t('fw_adv_sel_l'));};
+		dropdownItemKeyboardNavigation(pf + "-fw_level_a");
+		dropdownItemKeyboardNavigation(pf + "-fw_level_b");
+		dropdownItemKeyboardNavigation(pf + "-fw_level_c");
+	}
+	function onScreenWidthChange()
+	{
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+			initJS_function(platform);
+			platform_o = platform;
+        }
+        
+        switch (level_apply) {
+            case 1:
+                 // Low
+                 selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_l'));
+            break;
+            case 2:
+                 // middle
+                 selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_m'));
+            break;
+            case 3:
+                 // High
+                 selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_h'));
+            break;
+            default:
+                // default middle
+                selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_m'));
+        }
+
+		if(vpn_status == "0")
+		{
+			document.getElementById(platform + "-vpn_switch").checked = false;
+		}
+		else
+		{
+			document.getElementById(platform + "-vpn_switch").checked = true;
+		}
+    }
+	function update_content(data_json)
+	{
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+	function switch_vpn_status()
+	{
+		if(document.getElementById(platform + "-vpn_switch").checked)
+		{
+			vpn_status = 1;
+		}
+        else
+		{
+			vpn_status = 0;
+		}
+    }
+
+	function fw_level_apply()
+	{
+		document.getElementById('_modal_text').innerHTML = i18next.t('fw_adv_dialog_des1');
+		toggle_modal();
+
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.fw_lv = level_apply;		
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/fw_adv_apply.cgi", req)
+            .then(response_upnp_apply).catch(response_print);
+	}
+	function vpn_apply()
+	{
+		document.getElementById('_modal_text').innerHTML = i18next.t('fw_adv_dialog_des1');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.isVpnEnable = vpn_status;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/fw_adv_vpn_apply.cgi", req)
+            .then(response_upnp_apply).catch(response_print);
+	}
+	function selectObj(id, text)
+	{
+        var selectItem = document.getElementById(id);
+        selectItem.innerHTML = text;
+		if(id.indexOf("fw_level") != -1)
+		{
+			switch (text) {
+                case i18next.t('fw_adv_sel_l'):
+                     // Low
+                     level_apply = 1;
+                break;
+                case i18next.t('fw_adv_sel_m'):
+                     // middle
+                     level_apply = 2;
+                break;
+                case i18next.t('fw_adv_sel_h'):
+                     // High
+                     level_apply = 3;
+                break;
+                default:
+                    // default middle
+                    level_apply = 2;
+            }
+		}
+		else
+		{
+			selectItem.innerHTML = text;
+		}
+    }
+	function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_upnp_apply(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-adv.html";}, 1000);
+    }
+	function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);
+    }
+	function response_add_portforward(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-adv.html";}, 1000);
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 50px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 50px;
+      margin: 0 0 18px 0;
+    }
+    .xxl_note_hight{
+        height: 150px;
+    }
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+		<div class="fx_pc" id="_fx_pc">
+		<div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-44 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="fw_adv_set">More Firewall Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="w-50 cardViewTd" data-i18n="fw_adv_level">Firewall Level</td>
+						<td class="w-50">
+							<div class="cardViewSelect">
+								<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-fw_level">Middle (Recommended)</button>
+								<button id="xxl-fw_level_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+									<span class="visually-hidden"></span>
+								</button>
+								<ul class="dropdown-menu dropdown-menu-lg-end">
+								  <li><a class="dropdown-item" href="#" id="xxl-fw_level_a" data-i18n="fw_adv_sel_h">High</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-fw_level_b" data-i18n="fw_adv_sel_m">Middle (Recommended)</a></li>
+								  <li><a class="dropdown-item" href="#" id="xxl-fw_level_c" data-i18n="fw_adv_sel_l">Low</a></li>
+								</ul>
+							</div>
+						</td>
+					</tr>
+					<tr class="cardViewTr xxl_note_hight">
+						<td colspan="2" class="cardViewTd" id="xxl-level_info">
+							<label class="cardViewNoteInfo" data-i18n="fw_adv_note">Note:
+							    <br>High: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, blocking Inbound ICMP request and UDP-flooding.
+							    <br>Middle: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, and blocking Inbound ICMP request.
+							    <br>Low: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing but allowing Inbound ICMP request.</label>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xxl-fw_level_apply_btn" data-i18n="save">Save</button>
+            </div>
+			<div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="fw_adv_vpn_pass">VPN Pass-through</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="fw_adv_vpn_pass_func">VPN Pass-through Function</td>
+					<td class="w-50">
+						<input class="switch_check" type="checkbox" id="xxl-vpn_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+                  <tr class="cardViewTr xxl_note_hight"></tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xxl-vpn_apply_btn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		</div>
+		<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+		<div class="row g-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-44 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="fw_adv_set">More Firewall Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="fw_adv_level">Firewall Level</td>
+					<td class="w-50">
+						<div class="cardViewSelect">
+							<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-fw_level">Middle (Recommended)</button>
+							<button id="xl-fw_level_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="visually-hidden"></span>
+							</button>
+							<ul class="dropdown-menu dropdown-menu-lg-end">
+							  <li><a class="dropdown-item" href="#" id="xl-fw_level_a" data-i18n="fw_adv_sel_h">High</a></li>
+							  <li><a class="dropdown-item" href="#" id="xl-fw_level_b" data-i18n="fw_adv_sel_m">Middle (Recommended)</a></li>
+							  <li><a class="dropdown-item" href="#" id="xl-fw_level_c" data-i18n="fw_adv_sel_l">Low</a></li>
+							</ul>
+						</div>
+					</td>
+                  </tr>
+                  <tr class="cardViewTr">
+    				<td colspan="2" class="cardViewTd" id="xl-level_info">
+    					<label class="cardViewNoteInfo" data-i18n="fw_adv_note">Note:
+							    <br>High: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, blocking Inbound ICMP request and UDP-flooding.
+							    <br>Middle: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, and blocking Inbound ICMP request.
+							    <br>Low: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing but allowing Inbound ICMP request.</label>
+    				</td>
+    			  </tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xl-fw_level_apply_btn" data-i18n="save">Save</button>
+            </div>
+			<div class="col-xxl bg-white mt-44 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="fw_adv_vpn_pass">VPN Pass-through</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+                    <td class="w-50 cardViewTd" data-i18n="fw_adv_vpn_pass_func">VPN Pass-through Function</td>
+					<td class="w-50">
+						<input class="switch_check" type="checkbox" id="xl-vpn_switch" data-i18n-aria-label="checkbox_btn">
+					</td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-vpn_apply_btn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+		<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-44 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseUPNP-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseUPNP">
+                        <span data-i18n="fw_adv_set">More Firewall Settings</span>
+                        <img id="collapseUPNP-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseUPNP" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="cardViewTd" data-i18n="fw_adv_level">Firewall Level</td>
+							</tr>
+							<tr>
+								<td>
+									<div class="cardViewSelect">
+            							<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-fw_level">Middle (Recommended)</button>
+													<button id="mobile-fw_level_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+            								<span class="visually-hidden"></span>
+            							</button>
+            							<ul class="dropdown-menu dropdown-menu-lg-end">
+            							  <li><a class="dropdown-item" href="#" id="mobile-fw_level_a" data-i18n="fw_adv_sel_h">High</a></li>
+            							  <li><a class="dropdown-item" href="#" id="mobile-fw_level_b" data-i18n="fw_adv_sel_m">Middle (Recommended)</a></li>
+            							  <li><a class="dropdown-item" href="#" id="mobile-fw_level_c" data-i18n="fw_adv_sel_l">Low</a></li>
+            							</ul>
+            						</div>
+								</td>
+							</tr>
+							<tr class="cardViewTr">
+                				<td colspan="2" class="cardViewTd" id="mobile-level_info">
+                					<label class="cardViewNoteInfo" data-i18n="fw_adv_note">Note:
+							    <br>High: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, blocking Inbound ICMP request and UDP-flooding.
+							    <br>Middle: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing, and blocking Inbound ICMP request.
+							    <br>Low: allow Internet forwarding, enable Reverse Path Filtering to defend IP spoofing but allowing Inbound ICMP request.</label>
+                				</td>
+                			</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-fw_level_apply_btn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-44 justify-content-between">
+            <div class="col-xxl bg-white me-44 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseVPN-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseVPN">
+                        <span data-i18n="fw_adv_vpn_pass">VPN Pass-through</span>
+                        <img id="collapseVPN-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseVPN" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="cardViewTd" data-i18n="fw_adv_vpn_pass_func">VPN Pass-through Function</td>
+							</tr>
+							<tr>
+								<td>
+									<input class="switch_check" type="checkbox" id="mobile-vpn_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-vpn_apply_btn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="toggle_dialog_modal_btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('fw_adv_title');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('fw_adv_title');
+            switch (level_apply) {
+                case 1:
+                     // Low
+                     selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_l'));
+                break;
+                case 2:
+                     // middle
+                     selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_m'));
+                break;
+                case 3:
+                     // High
+                     selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_h'));
+                break;
+                default:
+                    // default middle
+                    selectObj(platform + '-fw_level', i18next.t('fw_adv_sel_m'));
+            }
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+    });
+</script>
+</html>

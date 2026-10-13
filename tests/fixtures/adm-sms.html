@@ -1,0 +1,1397 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="sms_title">Messages</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- Generic WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    var platform_o = '';
+    var curVoiceCallFunction = 'Off';
+    var message_data_json;
+    //var message_data_json_tmp = ;
+    var message_data_array = [];
+    var message_prePhonenum_lastSMS_array = [];
+    var message_search_array = [];
+    var message_preClass_json = {};
+    
+    var is_ChatScreenOn = false;
+    var phone_Num = '';
+
+    function response_print(response){
+        //console.log("response: "+JSON.stringify(response));
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);        
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        reloadMessages();
+        setInterval(reloadMessages, 1000);
+    }
+
+    function bodyLoad() {
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("adm-sms.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+
+        saveLoadingListener();
+        saveDialogListener();
+        sendChatDialogListener();
+
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        
+        //setTimeout(loop_reload, 1000);
+        /* Add your onload function call here: End */
+    }
+    function initJS_function(pf){
+        if(pf != "mobile"){
+            document.getElementById(pf + "-Ph_Num").style = 'cursor: default;';
+            document.getElementById(pf + "-allCheckBox").style = 'background-color: var(--pageBG);';
+            document.getElementById(pf + "-allCheckBox").onchange = function(){allCheck(document.getElementById(pf + "-allCheckBox"));};
+        }
+        document.getElementById(pf + "-DeleteBtn").onclick = function(){show_deleteDialog();};
+        document.getElementById(pf + "-ComposeBtn").onclick = function(){toggle_smsCompose_modal();};
+        document.getElementById(pf + "-mysearch").oninput = function(){searchInput(document.getElementById(pf + "-mysearch"));};
+        document.getElementById(pf + "-mysearch").placeholder = i18next.t('sms_search');
+    }
+    /*
+    function loop_reload(){
+        reloadMessages();
+        setTimeout(loop_reload, 1000);
+    }
+    */
+    function initSMS_json_data(message_data_json_tmp){
+        //console.log("message_data_json_tmp [0].phoneNum: " + message_data_json_tmp.message[0].phone_number);
+        message_data_array = message_data_json_tmp.message;
+        if(message_data_array.length <= 0){
+            console.log("message list is empty");
+            message_prePhonenum_lastSMS_array = [];
+            initMessageContactTable(message_prePhonenum_lastSMS_array);
+            return;
+        }
+        message_prePhonenum_lastSMS_array = [];
+        message_data_array.sort(function(a, b) {
+            return b.time - a.time;
+        });
+        message_data_array.sort(function(a, b) {
+            return b.phone_number - a.phone_number;
+        });
+        var phoneNum = message_data_array[0].phone_number;
+        for(var i=0 ; i<message_data_array.length ; i++){
+            var phoneNum_tmp = message_data_array[i].phone_number;
+            /*
+            console.log("message_data_array["+i+"].phone_number: "+message_data_array[i].phone_number +
+                        ", message_data_array["+i+"].time: "+message_data_array[i].time);
+            */
+            if(phoneNum != phoneNum_tmp){
+                phoneNum = phoneNum_tmp;
+
+                /* check if already record the phone number */
+                if(message_prePhonenum_lastSMS_array.length == 0){
+                    message_prePhonenum_lastSMS_array.push(message_data_array[i-1]);
+                } else{
+                    for(var j=0; j<message_prePhonenum_lastSMS_array.length; j++){
+                        /* update last context */
+                        if(message_prePhonenum_lastSMS_array[j].phone_number === message_data_array[i-1].phone_number){
+                            message_prePhonenum_lastSMS_array[j] = message_data_array[i-1];
+                            break;
+                        }
+
+                        if(j == message_prePhonenum_lastSMS_array.length-1)
+                            message_prePhonenum_lastSMS_array.push(message_data_array[i-1]);
+                    }
+                }
+            }
+        }
+
+        /* last sms message */
+        if(message_prePhonenum_lastSMS_array.length == 0){
+            message_prePhonenum_lastSMS_array.push(message_data_array[message_data_array.length-1]);
+        } else{
+            for(var i=0; i<message_prePhonenum_lastSMS_array.length; i++){
+                if(message_prePhonenum_lastSMS_array[i].phone_number === message_data_array[message_data_array.length-1].phone_number){
+                    message_prePhonenum_lastSMS_array[i] = message_data_array[message_data_array.length-1];
+                    break;
+                }
+
+                if(i == message_prePhonenum_lastSMS_array.length-1)
+                    message_prePhonenum_lastSMS_array.push(message_data_array[message_data_array.length-1]);
+            }
+        }
+
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+        /*
+            console.log("message_data_array["+i+"].phone_number: "+message_prePhonenum_lastSMS_array[i].phone_number +
+                        ", message_data_array["+i+"].time: "+message_prePhonenum_lastSMS_array[i].time);
+        */
+            var tmpKey = message_prePhonenum_lastSMS_array[i].phone_number;
+            var tmpArray = [];
+            var unread_num = 0;
+            for(var j=0 ; j<message_data_array.length ; j++){
+                if(message_prePhonenum_lastSMS_array[i].phone_number === message_data_array[j].phone_number){
+                    tmpArray.push(message_data_array[j]);
+                    if(message_data_array[j].read_status == 0){
+                        unread_num++;
+                    }
+                }
+            }
+            message_preClass_json[tmpKey] = tmpArray;
+            message_prePhonenum_lastSMS_array[i].unread_num = unread_num;
+            message_prePhonenum_lastSMS_array[i].Class = tmpKey;
+            message_prePhonenum_lastSMS_array[i].onCheck = false;
+        }
+        //console.log("message_preClass_json:" + JSON.stringify(message_preClass_json));
+        initMessageContactTable(message_prePhonenum_lastSMS_array);
+    }
+    
+    function initMessageContactTable(message_prePhonenum_lastSMS_array){
+        message_search_array = message_prePhonenum_lastSMS_array;
+        var textStyle;
+        var textStyle_date;
+        var textStyle_phone;
+        var tbodySmsList = document.getElementById(platform + '-tbodySmsList');
+        var tbodySmsListCon = '';
+        var tbodySmsListAll = '';
+        tbodySmsList.innerHTML = '';
+        if(platform != 'mobile'){
+            for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++)
+            {
+                var max_width;
+                if(platform == 'xxl'){
+                    max_width = "400px";
+                }else{
+                    max_width = "250px";
+                }
+                //console.log("message_prePhonenum_lastSMS_array["+i+"]:" + JSON.stringify(message_prePhonenum_lastSMS_array[i]));
+                tbodySmsListCon = '<tr class="cardViewTableTR">';
+                
+                tbodySmsListCon += '<td class="w-20 cardViewTableTD">';
+                if(message_prePhonenum_lastSMS_array[i].onCheck){
+                //if(false){
+                    tbodySmsListCon += '<input type="checkbox" class="fx_Checkbox" aria-label="'+ i18next.t('sms_checkbox_select', {idx: i}) +'" id="'+platform+'-contactCheckbox'+i+'" checked></input>';
+                }else{
+                    tbodySmsListCon += '<input type="checkbox" class="fx_Checkbox" aria-label="'+ i18next.t('sms_checkbox_select', {idx: i}) +'" id="'+platform+'-contactCheckbox'+i+'"></input>';
+                }
+                tbodySmsListCon += '<a id="'+platform+'tb_ph_num'+i+'">' +message_prePhonenum_lastSMS_array[i].phone_number+ '</a>';
+                tbodySmsListCon += '</td>';
+                var status_icon;
+                if(message_prePhonenum_lastSMS_array[i].read_status > 1 && message_prePhonenum_lastSMS_array[i].unread_num == 0){
+                    status_icon = '<label><img class="sms_status_img" alt="'+ i18next.t('sms_status_send') +'" src="/images/status_send.svg"></img></label>';
+                }else if(message_prePhonenum_lastSMS_array[i].unread_num > 0){
+                    status_icon = '<label><img class="sms_status_img" alt="'+ i18next.t('sms_status_unread') +'" src="/images/status_unread.svg"><a>&#215;'+message_prePhonenum_lastSMS_array[i].unread_num+'</a></img></label>';
+                }else{
+                    status_icon = '<label><img class="sms_status_img" alt="'+ i18next.t('sms_status_read') +'" src="/images/status_read.svg"></img></label>';
+                }
+                tbodySmsListCon += '<td class="w-20 cardViewTableTD">' +status_icon+ '</td>';
+                tbodySmsListCon += '<td class="w-40 cardViewTableTD" id="'+platform+'tb_td_context'+i+'"><label id="'+platform+'tb_context'+i+'"></label></td>';
+                tbodySmsListCon += '<td class="w-20 cardViewTableTD"><label id="'+platform+'tb_time'+i+'">' +message_prePhonenum_lastSMS_array[i].time+ '</label></td>';
+                
+                tbodySmsListCon += '</tr>';
+                tbodySmsListAll += tbodySmsListCon;
+            }
+        }else{
+            //mobile view
+            for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++)
+            {
+                //console.log("message_prePhonenum_lastSMS_array["+i+"]:" + JSON.stringify(message_prePhonenum_lastSMS_array[i]));
+                tbodySmsListCon = '<tr class="cardViewTableTR">';
+                
+                tbodySmsListCon += '<td class="" id="'+platform+'tb_checkbox'+i+'Td">';
+                if(message_prePhonenum_lastSMS_array[i].onCheck){
+                    tbodySmsListCon += '<input type="checkbox" class="fx_Checkbox" aria-label="'+ i18next.t('sms_checkbox_select', {idx: i}) +'" id="'+platform+'-contactCheckbox'+i+'" checked></input>';
+                }else{
+                    tbodySmsListCon += '<input type="checkbox" class="fx_Checkbox" aria-label="'+ i18next.t('sms_checkbox_select', {idx: i}) +'" id="'+platform+'-contactCheckbox'+i+'"></input>';
+                }
+                tbodySmsListCon += '</td>';
+                var status_icon;
+                if(message_prePhonenum_lastSMS_array[i].read_status > 1 && message_prePhonenum_lastSMS_array[i].unread_num == 0){
+                    status_icon = '<label class="sms_status_img"><img alt="'+ i18next.t('sms_status_send') +'" src="/images/status_send.svg" id="'+platform+'tb_readImg'+i+'"></img></label>';
+                }else if(message_prePhonenum_lastSMS_array[i].unread_num > 0){
+                    var unread_num = '';
+                    if(message_prePhonenum_lastSMS_array[i].unread_num > 99){
+                        unread_num = '99...'
+                    }else{
+                        unread_num = '' + message_prePhonenum_lastSMS_array[i].unread_num;
+                    }
+                    status_icon = '<label class="sms_status_img" id="'+platform+'tb_unreadImg'+i+'Lb"><img alt="'+ i18next.t('sms_status_unread') +'" src="/images/status_unread.svg" id="'+platform+'tb_readImg'+i+'"><br><a>'+unread_num+'</a></img></label>';
+                }else{
+                    status_icon = '<label class="sms_status_img"><img alt="'+ i18next.t('sms_status_read') +'" src="/images/status_read.svg" id="'+platform+'tb_readImg'+i+'"></img></label>';
+                }
+                var show_date = '';
+                const d = new Date(message_prePhonenum_lastSMS_array[i].time);
+                const now_d = new Date(Date.now());
+                if(now_d.getFullYear() == d.getFullYear() && now_d.getMonth() == d.getMonth() && now_d.getDate() == d.getDate()){
+                    var options = { hour: '2-digit', minute: '2-digit' };
+                    show_date = d.toLocaleTimeString("en-US", options);
+                }else{
+                    var options = { month: '2-digit', day: '2-digit' };
+                    show_date = d.toLocaleDateString("en-US", options);
+                }
+                tbodySmsListCon += '<td class="" id="'+platform+'tb_statusIcon'+i+'Td">' +status_icon+ '</td>';
+                tbodySmsListCon += '<td class="" id="'+platform+'tb_showChatScreen'+i+'Td"><label id="'+platform+'tb_ph_num_date'+i+'Lb"><a id="'+platform+'tb_ph_num'+i+'">' +message_prePhonenum_lastSMS_array[i].phone_number+ '</a> <a id="'+platform+'tb_date'+i+'">' +show_date+ '</a></label><br>'+
+                                    '<label id="'+platform+'tb_context'+i+'Lb">'+
+                                        '<a id="'+platform+'tb_context'+i+'"></a>'+
+                                    '</label></td>';
+                tbodySmsListCon += '</tr>';
+                tbodySmsListAll += tbodySmsListCon;
+            }
+        }
+        tbodySmsList.innerHTML = tbodySmsListAll;
+
+        if(platform != 'mobile'){
+            for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++)(function(i)
+            {
+                if(message_prePhonenum_lastSMS_array[i].unread_num > 0){
+                    textStyle = 'font: normal normal 500 18px/21px Roboto;color: var(--inputtext);max-width: '+max_width+';overflow: hidden;white-space: nowrap;text-overflow: ellipsis;cursor: inherit;';
+                }else{
+                    textStyle = 'font: normal normal 300 18px/21px Roboto;color: var(--inputtext);max-width: '+max_width+';overflow: hidden;white-space: nowrap;text-overflow: ellipsis;cursor: inherit;';
+                }
+                document.getElementById(platform+"tb_ph_num"+i).style = textStyle;
+                document.getElementById(platform+"tb_context"+i).style = textStyle;
+                document.getElementById(platform+"tb_context"+i).innerText = message_prePhonenum_lastSMS_array[i].context;
+                document.getElementById(platform+"tb_time"+i).style = textStyle;
+                document.getElementById(platform+"tb_td_context"+i).style = "cursor: pointer;";
+                document.getElementById(platform+"tb_td_context"+i).onclick = function(){showChatScreen(i);};
+                document.getElementById(platform+"-contactCheckbox"+i).onchange = function(){contactCheck(document.getElementById(platform+"-contactCheckbox"+i),i);};
+            })(i);
+        }else{
+            //mobile view
+            for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++)(function(i)
+            {
+                if(message_prePhonenum_lastSMS_array[i].unread_num > 0){
+                    textStyle = 'font: normal normal 600 12px/14px Roboto;color: var(--chatStatusColor);';
+                    textStyle_phone = 'font: normal normal 600 14px/16px Roboto;color: var(--chatStatusColor);';
+                    textStyle_date = 'font: normal normal 400 14px/16px Roboto;color: var(--chatStatusColor);float:right;';
+                }else{
+                    textStyle = 'font: normal normal 400 12px/14px Roboto;color: var(--chatStatusColor);';
+                    textStyle_phone = 'font: normal normal 400 14px/16px Roboto;color: var(--chatStatusColor);';
+                    textStyle_date = 'font: normal normal 400 14px/16px Roboto;color: var(--chatStatusColor);float:right;';
+                }
+                document.getElementById(platform+"tb_context"+i).style = textStyle;
+                document.getElementById(platform+"tb_context"+i).innerText = message_prePhonenum_lastSMS_array[i].context;
+                document.getElementById(platform+"tb_ph_num"+i).style = textStyle_phone;
+                document.getElementById(platform+"tb_date"+i).style = textStyle_date;
+                document.getElementById(platform+"tb_context"+i+"Lb").style = "font: normal normal 400 12px/14px Roboto;color: var(--inputtext);width: 250px;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;";
+                document.getElementById(platform+"tb_ph_num_date"+i+"Lb").style = "width:250px;font: normal normal 400 14px/16px Roboto;";
+                document.getElementById(platform+"tb_showChatScreen"+i+"Td").style = "padding: 0 0 0 10px;";
+                document.getElementById(platform+"tb_showChatScreen"+i+"Td").onclick = function(){showChatScreen(i);};
+                document.getElementById(platform+"tb_statusIcon"+i+"Td").style = "padding: 0; width: 10%;";
+                document.getElementById(platform+"tb_readImg"+i).style = "margin-top: 5px;";
+                if(message_prePhonenum_lastSMS_array[i].unread_num > 0){
+                    document.getElementById(platform+"tb_unreadImg"+i+"Lb").style = "text-align: center;font: normal normal 600 10px/12px Roboto";
+                }
+                document.getElementById(platform+"-contactCheckbox"+i).onchange = function(){contactCheck(document.getElementById(platform+"-contactCheckbox"+i),i);};
+                document.getElementById(platform+"tb_checkbox"+i+"Td").style = "padding: 0; width: 10%;";
+            })(i);
+        }
+
+    }
+
+    var instanceArray = [];
+    function initChatScreenCon(){
+        var currentChatArray = [];
+        currentChatArray = message_preClass_json[phone_Num];
+        document.getElementById('_sendChat_dialog_modal_header').innerHTML = phone_Num;
+        var chatList = document.getElementById('chat_card_body');
+        var chatListCon = '';
+        var chatListAll = '';
+        var delivered = '';
+        var delivered_color = 'chatStatusColor';
+        var not_delivered_icon = '';
+        chatList.innerHTML = '';
+        for(var i=0 ; i<currentChatArray.length ; i++){
+            //console.log("currentChat: " + JSON.stringify(currentChatArray[i]));
+            chatListCon = '';
+            if(currentChatArray[i].read_status > 1){
+                if(currentChatArray[i].read_status == 6){
+                //if(1){
+                    delivered = currentChatArray[i].time+'<br>Delivered';
+                    not_delivered_icon = '';
+                }else{
+                    delivered = 'Not Delivered';
+                    not_delivered_icon = '<img alt="'+ i18next.t('sms_status_warn') +'" id="'+platform+'tb_chat_warning'+i+'img" src="/images/ic_chat_warning.svg">';
+                }
+                chatListCon = '<div class="d-flex flex-row justify-content-end mb-0" id="'+platform+'tb_Delivered'+i+'">'+
+                      not_delivered_icon+
+                      '<div class="p-3" id="'+platform+'tb_Delivered_context'+i+'div">'+
+                        '<p class="small mb-0" id="'+platform+'tb_Delivered_context'+i+'"></p>'+
+                      '</div>'+
+                      '<div class="inner_send"></div>'+
+                    '</div>'+
+                        '<label class="d-flex justify-content-end mb-4 me-1" id="'+platform+'tb_Delivered_sta'+i+'">'+delivered+'</label>';
+            }else{
+                chatListCon = '<div class="d-flex flex-row justify-content-start mb-0" id="'+platform+'tb_Delivered'+i+'">'+
+                  '<div class="inner_receive"></div>'+
+                  '<div class="p-3" id="'+platform+'tb_Delivered_context'+i+'div">';
+            	if(currentChatArray[i].context === undefined){
+                    chatListCon = chatListCon+
+                        '<p class="small mb-0" id="'+platform+'tb_Delivered_context'+i+'">'+'Wait...'+'</p>';
+            	}else{
+                    chatListCon = chatListCon+
+                        '<p class="small mb-0" id="'+platform+'tb_Delivered_context'+i+'"></p>';
+            	}
+                chatListCon = chatListCon+
+                  '</div>'+
+                '</div>'+
+                    '<label class="d-flex justify-content-start mb-4 ms-1" id="'+platform+'tb_Delivered_sta'+i+'">'+currentChatArray[i].time+'</label>';
+            }
+            chatListAll += chatListCon;
+        }
+        chatList.innerHTML = chatListAll;
+        
+        for(var i=0 ; i<currentChatArray.length ; i++)(function(i)
+        {
+            if(currentChatArray[i].read_status > 1){
+                delivered_color = 'chatStatusColor';
+                if(currentChatArray[i].read_status != 6){
+                    delivered_color = 'errorColor';
+                    document.getElementById(platform+"tb_chat_warning"+i+"img").style = "width: 24px; height: 100%; margin:6px;";
+                }
+                document.getElementById(platform+"tb_Delivered"+i).style = "padding:0;align-items: center;";
+                document.getElementById(platform+"tb_Delivered_context"+i+"div").style = "border-radius: 5px; border-bottom-right-radius: 0; background-color: var(--warningColor); max-width: 300px;";
+                document.getElementById(platform+"tb_Delivered_context"+i).style = "color: var(--sendChatColor); font: normal normal 500 18px/21px Roboto; word-wrap:break-word;";
+                document.getElementById(platform+"tb_Delivered_context"+i).innerText = currentChatArray[i].context;
+                document.getElementById(platform+"tb_Delivered_sta"+i).style = "margin-top:7px; padding:0;color: var(--"+delivered_color+"); font: normal normal 400 12px/14px Roboto; text-align: right;";
+            }else{
+                document.getElementById(platform+"tb_Delivered"+i).style = "padding:0;";
+                document.getElementById(platform+"tb_Delivered_context"+i+"div").style = "border-radius: 5px; border-bottom-left-radius: 0; background-color: var(--trColor); max-width: 300px;";
+                document.getElementById(platform+"tb_Delivered_context"+i).style = "color: var(--receiveChatColor); font: normal normal 500 18px/21px Roboto; word-wrap:break-word;";                
+                if(currentChatArray[i].context === undefined){
+                    document.getElementById(platform+"tb_Delivered_context"+i).innerText = i18next.t('sms_wait');
+            	}else{
+                    document.getElementById(platform+"tb_Delivered_context"+i).innerText = currentChatArray[i].context;
+            	}
+                document.getElementById(platform+"tb_Delivered_sta"+i).style = "margin-top:7px; padding:0;color: var(--chatStatusColor); font: normal normal 400 12px/14px Roboto; text-align: left;";
+            }
+        })(i);
+
+        if(currentChatArray[currentChatArray.length - 1].unread_num > 0){
+            var modal = document.getElementById('chat_card_body');
+            modal.scrollTo({
+              top: modal.scrollHeight,
+              left: 0,
+              behavior: 'smooth'
+            });
+            // req unread -> read
+            for(var i=0 ; i<currentChatArray.length ; i++){
+                if(currentChatArray[i].read_status == 0){
+                    instanceArray.push(currentChatArray[i].index);
+                }
+            }
+            updateSMS_readStatus();
+        }
+    }
+    function showChatScreen (num){
+        phone_Num = message_search_array[num].phone_number;
+        //console.log("phone_Num: " + phone_Num);
+        //console.log("message_preClass_json:" + JSON.stringify(message_preClass_json));
+        initChatScreenCon();
+        toggle_sendChat_dialog_modal();
+    }
+    
+    function updateSMS_readStatus_response(data_json){
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sms.html";}, 1000);
+        }else {
+            //console.log("res: " + JSON.stringify(data_json));
+            document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        }
+    }
+    function updateSMS_readStatus(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        //req.phone_number = phone_Num;
+        req.list_length = instanceArray.length;
+        req.index_List = instanceArray.toString(); 
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_smsUpdateStatus.cgi", req, 10000)
+            .then(response => { return response}).then(updateSMS_readStatus_response).catch(response_print);
+    }
+
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+//console.log('platform: '+platform);
+        if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+        
+        if(window.innerWidth >= 1200){
+            document.getElementById(platform + "-ComposeBtn").setAttribute("data-content", i18next.t('sms_composeSMS_btn'));
+            document.getElementById(platform + "-DeleteBtn").setAttribute("data-content", i18next.t('sms_deleteSMS_btn'));
+        }else{
+            ocument.getElementById(platform + "-ComposeBtn").setAttribute("data-content", "");
+            document.getElementById(platform + "-DeleteBtn").setAttribute("data-content", "");
+        }
+
+        //selectObj(platform + '-VoiceCallSelect',curVoiceCallFunction);
+        if(platform != 'mobile'){
+            document.getElementById(platform + '-allCheckBox').checked = false;
+        }
+        document.getElementById(platform + '-DeleteBtn').disabled = true;
+        
+        initSMS_json_data(message_data_json);
+
+    }
+    
+    function searchInput(inputObj){
+        var searchText = inputObj.value;
+        message_search_array = [];
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+            if(message_prePhonenum_lastSMS_array[i].phone_number.indexOf(searchText) != -1){
+                message_search_array.push(message_prePhonenum_lastSMS_array[i]);
+            }
+        }
+        initMessageContactTable(message_search_array);
+    }
+    
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+    
+    function hidePass_toggle(toggleid, id)
+	{
+		var password_eye = document.getElementById(toggleid);
+		var password_input = document.getElementById(id);
+		if(password_input.type === "password")
+		{
+			password_input.type = "text";
+			password_eye.src = "/images/iconPasswordShow.svg";
+		}
+		else if(password_input.type === "text")
+		{
+			password_input.type = "password";
+			password_eye.src = "/images/iconPasswordHide.svg";
+		}
+	}
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+        //console.log(text+ "!!!" + selectItem.innerHTML);
+        selectItem.innerHTML = text;
+        if(id.indexOf("VoiceCallSelect") != -1){
+            checkVoiceCallFunction(text);
+            curVoiceCallFunction = text;
+        }else if(id.indexOf("") != -1){
+        
+        }
+    }
+    
+    function allCheck(checkBoxObj){
+        var selectNum = 0;
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+            for(var j=0 ; j<message_search_array.length ; j++){
+                if(message_prePhonenum_lastSMS_array[i].phone_number == message_search_array[j].phone_number){
+                    message_prePhonenum_lastSMS_array[i].onCheck = checkBoxObj.checked;
+                }
+            }
+            if(message_prePhonenum_lastSMS_array[i].onCheck){
+                selectNum++;
+            }
+        }
+        for(var j=0 ; j<message_search_array.length ; j++){
+            message_search_array[j].onCheck = checkBoxObj.checked;
+        }
+        if(selectNum > 0){
+            document.getElementById(platform + '-DeleteBtn').disabled = false;
+        }else{
+            document.getElementById(platform + '-DeleteBtn').disabled = true;
+        }
+        initMessageContactTable(message_search_array);
+    }
+    function contactCheck(checkBoxObj, idx){
+        var selectNum = 0;
+        
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+            if(message_prePhonenum_lastSMS_array[i].phone_number == message_search_array[idx].phone_number){
+                message_prePhonenum_lastSMS_array[i].onCheck = checkBoxObj.checked;
+            }
+        }
+        message_search_array[idx].onCheck = checkBoxObj.checked;
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+            if(message_prePhonenum_lastSMS_array[i].onCheck){
+                selectNum++;
+            }
+        }
+        if(selectNum > 0){
+            document.getElementById(platform + '-DeleteBtn').disabled = false;
+        }else{
+            document.getElementById(platform + '-DeleteBtn').disabled = true;
+        }
+        if(platform != 'mobile'){
+            if(selectNum == message_prePhonenum_lastSMS_array.length){
+                document.getElementById(platform + '-allCheckBox').checked = true;
+            }else{
+                document.getElementById(platform + '-allCheckBox').checked = false;
+            }
+        }
+        initMessageContactTable(message_search_array);
+    }
+    
+    var update_time="";
+    function reloadMessages_response(data_json){
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sms.html";}, 1000);
+        }else {
+            //console.log("res: " + JSON.stringify(data_json));
+            ///document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;//Do not need update token
+            message_data_json = data_json;
+            if(update_time != data_json.sms_update_time){
+                console.log("Update: " + data_json.sms_update_time);
+                update_time = data_json.sms_update_time;
+                onScreenWidthChange();//First time Init
+            }
+            
+            if(is_ChatScreenOn){
+                initChatScreenCon();
+            }
+        }
+    }
+    function reloadMessages(){
+    	//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_smsReload.cgi", req, 10000)
+            .then(response => { return response}).then(reloadMessages_response).catch(response_print);
+
+    }
+    
+    function show_deleteDialog(){
+        var deleteContent = [];
+        
+        for(var i=0 ; i<message_prePhonenum_lastSMS_array.length ; i++){
+            if(message_prePhonenum_lastSMS_array[i].onCheck){
+                var tmpArray = message_preClass_json[message_prePhonenum_lastSMS_array[i].Class];
+                for(var j=0 ; j<tmpArray.length ; j++){
+                    deleteContent.push(tmpArray[j]);
+                    console.log("tmpArray["+j+"]: " + JSON.stringify(tmpArray[j]));
+                }
+            }
+        }
+        
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('sms_dialog_del');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('sms_dialog_delDes');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+        
+        document.getElementById('_dialog_modal_Btn').value = "Delete";
+        document.getElementById('_dialog_modal_Btn').onclick = function() {deleteMessages(deleteContent)};
+        
+        toggle_dialog_modal();
+    }
+    function deleteMessages_response(data_json){
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sms.html";}, 1000);
+        }else {
+            document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+            reloadMessages();
+        }
+    }
+    function deleteMessages(deleteContent){
+        toggle_dialog_modal();
+        
+        document.getElementById('_modal_text').innerHTML = i18next.t('sms_dialog_deleting');
+        toggle_modal();
+    	//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.DeleteSMS_List = deleteContent;
+
+        //console.log("res: " + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_smsDelete.cgi", req, 10000)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(deleteMessages_response).catch(response_print);
+
+    }
+    
+    function composeSMS_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sms.html";}, 500);
+    }
+    function composeSMS(){
+        if(document.getElementById('RecipientsInput').value.length > 0){
+            var recipientsArray = document.getElementById('RecipientsInput').value.split(', ');
+            var isInvalid = false;
+            for(var i=0 ; i<recipientsArray.length ; i++){
+                isInvalid = false;
+                if(validatePhoneNum(recipientsArray[i])){
+                    isInvalid=true;
+                }else{
+                    if(!isInvalid){
+                        break;
+                    }
+                }
+            }
+            if(!isInvalid){
+                document.getElementById('invalidRecipientLabel').style = 'display: inline-block;color: var(--errorColor);text-align: left;font: normal normal 500 12px/14px Roboto;';
+                document.getElementById('RecipientsInput').style = 'border-bottom: 2px solid var(--errorColor);color: var(--errorColor);';
+				document.getElementById('RecipientsInput').focus();
+            }else{
+                //prepare json data
+                const req = {}; //create javascript object;
+                req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+                req.Recipients = recipientsArray.toString();
+                req.RecipientsNum = recipientsArray.length;
+                req.SMScontext = document.getElementById('ComposeTextarea').value;
+
+                toggle_smsCompose_modal();
+                document.getElementById('_modal_text').innerHTML = i18next.t('sms_dialog_sending');
+                toggle_modal();
+
+                //console.log("req:" + JSON.stringify(req));
+
+                do_fetch_api("POST", "/cgi-bin/cgi/req_smsCompose.cgi", req)
+                .then(response => {setTimeout(toggle_modal,1000); return response}).then(composeSMS_response).catch(response_print);
+
+            }
+        }else{
+            //show_EditError("Please enter at least one contact information.");
+            document.getElementById('invalidRecipientLabel').style = 'display: inline-block;color: var(--errorColor);text-align: left;font: normal normal 500 12px/14px Roboto;';
+            document.getElementById('RecipientsInput').style = 'border-bottom: 2px solid var(--errorColor);color: var(--errorColor);';
+			document.getElementById('RecipientsInput').focus();
+        }
+    }
+    function recipientsInput(){
+        document.getElementById('invalidRecipientLabel').style = 'display: none;';
+        document.getElementById('RecipientsInput').style = 'border-bottom: 2px solid var(--inputBorder);color: var(--headingText);';
+    }
+    
+//Modal
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            //myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            //clearInterval(myTimer);
+            //counter = 0;
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    
+    function toggle_sendChat_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_sendChat_dialog_modal'));
+        _myModal.toggle();
+    }
+    function sendChatDialogListener() {
+        var myModalEl = document.getElementById('_sendChat_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            is_ChatScreenOn = true;
+        });
+        myModalEl.addEventListener('shown.bs.modal', function (event) {
+            var modal = document.getElementById('chat_card_body');
+            modal.scrollTo({
+              top: modal.scrollHeight,
+              left: 0,
+              behavior: 'smooth'
+            });
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            is_ChatScreenOn = false;
+        });
+    }
+    
+    function toggle_smsCompose_modal(){
+        document.getElementById('ComposeTextarea').value = "";
+        document.getElementById('ComposeTextarea').style = "border: 2px solid var(--errorColor);";
+        document.getElementById('invalidLabel').style = "color: var(--errorColor);text-align: left;font: normal normal 500 12px/14px Roboto;display: inline-block;";
+        document.getElementById('_SendToUser_Btn').disabled = true;
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_smsCompose_modal'));
+        _myModal.toggle();
+    }
+    function saveSmsComposeListener() {
+        var myModalEl = document.getElementById('_smsCompose_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function smsInputContext(textareaObj){
+        /*
+        if (textareaObj.value.length > 160) {
+            textareaObj.value = textareaObj.value.slice(0,160); 
+        }
+        */
+        var limitCharNum = 160;
+        if(isChina(textareaObj.value)){
+            limitCharNum = 70;
+        }else{
+            limitCharNum = 160;
+        }
+        document.getElementById('smsContextLimit').innerHTML = i18next.t('sms_charlimit', {charleng:textareaObj.value.length,limitChar:limitCharNum});
+        if(textareaObj.value.length > 0){
+            document.getElementById('ComposeTextarea').style = "border: 2px solid var(--inputBorder);";
+            document.getElementById('invalidLabel').style = "display: none;";
+            document.getElementById('_SendToUser_Btn').disabled = false;
+        }else{
+            document.getElementById('ComposeTextarea').style = "border: 2px solid var(--errorColor);";
+            document.getElementById('invalidLabel').style = "color: var(--errorColor);text-align: left;font: normal normal 500 12px/14px Roboto;display: inline-block;";
+            document.getElementById('_SendToUser_Btn').disabled = true;
+        }
+    }
+    
+    function chatInputContext(textareaObj){
+        /*
+        if (textareaObj.value.length > 160) {
+            textareaObj.value = textareaObj.value.slice(0,160); 
+        }
+        */
+        var limitCharNum = 160;
+        if(isChina(textareaObj.value)){
+            limitCharNum = 70;
+        }else{
+            limitCharNum = 160;
+        }
+        document.getElementById('chatContextLimit').innerHTML = i18next.t('sms_charlimit', {charleng:textareaObj.value.length,limitChar:limitCharNum});
+        if(textareaObj.value.length > 0){
+            document.getElementById('_SendChat_Btn').disabled = false;
+        }else{
+            document.getElementById('_SendChat_Btn').disabled = true;
+        }
+    }
+    
+    function chatScreenSendSMS_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+        }else {
+            setTimeout(() => {
+                var modal = document.getElementById('chat_card_body');
+                modal.scrollTo({
+                  top: modal.scrollHeight,
+                  left: 0,
+                  behavior: 'smooth'
+                });
+            }, 1300);
+        }
+    }
+    function chatScreenSendSMS() {
+        var recipientsArray = [];
+        recipientsArray.push(phone_Num);
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.Recipients = recipientsArray.toString();
+        req.RecipientsNum = recipientsArray.length;
+        req.SMScontext = document.getElementById('chatTextarea').value;
+
+        //console.log("req:" + JSON.stringify(req));
+        document.getElementById('chatTextarea').value = '';
+        chatInputContext(document.getElementById('chatTextarea'));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_smsCompose.cgi", req)
+        .then(response => {return response}).then(chatScreenSendSMS_response).catch(response_print);
+    }
+
+    function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 50px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    
+    .search-div {
+        position:relative;
+        width: 200px;
+        height: 40px;
+        background: var(--selectBG);
+        border-radius: 40px;
+        transition:0.5s;
+        /*bix-shadow: 0 0 0 5px var(--headingText);*/
+        cursor: unset;
+        overflow: hidden;
+        border: 1px solid var(--inputBorder);
+        float: left;
+    }
+    
+    .search-div .icon-div {
+        position:absolute;
+        top:0;
+        left:0;
+        width: 40px;
+        height: 40px;
+        background: var(--selectBG);
+        border-radius: 40px;
+        display:flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .search-div .icon-div::before{
+        content:url(/images/ic_search.svg);
+        height: 24px;
+        position:absolute;
+    }
+    .search-div .icon-div::after{
+        content:url(/images/ic_search.svg);
+        height: 24px;
+        position:absolute;
+    }
+    
+    .search-div .input-div{
+        position:relative;
+        width: 100px;
+        height: 40px;
+        left: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .search-div .input-div input{
+        position:absolute;
+        width: 100px;
+        height: 40px;
+        top: 0;
+        background: var(--selectBG);
+        border: none;
+        outline: none;
+        padding: 10px 0;
+        font: normal normal 300 18px/21px Roboto;
+        color: var(--headingText);
+    }
+    
+    .sms_status_img img{
+        padding-right: 0px !important;
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .sms_status_img a{
+        font: normal normal 600 10px/12px Roboto !important;
+        color:var(--warningColor) !important;
+        text-align: center;
+    }
+    
+    .chat-modal-content {
+        height: 550px;
+    }
+    
+    .chat_card_body {
+        height: 250px;
+        overflow-y: auto;
+    }
+    
+    .inner_send {
+        width: 0px;
+        height: 0px;
+        border-top: 8px solid transparent;
+        border-right: 0px solid transparent;
+        border-bottom: 0px solid transparent;
+        border-left: 10px solid var(--warningColor);
+        margin-top: auto;
+    }
+    
+    .inner_receive {
+        width: 0px;
+        height: 0px;
+        border-top: 8px solid transparent;
+        border-right: 10px solid var(--trColor);
+        border-bottom: 0px solid transparent;
+        border-left: 0px solid transparent;
+        margin-top: auto;
+    }
+    
+    
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 50px;
+      margin: 0 0 18px 0;
+    }
+    .cardViewTableTD{ 
+        padding: 1rem .5rem !important;
+    }
+    
+    .search-div {
+        width: 250px;
+        cursor: unset;
+    }
+    
+    .search-div .input-div{
+        width: 180px;
+    }
+    
+    .search-div .input-div input{
+        width: 180px;
+    }
+    
+    .SMS_label{
+        float: left;
+        font: normal normal 500 20px/24px Roboto;
+        color: #3F4024; /*old: #424242*/
+        margin:8px 8px 8px 0;
+    }
+    
+    .sms_status_img img{
+        padding-right: 6px !important;
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .sms_status_img a{
+        font: normal normal 500 16px/16px Roboto !important;
+        color:var(--warningColor) !important;
+    }
+    
+    .chat-modal-content {
+        height: 850px !important;
+        width: 733px !important;
+    }
+    
+    .chat_card_body {
+        height: 415px;
+        overflow-y: auto;
+    }
+}
+@media only screen and (min-width: 768px) {
+    .search-div {
+        width: 334px;
+        cursor: unset;
+    }
+    .search-div .input-div{
+        width: 250px;
+    }
+    
+    .search-div .input-div input{
+        width: 250px;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                    <thead>
+                      <tr>
+                        <th colspan="4" scope="row" class="">
+                          <label class="SMS_label" data-i18n="sms_subTitle">SMS</label>
+                          <div class="search-div" id="xxl-search-div">
+                            <div class="icon-div" id="xxl-icon-div">
+                            </div>
+                            <div class="input-div" id="xxl-input-div">
+                                <input type="text" placeholder="Search" id="xxl-mysearch" data-i18n-aria-label="sms_search"></input>
+                            </div>
+                          </div>
+                          <div class="cardViewSmsBtn">
+                            <button class="cardViewSmsTitleBtn compose-text" id="xxl-ComposeBtn"><img src="/images/ic_sms_compose.svg" data-i18n-img-alt="sms_composeSMS_btn"></button>
+                            <button class="cardViewSmsTitleBtn delete-text" id="xxl-DeleteBtn" disabled><img src="/images/ic_sms_delete.svg" data-i18n-img-alt="sms_deleteSMS_btn"></button>
+                          </div>
+                        </th>
+                      </tr>
+                      <tr class="cardViewTableFirstTR">
+                        <td class="w-20 cardViewTableFirstTD">
+                            <input type="checkbox" class="fx_Checkbox" id="xxl-allCheckBox" data-i18n-aria-label="sms_checkbox_selectAll"></input>
+                            <a id="xxl-Ph_Num" data-i18n="sms_phone">Phone Number</a>
+                        </td>
+                        <td class="w-20 cardViewTableFirstTD">
+                            <label data-i18n="sms_status">Status</label>
+                        </td>
+                        <td class="w-40 cardViewTableFirstTD">
+                            <label data-i18n="sms_content">Content</label>
+                        </td>
+                        <td class="w-20 cardViewTableFirstTD"><label data-i18n="sms_date">Date</label></td>
+                      </tr>
+                    </thead>
+                    <tbody id="xxl-tbodySmsList">
+                    </tbody>
+                    </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                    <thead>
+                      <tr>
+                        <th colspan="4" scope="row" class="">
+                          <label class="SMS_label" data-i18n="sms_subTitle">SMS</label>
+                          <div class="search-div" id="xl-search-div">
+                            <div class="icon-div" id="xl-icon-div">
+                            </div>
+                            <div class="input-div" id="xl-input-div">
+                                <input type="text" placeholder="Search" id="xl-mysearch" data-i18n-aria-label="sms_search"></input>
+                            </div>
+                          </div>
+                          <div class="cardViewSmsBtn">
+                            <button class="cardViewSmsTitleBtn compose-text" id="xl-ComposeBtn"><img src="/images/ic_sms_compose.svg" data-i18n-img-alt="sms_composeSMS_btn"></button>
+                            <button class="cardViewSmsTitleBtn delete-text" id="xl-DeleteBtn" disabled><img src="/images/ic_sms_delete.svg" data-i18n-img-alt="sms_deleteSMS_btn"></button>
+                          </div>
+                        </th>
+                      </tr>
+                      <tr class="cardViewTableFirstTR">
+                        <td class="w-20 cardViewTableFirstTD">
+                            <input type="checkbox" class="fx_Checkbox" id="xl-allCheckBox" data-i18n-aria-label="sms_checkbox_selectAll"></input>
+                            <a id="xl-Ph_Num" data-i18n="sms_phone">Phone Number</a>
+                        </td>
+                        <td class="w-20 cardViewTableFirstTD">
+                            <label data-i18n="sms_status">Status</label>
+                        </td>
+                        <td class="w-40 cardViewTableFirstTD">
+                            <label data-i18n="sms_content">Content</label>
+                        </td>
+                        <td class="w-20 cardViewTableFirstTD"><label data-i18n="sms_date">Date</label></td>
+                      </tr>
+                    </thead>
+                    <tbody id="xl-tbodySmsList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView" id="mobile-smsTable"> 
+                <table class="table table-borderless cardViewTable">
+                    <thead>
+                      <tr>
+                        <th colspan="4" scope="row" class="">
+                          <div class="search-div" id="mobile-search-div">
+                            <div class="icon-div" id="mobile-icon-div">
+                            </div>
+                            <div class="input-div" id="mobile-input-div">
+                                <input type="text" placeholder="Search" id="mobile-mysearch" data-i18n-aria-label="sms_search"></input>
+                            </div>
+                          </div>
+                          <div class="cardViewSmsBtn">
+                            <button class="cardViewSmsTitleBtn compose-text" id="mobile-ComposeBtn"><img src="/images/ic_sms_compose.svg" data-i18n-img-alt="sms_composeSMS_btn"></button>
+                            <button class="cardViewSmsTitleBtn delete-text" id="mobile-DeleteBtn" disabled><img src="/images/ic_sms_delete.svg" data-i18n-img-alt="sms_deleteSMS_btn"></button>
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="mobile-tbodySmsList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+<!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text">Authenticating, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_modal_Btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_sendChat_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" id="_sendChat_dialog_modal2">
+			<div class="modal-content chat-modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_sendChat_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body" id="chat1">
+                  <div class="chat_card_body" id="chat_card_body">
+                  </div>
+                    <div class="mb-1">
+                      <textarea class="form-control chatTextarea" 
+                                aria-label="Chat text area" 
+                                id="chatTextarea" 
+                                placeholder="Message..."
+                                rows="3"></textarea>
+                    </div>
+                    <label class=""
+                        id="chatContextLimit" data-i18n="sms_charlimit160">Characters: 0/160</label>
+                    <div id="_SendChat_Btn_Div">
+					<button class="inModal_Btn" id="_SendChat_Btn" data-i18n="sms_send" disabled>Send</button>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_smsCompose_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content" id="sms_modal_content_Div">
+				<div class="modal-header" id="_smsCompose_header_Div">
+					<label class="modal-title dialog_modal_header" 
+                            id="_smsCompose_modal_header" data-i18n="sms_composeSMS">Compose SMS & Send</label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body">
+                    <div id="Recipients_Div">
+                      <label for="RecipientsInput"
+                        class="dialog_modal_text"
+                        id="RecipientsInput_Lb" data-i18n="sms_recipients">Recipients</label>
+                      <br>
+                      <label id="invalidRecipientLabel" data-i18n="sms_invalidRecipient">Invalid Recipient Name / Number!</label>
+                      <input type="text" class="form-control smsTextInput" 
+                                id="RecipientsInput"
+                                placeholder="">
+                    </div>
+                    <div class="mb-1">
+                      <label for="ComposeTextarea" 
+                        class="dialog_modal_text form-label"
+                        id="ComposeTextarea_Lb" data-i18n="sms_compose">Compose Message</label>
+                      <br>
+                      <label class="" id="invalidLabel" data-i18n="sms_requiredInput">Required Input!</label>
+                      <textarea class="form-control smsTextarea" 
+                                aria-label="Chat text area" 
+                                id="ComposeTextarea" 
+                                placeholder="Message..."
+                                rows="3"></textarea>
+                    </div>
+                    <label class=""
+                        id="smsContextLimit" data-i18n="sms_charlimit160">Characters: 0/160</label>
+                    <div id="_SendToUser_Btn_div">
+					<button class="inModal_Btn" id="_SendToUser_Btn" data-i18n="sms_send" disabled>Send</button>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            document.getElementById("ComposeTextarea").placeholder = i18next.t('sms_message');
+            document.getElementById("chatTextarea").placeholder = i18next.t('sms_message');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_sendChat_dialog_modal");
+            set_EAA_ToItem("_smsCompose_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_Messages');
+            if(window.innerWidth >= 1200){
+                document.getElementById(platform + "-ComposeBtn").setAttribute("data-content", i18next.t('sms_composeSMS_btn'));
+                document.getElementById(platform + "-DeleteBtn").setAttribute("data-content", i18next.t('sms_deleteSMS_btn'));
+            }else{
+                ocument.getElementById(platform + "-ComposeBtn").setAttribute("data-content", "");
+                document.getElementById(platform + "-DeleteBtn").setAttribute("data-content", "");
+            }
+            document.getElementById(platform + "-mysearch").placeholder = i18next.t('sms_search');
+            document.getElementById("ComposeTextarea").placeholder = i18next.t('sms_message');
+            document.getElementById("chatTextarea").placeholder = i18next.t('sms_message');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("_sendChat_dialog_modal");
+            set_EAA_ToItem("_smsCompose_modal");
+        }
+    });
+    document.getElementById("_SendToUser_Btn").onclick = function(){composeSMS();};
+    document.getElementById("_SendToUser_Btn_div").style = "text-align: center";
+    document.getElementById("smsContextLimit").style = "color: var(--warningColor);text-align: right;width: 100%;font: normal normal 500 14px/16px Roboto;";
+    document.getElementById("invalidLabel").style = "display: none;";
+    document.getElementById("invalidRecipientLabel").style = "display:none;";
+    document.getElementById("Recipients_Div").style = "margin-bottom:30px";
+    document.getElementById("_smsCompose_header_Div").style = "padding:1.5rem 1.5rem 0 1.5rem;";
+    document.getElementById("sms_modal_content_Div").style = "height: 559px;width: 733px";
+    document.getElementById("_SendChat_Btn").onclick = function(){chatScreenSendSMS();};
+    document.getElementById("_SendChat_Btn_Div").style = "text-align: center";
+    document.getElementById("chatContextLimit").style = "color: var(--warningColor);text-align: right;width: 100%;font: normal normal 500 18px/21px Roboto;";
+    document.getElementById("_sendChat_dialog_modal2").style = "overflow-y: initial";
+    document.getElementById("_dialog_modal_Btn").onclick = function(){toggle_dialog_modal();};
+    document.getElementById("mobile-smsTable").style = "padding-right: calc(1.5rem * .5);padding-left: calc(1.5rem * .5);";
+
+    document.getElementById("ComposeTextarea").oninput = function(){smsInputContext(document.getElementById("ComposeTextarea"));};
+    document.getElementById("RecipientsInput").oninput = function(){recipientsInput();};
+    document.getElementById("chatTextarea").oninput = function(){chatInputContext(document.getElementById("chatTextarea"));};
+
+</script>
+</html>

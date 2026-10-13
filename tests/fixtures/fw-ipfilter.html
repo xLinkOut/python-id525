@@ -1,0 +1,1304 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="ipFilter_title">IP Address Filter</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = "";
+	var platform_o = "";
+	var is_edit = "0"
+	var edit_instance = "";
+	var ipf_lanipAddr = "";
+	var ipf_lan_port = "1-65535";
+	var ipf_wanipAddr = "";
+	var ipf_wan_port = "1-65535";
+	var ipf_protocol = "TCP/UDP";
+	var ipf_iptype = "";
+
+	var IPv6_REGEXP = /((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))/;
+	<!-- var IPv4_CIDR = /^(?=\d+\.\d+\.\d+\.\d+($|\/))(([1-9]?\d|1\d\d|2[0-4]\d|25[0-5])\.?){4}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/; -->
+	var IPv4_CIDR = /^(?=\d+\.\d+\.\d+\.\d+($|\/))(([1-9]?\d|1\d\d|2[0-4]\d|25[0-5])\.?){4}?$/;
+	<!-- var IPv6_CIDR=/^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$/; -->
+	var IPv6_CIDR=/^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*?$/;
+	var IPFilter_Enable = "0";
+	var pkts_blocklist_mode = "0";
+	var ipFilter_entries = "[]";
+    var ip_filter_rule_list = JSON.parse( ipFilter_entries.replace(/&quot;/g,'"') );
+	<!-- var host_ip = ""; -->
+	var startIP = "";
+	var endIP = "";
+	var ip_array = [];
+	var g_handler_icmp;
+	var g_handler;
+	<!-- var tmp = host_ip.split(".") -->
+	<!-- tmp[3] = "0" -->
+	<!-- ipf_wanipAddr = tmp.join(".") + "/24" -->
+
+	function update_content(data_json)
+	{
+		document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+	}
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("fw-ipfilter.html");
+		do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIAF');
+        mobile_CollapsibleAddListener('collapseIAFL');
+		saveLoadingListener();
+		saveAddListener();
+
+        for(var i = 0; i < ip_filter_rule_list.length; i++ )
+        {
+            var createJosn = {};
+
+            createJosn.index = i+1;
+            createJosn.instance = ip_filter_rule_list[i].instance;
+            createJosn.ip = ip_filter_rule_list[i].dst_ip;
+            createJosn.protocol = ip_filter_rule_list[i].protocol;
+            createJosn.iptype = ip_filter_rule_list[i].ip_type;
+            ip_array.push( createJosn );
+        }
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+	function initJS_function(pf){
+		document.getElementById(pf + "-ipfilter_switch").onchange = function(){switch_status();};
+		document.getElementById(pf + "-filterMode_white").onclick = function(){selectObj(pf + '-filterMode', i18next.t('ipFilter_mode_whitelist'));};
+		document.getElementById(pf + "-filterMode_black").onclick = function(){selectObj(pf + '-filterMode', i18next.t('ipFilter_mode_blacklist'));};
+		document.getElementById(pf + "-modal_alertBtn").onclick = function(){modal_alert();};
+		document.getElementById(pf + "-IPFilterList").style = 'display: none;';
+		document.getElementById(pf + "-addNewBtn").onclick = function(){toggle_add_modal();};
+		if(pf != "mobile")
+		{
+			document.getElementById(pf + "-MaxLimtLabel").style = 'float: right; padding: 5px 15px;';
+			document.getElementById(pf + "-sortNumberBtn").onclick = function(){sortNumber();};
+			document.getElementById(pf + "-sortTypeBtn").onclick = function(){sortType();};
+			document.getElementById(pf + "-sortIPBtn").onclick = function(){sortIP();};
+		}
+		document.getElementById("ip_TypeSelect_v4").onclick = function(){selectObj('ip_TypeSelect', 'IPv4');};
+		document.getElementById("ip_TypeSelect_v6").onclick = function(){selectObj('ip_TypeSelect', 'IPv6');};
+		document.getElementById("edit_ip_TypeSelect_v4").onclick = function(){selectObj('edit_ip_TypeSelect', 'IPv4');};
+		document.getElementById("edit_ip_TypeSelect_v6").onclick = function(){selectObj('edit_ip_TypeSelect', 'IPv6');};
+		document.getElementById("addIPBtn").onclick = function(){btnOKClicked();};
+		document.getElementById("editIPBtn").onclick = function(){edit_rule_save();};
+		document.getElementById("deleteIPBtn").onclick = function(){confirm_delete();};
+		document.getElementById("alertSaveIPBtn").onclick = function(){Status_Mode_Sav();};
+		
+		dropdownItemKeyboardNavigation(pf + "-filterMode_white");
+		dropdownItemKeyboardNavigation(pf + "-filterMode_black");
+		dropdownItemKeyboardNavigation("ip_TypeSelect_v4");
+		dropdownItemKeyboardNavigation("ip_TypeSelect_v6");
+		dropdownItemKeyboardNavigation("edit_ip_TypeSelect_v4");
+		dropdownItemKeyboardNavigation("edit_ip_TypeSelect_v6");
+	}
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+		if( ip_filter_rule_list.length >= 10)
+		{
+			document.getElementById(platform + "-addNewBtn").style = "color: var(--disabledText);";
+			document.getElementById(platform + "-addNewBtn").disabled = true;
+			document.getElementById(platform + '-addNewImg').src="/images/iconAddNewDisable.svg";
+			document.getElementById(platform + "-MaxLimtLabel").style = "float: right; padding: 5px 15px;; color: var(--errorColor);";
+		}
+
+		if(IPFilter_Enable == "0")
+		{
+			document.getElementById(platform + "-IPFilterList").style.display = "none";
+			document.getElementById(platform + "-ipfilter_switch").checked = false;
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+		}
+		else
+		{
+			document.getElementById(platform + "-IPFilterList").style.display = "block";
+			document.getElementById(platform + "-ipfilter_switch").checked = true;
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+		}
+		selectObj_init(platform);
+
+		initAddrListTable(ip_array);
+    }
+    function selectObj_init(platform) {
+        if(pkts_blocklist_mode == "1")
+		{
+			selectObj(platform + '-filterMode', i18next.t('ipFilter_mode_whitelist'));
+		}else{
+			selectObj(platform + '-filterMode', i18next.t('ipFilter_mode_blacklist'));
+		}
+    }
+	function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function response_add_ipfilter(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/fw-ipfilter.html";}, 1000);
+    }
+	function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);
+    }
+	function resetInputStyle()
+	{
+		document.getElementById("IPAddrTitle").style = "color: var(--headingText);";
+		document.getElementById("ipf_lanipAddr").style = "color: var(--headingText);";
+		document.getElementById("IPAddrTitle_div").style.borderBottom = "1px solid var(--inputBorder)";
+		document.getElementById('IPAddr_error').style.display = 'none';
+		document.getElementById('IPAddr_error').innerHTML = '';
+	}
+	function btnOKClicked()
+	{
+		var isValid = true;
+		resetInputStyle();
+		var ipf_lanipAddr = document.getElementById("ipf_lanipAddr");
+		var ip_TypeSelect = document.getElementById("ip_TypeSelect").innerHTML;
+		if(checkEmpty(ipf_lanipAddr))
+		{
+			document.getElementById("IPAddrTitle").style = "color: var(--errorColor);";
+			document.getElementById("ipf_lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('IPAddr_error').style.display = 'block';
+			document.getElementById('IPAddr_error').innerHTML = i18next.t('ipFilter_err_des1');
+			document.getElementById("ipf_lanipAddr").focus();
+			return;
+		}
+		for(var i = 0; i < ip_array.length; i++)
+        {
+			var ip = ip_array[i].ip;
+			if(ip == ipf_lanipAddr.value)
+			{
+				document.getElementById("IPAddrTitle").style = "color: var(--errorColor);";
+				document.getElementById("ipf_lanipAddr").style = "color: var(--errorColor);";
+				document.getElementById("IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById('IPAddr_error').style.display = 'block';
+				document.getElementById('IPAddr_error').innerHTML = i18next.t('ipFilter_err_des2');
+				document.getElementById("ipf_lanipAddr").focus();
+				return;
+			}
+		}
+
+		<!-- if(ipf_lanipAddr.value.includes(":") == false) -->
+		if(ip_TypeSelect == "IPv4")
+		{
+			ipf_iptype = "IPv4";
+			<!-- var ip_class_index = 0 -->
+			<!-- if(ipClass_CFG == 2) -->
+				<!-- ip_class_index = 0 //class A -->
+			<!-- else if(ipClass_CFG == 1) -->
+				<!-- ip_class_index = 1 //class B -->
+			<!-- else -->
+				<!-- ip_class_index = 2 //class C -->
+
+			<!-- for(var i = 0; i <= 3; i++) -->
+			<!-- { -->
+				<!-- var input_ip = parseInt(ipf_lanipAddr.value.split(".")[i]) -->
+				<!-- var start_IP = parseInt(startIP.split(".")[i]) -->
+				<!-- var end_ip = parseInt(endIP.split(".")[i]) -->
+				<!-- if(i <= ip_class_index) -->
+				<!-- { -->
+					<!-- if(input_ip != start_IP) -->
+					<!-- { -->
+						<!-- isValid = false; -->
+						<!-- break; -->
+					<!-- } -->
+				<!-- } -->
+			<!-- } -->
+			if(IPv4_CIDR.test(ipf_lanipAddr.value) == false || isIpv4Invalid(ipf_lanipAddr.value) == true)
+				isValid = false;
+		}
+		else
+		{
+			ipf_iptype = "IPv6";
+			if(IPv6_CIDR.test(ipf_lanipAddr.value) == false || isIpv6Invalid(ipf_lanipAddr.value) == true)
+				isValid = false;
+		}
+		if(isValid == false)
+		{
+			document.getElementById("IPAddrTitle").style = "color: var(--errorColor);";
+			document.getElementById("ipf_lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('IPAddr_error').style.display = 'block';
+			document.getElementById('IPAddr_error').innerHTML = i18next.t('ipFilter_err_des3');
+			document.getElementById("ipf_lanipAddr").focus();
+			return;
+		}
+
+		document.getElementById('modal_AddIpfliter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('ipFilter_err_des4');
+		toggle_modal();
+		<!-- //prepare json data -->
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.is_edit = is_edit;
+		req.edit_instance = edit_instance;
+		<!-- req.ipf_lanipAddr = document.getElementById("ipf_lanipAddr").value; -->
+		req.ipf_lanipAddr = "";
+		req.ipf_lan_port = "";
+		<!-- req.ipf_wanipAddr = ipf_wanipAddr; -->
+		req.ipf_wanipAddr = document.getElementById("ipf_lanipAddr").value;
+		req.ipf_wan_port = "";
+		req.ipf_protocol = "";
+		<!-- req.ipf_iptype = ipf_iptype; -->
+		req.ipf_iptype = ip_TypeSelect;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/ipfilter_add.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function isIpv4Invalid(ipv4_addr) {
+		const str = ipv4_addr;
+		const word = str.split('.');
+		if(parseInt(word[0]) >= 224 && parseInt(word[0]) <= 239){
+			return true;
+		}
+		if(parseInt(word[0]) >= 240 && parseInt(word[0]) <= 255){
+			return true;
+		}
+		if(parseInt(word[0]) == 127) {
+			return true;
+		}
+		if(str == "255.255.255.255" || str == "0.0.0.0") {
+			return true;
+		}
+		return false;
+	}
+	function isIpv6Invalid(ipv6_addr) {
+		const str = ipv6_addr;
+		if(str == "0::0" || str == "::1" ||
+		   str == "FF00::/8" || str == "ff00::/8") {
+			return true;
+		}
+		return false;
+	}
+	
+	function initAddrListTable(entries)
+	{
+        var tbodystaticAddrList = document.getElementById(platform + '-tbodystaticAddrList');
+        var tbodystaticAddrListCon = '';
+        var tbodystaticAddrListAll = '';
+        var deleteIcon = '';
+
+		var idx = 1;
+		<!-- for(var i = 0; i < entries.length; i=i+2) -->
+		for(var i = 0; i < entries.length; i++)
+        {
+			var tmp_index = entries[i].index;		
+			var instance = entries[i].instance;
+			var ip = entries[i].ip;
+			var iptype = entries[i].iptype;
+			tbodystaticAddrListCon = '<tr class="cardViewTableTR">';
+            <!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +idx+ '</label></td>'; -->
+			if(platform != 'mobile')
+			{
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +tmp_index+ '</label></td>';
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +iptype+ '</label></td>';
+			}
+			tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' +ip+ '</label></td>';
+			if(platform == 'mobile')
+			{
+				<!-- detailInfo = '<button class="btn" id="more_info_' + tmp_index + '"><img src="/images/iconMore.svg"></button>'; -->
+				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('ipFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('ipFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg"></button>';
+				<!-- tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + detailInfo + editIcon + deleteIcon + '</label></td>'; -->
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+			else
+			{
+				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg" alt="' +i18next.t('ipFilter_set_edit_alt')+ '"></button>';
+				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg" alt="' +i18next.t('ipFilter_set_del_alt')+ '"></button>';
+//				editIcon = '<button class="btn" id="edit_rule_' + instance + '"><img src="/images/ic_edit.svg"></button>';
+//				deleteIcon = '<button class="btn" id="deleteItem_' + instance + '"><img src="/images/ic_delete.svg"></button>';
+				tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>' + editIcon + deleteIcon + '</label></td>';
+			}
+            tbodystaticAddrListCon += '</tr>';
+            tbodystaticAddrListAll += tbodystaticAddrListCon;
+			idx = idx + 1;
+		}
+        tbodystaticAddrList.innerHTML = tbodystaticAddrListAll;
+		for(var i = 0; i < entries.length; i++)(function(i){
+			var instance = entries[i].instance;
+            document.getElementById("edit_rule_"+instance).onclick = function(){edit_rule(instance);};
+            document.getElementById("deleteItem_"+instance).onclick = function(){deleteItem(instance);};
+        })(i);
+    }
+	function more_info(i)
+	{
+		document.getElementById('_more_item').innerHTML = ip_array[i-1].index;
+		document.getElementById('_more_iptype').innerHTML = ip_array[i-1].iptype;
+		document.getElementById('_more_wanip').innerHTML = ip_array[i-1].ip;
+
+        toggle_MoreInfo_modal();
+    }
+	function edit_rule(instance)
+	{
+		var edit_type = ""
+		var edit_ip = ""
+		for(var i = 0; i < ip_array.length; i++)
+        {
+			var tmp_instance = ip_array[i].instance;
+			if(tmp_instance == instance)
+			{
+				edit_type = ip_array[i].iptype;
+				edit_ip = ip_array[i].ip;
+				break
+			}
+		}
+		document.getElementById('edit_ip_TypeSelect').innerHTML = edit_type;
+		document.getElementById('edit_ipf_lanipAddr').value = edit_ip;
+        toggle_edit_modal();
+
+		g_handler = instance;
+    }
+	function edit_rule_save()
+	{
+		var isValid = true;
+		resetInputStyle();
+		var ipf_lanipAddr = document.getElementById("edit_ipf_lanipAddr");
+		var ip_TypeSelect = document.getElementById("edit_ip_TypeSelect").innerHTML;
+		if(checkEmpty(ipf_lanipAddr))
+		{
+			document.getElementById("edit_IPAddrTitle").style = "color: var(--errorColor);";
+			document.getElementById("edit_ipf_lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("edit_IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_IPAddr_error').style.display = 'block';
+			document.getElementById('edit_IPAddr_error').innerHTML = i18next.t('ipFilter_err_des1');
+			document.getElementById("edit_ipf_lanipAddr").focus();
+			return;
+		}
+		for(var i = 0; i < ip_array.length; i++)
+        {
+			var ip = ip_array[i].ip;
+			if(ip == ipf_lanipAddr.value)
+			{
+				document.getElementById("edit_IPAddrTitle").style = "color: var(--errorColor);";
+				document.getElementById("edit_ipf_lanipAddr").style = "color: var(--errorColor);";
+				document.getElementById("edit_IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+				document.getElementById('edit_IPAddr_error').style.display = 'block';
+				document.getElementById('edit_IPAddr_error').innerHTML = i18next.t('ipFilter_err_des2');
+				document.getElementById("edit_ipf_lanipAddr").focus();
+				return;
+			}
+		}
+
+		if(ip_TypeSelect == "IPv4")
+		{
+			ipf_iptype = "IPv4";
+			if(IPv4_CIDR.test(ipf_lanipAddr.value) == false || isIpv4Invalid(ipf_lanipAddr.value) == true)
+				isValid = false;
+		}
+		else
+		{
+			ipf_iptype = "IPv6";
+			if(IPv6_CIDR.test(ipf_lanipAddr.value) == false || isIpv6Invalid(ipf_lanipAddr.value) == true)
+				isValid = false;
+		}
+		if(isValid == false)
+		{
+			document.getElementById("edit_IPAddrTitle").style = "color: var(--errorColor);";
+			document.getElementById("edit_ipf_lanipAddr").style = "color: var(--errorColor);";
+			document.getElementById("edit_IPAddrTitle_div").style.borderBottom = "1px solid var(--errorColor)";
+			document.getElementById('edit_IPAddr_error').style.display = 'block';
+			document.getElementById('edit_IPAddr_error').innerHTML = i18next.t('ipFilter_err_des3');
+			document.getElementById("edit_ipf_lanipAddr").focus();
+			return;
+		}
+
+		toggle_edit_modal();
+		document.getElementById('modal_AddIpfliter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('ipFilter_err_des4');
+		toggle_modal();
+
+		<!-- //prepare json data -->
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.edit_instance = g_handler;
+		req.ipf_wanipAddr = document.getElementById("edit_ipf_lanipAddr").value;
+		req.ipf_iptype = ip_TypeSelect;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/ipfilter_edit.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function deleteItem( instance )
+	{
+        g_handler = instance;
+		toggle_check_modal()
+	}
+	function confirm_delete()
+	{
+		toggle_check_modal()
+		document.getElementById('modal_AddIpfliter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('ipFilter_err_des4');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.apply = "del";
+		req.del_rule = g_handler;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/ipfilter_save.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function selectObj(id, text) {
+        var selectItem = document.getElementById(id);
+        selectItem.innerHTML = text;
+    }
+	function switch_status()
+	{
+        if(document.getElementById(platform + "-ipfilter_switch").checked)
+		{
+			document.getElementById(platform + "-IPFilterList").style.display = "block";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--headingText);";
+            document.getElementById(platform + "-filterMode").disabled = false;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = false;
+			IPFilter_Enable = "1"
+		}
+        else
+		{
+			document.getElementById(platform + "-IPFilterList").style.display = "none";
+			document.getElementById(platform + "-filterMode_title").style = "color: var(--disabledText);";
+            document.getElementById(platform + "-filterMode").disabled = true;
+            document.getElementById(platform + "-filterMode_dropdown").disabled = true;
+			IPFilter_Enable = "0"
+		}
+    }
+	function modal_alert()
+	{
+		if(document.getElementById(platform + "-filterMode").innerHTML == "Allow" && ip_filter_rule_list.length == 0 && document.getElementById(platform + "-ipfilter_switch").checked)
+		{
+			document.getElementById('_alert_modal_title').style = "color: var(--warningColor);";
+			document.getElementById('_alert_modal_text').innerHTML = i18next.t('ipFilter_err_des5');
+			toggle_alert_modal()
+		}
+		else
+		{
+			Status_Mode_Save()
+		}
+	}
+	function Status_Mode_Save()
+	{
+		if(document.getElementById(platform + "-filterMode").innerHTML == i18next.t('ipFilter_mode_blacklist'))
+		{
+			var pkt_allow = "0"
+		}
+		else
+		{
+			var pkt_allow = "1"
+		}
+
+		if(document.getElementById(platform + "-filterMode").innerHTML == "Allow" && ip_filter_rule_list.length == 0 && document.getElementById(platform + "-ipfilter_switch").checked)
+		{
+			toggle_alert_modal()
+		}
+
+		document.getElementById('modal_AddIpfliter').style = "display: none";
+		document.getElementById('_modal_text').innerHTML = i18next.t('ipFilter_err_des4');
+		toggle_modal();
+
+		//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.apply = "apply";
+		req.ipfilter_enable = IPFilter_Enable
+		req.pkts_blocklist_mode = pkt_allow;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/ipfilter_save.cgi", req)
+            .then(response_add_ipfilter).catch(response_print);
+	}
+	function toggle_add_modal(){
+		resetInputStyle();
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_AddIpfliter'));
+        _myModal.toggle();
+    }
+	function saveAddListener() {
+        var myModalEl = document.getElementById('modal_AddIpfliter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_check_modal(){
+		resetInputStyle();
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('check_modal'));
+        _myModal.toggle();
+    }
+	function saveCheckListener() {
+        var myModalEl = document.getElementById('check_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_alert_modal(){
+		resetInputStyle();
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('alert_modal'));
+        _myModal.toggle();
+    }
+	function saveCheckListener() {
+        var myModalEl = document.getElementById('alert_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_edit_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_editIpfliter'));
+        _myModal.toggle();
+    }
+	function saveEditListener() {
+        var myModalEl = document.getElementById('modal_editIpfliter');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfo_Listener() {
+        var myModalEl = document.getElementById('_MoreInfo_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	var sortIPStatus = 1;
+	var sortNumberStatus = 1;
+	var sortTypeStatus = 1;
+	function sortNumber()
+	{
+        sortNumberStatus = sortNumberStatus%2;
+        pageIdx = 0;
+        sortIPStatus = 1;
+        sortTypeStatus = 1;
+        document.getElementById(platform + '-sortIPImg').src="/images/iconSort.svg";
+		switch(sortNumberStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortNumberImg').src="/images/iconA-Z.svg";
+				ip_array.sort(function(a, b) {
+					if(a.index < b.index) { return -1; }
+					if(a.index > b.index) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortNumberImg').src="/images/iconZ-A.svg";
+				ip_array.sort(function(a, b) {
+					if(a.index > b.index) { return -1; }
+					if(a.index < b.index) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(ip_array);
+        sortNumberStatus++;
+    }
+	function sortIP()
+	{
+        sortIPStatus = sortIPStatus%2;
+        pageIdx = 0;
+        sortNumberStatus = 1;
+		sortTypeStatus = 1;
+        document.getElementById(platform + '-sortNumberImg').src="/images/iconSort.svg";
+		switch(sortIPStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortIPImg').src="/images/iconA-Z.svg";
+				ip_array.sort(function(a, b) {
+					const ip1 = a.ip.split('.').map(e=>e.padStart(3,'0')).join('')
+					const ip2 = b.ip.split('.').map(e=>e.padStart(3,'0')).join('')
+					if(ip1 < ip2) { return -1; }
+					if(ip1 > ip2) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortIPImg').src="/images/iconZ-A.svg";
+				ip_array.sort(function(a, b) {
+					const ip1 = a.ip.split('.').map(e=>e.padStart(3,'0')).join('')
+					const ip2 = b.ip.split('.').map(e=>e.padStart(3,'0')).join('')
+					if(ip1 > ip2) { return -1; }
+					if(ip1 < ip2) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(ip_array);
+        sortIPStatus++;
+    }
+	function sortType()
+	{
+        sortTypeStatus = sortTypeStatus%2;
+        pageIdx = 0;
+        sortIPStatus = 1;
+        sortNumberStatus = 1;
+        document.getElementById(platform + '-sortTypeImg').src="/images/iconSort.svg";
+		switch(sortTypeStatus){
+			case 1:
+				//A-Z
+				document.getElementById(platform + '-sortTypeImg').src="/images/iconA-Z.svg";
+				ip_array.sort(function(a, b) {
+					if(a.iptype < b.iptype) { return -1; }
+					if(a.iptype > b.iptype) { return 1; }
+					return 0;
+				});
+			break;
+			case 0:
+				//Z-A
+				document.getElementById(platform + '-sortTypeImg').src="/images/iconZ-A.svg";
+				ip_array.sort(function(a, b) {
+					if(a.iptype > b.iptype) { return -1; }
+					if(a.iptype < b.iptype) { return 1; }
+					return 0;
+				});
+			break;
+			default:
+			break;
+		}
+		initAddrListTable(ip_array);
+        sortTypeStatus++;
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.modalTitle{
+        text-align: left;
+		font: normal normal 300 32px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalText{
+		font: normal normal 300 24px/36px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.modalInputLabel{
+		font: normal normal 300 18px/21px Roboto;
+		letter-spacing: 0px;
+		color: #666666;
+		opacity: 1;
+    }
+	.model_width{
+		width:100%;
+	}
+	.scrollText{
+		max-width: 150px;
+		width: 50%;
+		overflow-x: scroll;
+		white-space: norwrap;
+		padding-left: 0px;
+		text-align: left;
+		font: normal normal 300 18px/21px Roboto;
+		color: var(--inputtext);
+	}
+	.dialog_modal .modal-content{
+		width:720px;
+		height:420px;
+	}
+
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{
+        width: 250px;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.model_width{
+		width:100%;
+	}
+	.dialog_modal .modal-content{
+		width:720px;
+		height:460px;
+	}
+}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="ipFilter_title">IP Address Filter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="ipFilter_func">IP Address Filter Function</td>
+                    <td class="w-25">
+					  <input class="switch_check" type="checkbox" id="xxl-ipfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					<td class="w-25 cardViewTd" id="xxl-filterMode_title" data-i18n="ipFilter_mode">Filter Mode</td>
+					<td class="w-25">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-filterMode">Whitelist</button>
+                        <button id="xxl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-filterMode_white" data-i18n="ipFilter_mode_whitelist">Whitelist</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-filterMode_black" data-i18n="ipFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xxl-modal_alertBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between" id="xxl-IPFilterList">
+			<div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+				<table class="table table-borderless cardViewTable">
+				<thead>
+				<tr>
+					<th colspan="5" scope="row" class="">
+						<label class="cardViewTitle" data-i18n="ipFilter_list">IP Address Filter List</label>
+						<button class="cardViewTitleBtn" id="xxl-addNewBtn">
+							<img src="/images/iconAddNew.svg" id="xxl-addNewImg" data-i18n-img-alt="ipFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+						</button>
+						<label class="cardViewTd" id="xxl-MaxLimtLabel" data-i18n="ipFilter_maxLimit">Max Limit: 10</label>
+                    </th>
+                 </tr>
+				 <tr class="cardViewTableFirstTR">
+					<td class="w-15 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_Item">Item</label>
+						<button class="cardViewSortBtn" id="xxl-sortNumberBtn"><img id="xxl-sortNumberImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortNum"></button>
+					</td>
+					<td class="w-20 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_ipType">IP Type</label>
+						<button class="cardViewSortBtn" id="xxl-sortTypeBtn"><img id="xxl-sortTypeImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortIPType"></button>
+					</td>
+					<td class="w-50 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_wan_ip">WAN IP Address</label>
+						<button class="cardViewSortBtn" id="xxl-sortIPBtn"><img id="xxl-sortIPImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortWanIP"></button>
+					</td>
+                    <td class="w-15 cardViewTableFirstTD"><label data-i18n="ipFilter_list_actions">Actions</label></td>
+				</tr>
+				</thead>
+				<tbody id="xxl-tbodystaticAddrList">
+                </tbody>
+				</table>
+			</div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="ipFilter_title">IP Address Filter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="ipFilter_func">IP Address Filter Function</td>
+                    <td class="w-25">
+					  <input class="switch_check" type="checkbox" id="xl-ipfilter_switch" data-i18n-aria-label="checkbox_btn">
+                    </td>
+					<td class="w-25 cardViewTd" id="xl-filterMode_title" data-i18n="ipFilter_mode">Filter Mode</td>
+					<td class="w-25">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-filterMode">Whitelist</button>
+                        <button id="xl-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="visually-hidden"></span>
+						</button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-filterMode_white" data-i18n="ipFilter_mode_whitelist">Whitelist</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-filterMode_black" data-i18n="ipFilter_mode_blacklist">Blacklist</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-modal_alertBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="xl-IPFilterList">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+					<th colspan="5" scope="row" class="">
+						<label class="cardViewTitle" data-i18n="ipFilter_list">IP Address Filter List</label>
+						<button class="cardViewTitleBtn" id="xl-addNewBtn">
+							<img src="/images/iconAddNew.svg" id="xl-addNewImg" data-i18n-img-alt="ipFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+						</button>
+						<label class="cardViewTd" id="xl-MaxLimtLabel" data-i18n="ipFilter_maxLimit">Max Limit: 10</label>
+					</th>
+                 </tr>
+				 <tr class="cardViewTableFirstTR">
+					<td class="w-15 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_Item">Item</label>
+						<button class="cardViewSortBtn" id="xl-sortNumberBtn"><img id="xl-sortNumberImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortNum"></button>
+					</td>
+					<td class="w-20 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_ipType">IP Type</label>
+						<button class="cardViewSortBtn" id="xl-sortTypeBtn"><img id="xl-sortTypeImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortIPType"></button>
+					</td>
+					<td class="w-50 cardViewTableFirstTD">
+						<label data-i18n="ipFilter_list_wan_ip">WAN IP Address</label>
+						<button class="cardViewSortBtn" id="xl-sortIPBtn"><img id="xl-sortIPImg" src="/images/iconSort.svg" data-i18n-img-alt="ipFilter_set_sortWanIP"></button>
+					</td>
+                    <td class="w-15 cardViewTableFirstTD"><label data-i18n="ipFilter_list_actions">Actions</label></td>
+                  </tr>
+                </thead>
+				<tbody id="xl-tbodystaticAddrList">
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAF-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAF">
+                        <span data-i18n="ipFilter_title">IP Address Filter</span>
+                        <img id="collapseIAF-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAF" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+							<tr>
+								<td class="w-25 cardViewTd" data-i18n="ipFilter_func">IP Address Filter Function</td>
+							</tr>
+							<tr>
+								<td>
+								  <input class="switch_check" type="checkbox" id="mobile-ipfilter_switch" data-i18n-aria-label="checkbox_btn">
+								</td>
+							</tr>
+							<tr>
+								<td class="w-25 cardViewTd" id="mobile-filterMode_title" data-i18n="ipFilter_mode">Filter Mode</td>
+							</tr>
+							<tr>
+								<td>
+									<div class="cardViewSelect">
+										<button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-filterMode">Whitelist</button>
+										<button id="mobile-filterMode_dropdown" data-i18n-aria-label="select_btn" type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" data-bs-toggle="dropdown" aria-expanded="false">
+											<span class="visually-hidden"></span>
+										</button>
+										<ul class="dropdown-menu dropdown-menu-lg-end">
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_white" data-i18n="ipFilter_mode_whitelist">Whitelist</a></li>
+											<li><a class="dropdown-item" href="#" id="mobile-filterMode_black" data-i18n="ipFilter_mode_blacklist">Blacklist</a></li>
+										</ul>
+								  </div>
+								</td>
+							</tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-modal_alertBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="mobile-IPFilterList">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIAFL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIAFL">
+                        <span data-i18n="ipFilter_list">IP Address Filter List</span>
+                        <img id="collapseIAFL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIAFL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+                              <tr>
+								<th colspan="2" scope="row" class="">
+									<button class="cardViewTitleBtn" id="mobile-addNewBtn">
+										<img src="/images/iconAddNew.svg" id="mobile-addNewImg" data-i18n-img-alt="ipFilter_add_alt"><span data-i18n="add_entry"> Add Entry</span>
+									</button>
+									<label class="cardViewTd" id="mobile-MaxLimtLabel" data-i18n="ipFilter_maxLimit">Max Limit: 10</label>
+								</th>
+                              </tr>
+                              <tr class="cardViewTableFirstTR">
+								<!-- <td class="w-15 cardViewTableFirstTD"> -->
+									<!-- <label>Item</label> -->
+									<!-- <button class="cardViewSortBtn" id="mobile-sortNumberBtn"><img id="mobile-sortNumberImg" src="/images/iconSort.svg"></button> -->
+								<!-- </td> -->
+								<!-- <td class="w-20 cardViewTableFirstTD"> -->
+									<!-- <label>IP Type</label> -->
+									<!-- <button class="cardViewSortBtn" id="mobile-sortTypeBtn"><img id="mobile-sortTypeImg" src="/images/iconSort.svg"></button> -->
+								<!-- </td> -->
+								<td class="w-50 cardViewTableFirstTD">
+									<label data-i18n="ipFilter_list_wan_ip">WAN IP Address</label>
+									<!-- <button class="cardViewSortBtn" id="mobile-sortIPBtn"><img id="mobile-sortIPImg" src="/images/iconSort.svg"></button> -->
+								</td>
+								<td class="w-50 cardViewTableFirstTD"><label data-i18n="ipFilter_list_actions">Actions</label></td>
+							  </tr>
+                            </thead>
+                            <tbody id="mobile-tbodystaticAddrList">
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>
+	<div class="modal fade dialog_modal" id="modal_AddIpfliter" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="ipFilter_dialog_add_title">Add New IP Address Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="ipFilter_list_ipType">IP Type</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="ip_TypeSelect">IPv4</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="ip_TypeSelect_v4">IPv4</a></li>
+                              <li><a class="dropdown-item" href="#" id="ip_TypeSelect_v6">IPv6</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="IPAddrTitle" data-i18n="ipFilter_list_wan_ip">WAN IP Address</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="IPAddrTitle_div">
+                            <input class="cardViewInputText" id="ipf_lanipAddr" data-i18n-aria-label="ipFilter_list_wan_ip"></input>
+                        </div>
+                    </div>
+					<div>
+						<label class="p-2 cardViewInputErrorText" id="IPAddr_error" data-i18n="ipFilter_err_des1">IP Address cannot be empty.</label>
+					</div>
+					<button class="inModal_Btn" id="addIPBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="modal_editIpfliter" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="ipFilter_dialog_edit_title">Modify IP Address Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="ipFilter_list_ipType">IP Type</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width">
+                            <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="edit_ip_TypeSelect">IPv4</button>
+                            <button type="button" data-i18n-aria-label="select_btn" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="inModalConTypeSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                              <li><a class="dropdown-item" href="#" id="edit_ip_TypeSelect_v4">IPv4</a></li>
+                              <li><a class="dropdown-item" href="#" id="edit_ip_TypeSelect_v6">IPv6</a></li>
+                            </ul>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" id="edit_IPAddrTitle" data-i18n="ipFilter_list_wan_ip">WAN IP Address</div>
+                        <div class="p-2 flex-fill cardViewSelect model_width" id="edit_IPAddrTitle_div">
+                            <input class="cardViewInputText" id="edit_ipf_lanipAddr" data-i18n-aria-label="ipFilter_list_wan_ip"></input>
+                        </div>
+                    </div>
+					<div>
+						<label class="p-2 cardViewInputErrorText" id="edit_IPAddr_error" data-i18n="ipFilter_err_des1">IP Address cannot be empty.</label>
+					</div>
+					<button class="inModal_Btn" id="editIPBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+							<img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img>
+						</div>
+                        <div class="loadingModal_text" id="_modal_text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="check_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="ipFilter_dialog_del_title">Delete IP Address Filter</label>
+					<button class="btn-close" data-bs-dismiss="modal" onclick="" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text" data-i18n="ipFilter_dialog_del_des">Are you sure you want to delete "IP Address Filter" rule?</label>
+					<button class="inModal_Btn" id="deleteIPBtn" data-i18n="delete">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="alert_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_alert_modal_title">Alert!</label>
+					<button class="btn-close" data-bs-dismiss="modal" onclick="" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_alert_modal_text"></label>
+					<button class="inModal_Btn" id="alertSaveIPBtn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header" data-i18n="ipFilter_list">IP Address Filter List</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="ipFilter_list_Item">Item</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_item"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="ipFilter_list_ipType">IP Type</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_iptype"></label>
+                        </div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle model_width" data-i18n="ipFilter_list_wan_ip">WAN IP Address</div>
+                        <div class="p-2 flex-fill inModalTitle model_width">
+                            <label class="inTable_modal_text" id="_more_wanip"></label>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("modal_AddIpfliter");
+            set_EAA_ToItem("modal_editIpfliter");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("alert_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_IP_Filter');
+            selectObj_init(platform);
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("modal_AddIpfliter");
+            set_EAA_ToItem("modal_editIpfliter");
+            set_EAA_ToItem("check_modal");
+            set_EAA_ToItem("alert_modal");
+            set_EAA_ToItem("_MoreInfo_modal");
+        }
+    });
+</script>
+</html>

@@ -16,11 +16,11 @@ def test_parse_lan_page() -> None:
     assert (lan.dhcp_start, lan.dhcp_end) == ("192.168.224.20", "192.168.224.219")
     assert lan.lease_time == 720
     assert lan.operation_mode == "Router"
-    assert [r.index for r in lan.reservations] == [1, 2, 3]
+    assert [r.index for r in lan.reservations] == [4, 7, 12]
     first = lan.reservations[0]
     assert (first.name, first.mac, first.ip) == ("device01", "02:00:5e:00:00:01", "192.168.224.92")
     assert first.active is True
-    assert first.interface_index == 1
+    assert first.interface_index == 2
 
 
 async def test_get_settings(make_client: ClientFactory, router: FakeRouter) -> None:

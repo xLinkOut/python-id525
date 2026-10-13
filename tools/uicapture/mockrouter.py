@@ -11,18 +11,20 @@ import ipaddress
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from aiohttp import web
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 SHIMS = Path(__file__).parent / "shims"
 TOKEN_PREFIX = "capture-token-"  # noqa: S105
 
-type Responder = Callable[[str, bytes], dict[str, Any] | None]
-"""Optional per-scenario answer: (endpoint, raw body) -> JSON, or None for default."""
+
+def next_answer(answers: dict[str, Any], name: str) -> dict[str, Any] | None:
+    """Pop the canned answer for ``name`` (a list answers in turn, the last repeats)."""
+    answer = answers.get(name)
+    if isinstance(answer, list):
+        return answer.pop(0) if len(answer) > 1 else answer[0] if answer else None
+    return answer
 
 
 @dataclass(frozen=True)
@@ -43,7 +45,10 @@ class MockRouter:
     host: str = "127.0.0.1"
     requests: list[Recorded] = field(default_factory=list)
     tokens: list[str] = field(default_factory=list)
-    responder: Responder | None = None
+    answers: dict[str, Any] = field(default_factory=dict)
+    """Canned answers for the current scenario (see ``Scenario.answers``)."""
+    page_fixtures: dict[str, str] = field(default_factory=dict)
+    """Page name -> fixture name (relative to ``pages_dir``, no suffix) to serve."""
     _runner: web.AppRunner | None = None
     port: int = 0
 
@@ -86,7 +91,7 @@ class MockRouter:
 
     async def _page(self, request: web.Request) -> web.StreamResponse:
         name = request.match_info["page"]
-        path = self.pages_dir / f"{name}.html"
+        path = self.pages_dir / f"{self.page_fixtures.get(name, name)}.html"
         if not path.is_file():
             return web.Response(text=f"<html><body>{name}</body></html>", content_type="text/html")
         return web.Response(body=path.read_bytes(), content_type="text/html", charset="utf-8")
@@ -107,9 +112,10 @@ class MockRouter:
         name = request.match_info["name"]
         raw = await request.read()
         self.requests.append(Recorded(name, raw, request.headers.get("Content-Type")))
-        answer = self.responder(name, raw) if self.responder is not None else None
-        if answer is None:
-            answer = self.default_answer(name)
+        canned = next_answer(self.answers, name)
+        answer = self.default_answer(name)
+        if canned is not None:
+            answer = {"result": True, **canned, "RequestVerifyToken": self.next_token()}
         return web.Response(text=json.dumps(answer), content_type="application/json")
 
     def default_answer(self, name: str) -> dict[str, Any]:
