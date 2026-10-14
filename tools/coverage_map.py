@@ -46,7 +46,11 @@ GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 LEGEND: tuple[tuple[str, tuple[Status, ...], str], ...] = (
-    ("live-verified", (Status.LIVE_VERIFIED,), "observed on a real router (read-only probes)"),
+    (
+        "live-verified",
+        (Status.LIVE_VERIFIED,),
+        "observed on a real router (read-only probes, user traces)",
+    ),
     ("ui-captured", (Status.UI_CAPTURED,), "byte-identical to the router UI, captured offline"),
     (
         "ui-captured*",

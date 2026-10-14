@@ -35,10 +35,10 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes) | 10 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 12 |
 | 🔵 ui-captured | byte-identical to the router UI, captured offline | 43 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
-| 🔹 static | implemented from the UI code, not captured | 17 |
+| 🔹 static | implemented from the UI code, not captured | 15 |
 | ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
 | ▫️ dead code | never called by the UI | 7 |
@@ -75,13 +75,13 @@ so it is always current.
 | Cellular settings | Delete APN | `req_deleteUserApn` | write | 🔵 ui-captured | `cellular.delete_apn()` |
 | Cellular settings | Select default APN | `req_defaultApnSave` | write | 🔵 ui-captured | `cellular.set_default_apn()` |
 | Cellular settings | Reset APNs (button unbound) | `req_defaultApnReset` | destructive | ▫️ dead-code |  |
-| LAN settings | Page data | `lan-settings.html` | read | 🔹 static | `lan.add_dhcp_reservation()` |
+| LAN settings | Page data | `lan-settings.html` | read | 🟦 live-verified | `lan.add_dhcp_reservation()` |
 | LAN settings | LAN / DHCP | `req_LanInternetProtoSave` | destructive | 🔵 ui-captured | `lan.update_settings()` |
 | LAN settings | Ethernet WAN port | `req_ethWanEnabled` | destructive | 🔵 ui-captured | `lan.set_ethernet_port_role()` |
 | LAN settings | Add DHCP reservation | `req_LanStaticAddrAdd` | write | 🔵 ui-captured | `lan.add_dhcp_reservation()` |
 | LAN settings | Edit DHCP reservation | `req_LanStaticAddrModify` | write | 🔵 ui-captured | `lan.modify_dhcp_reservation()` |
 | LAN settings | Delete DHCP reservation | `req_LanStaticAddrDelete` | write | 🔵 ui-captured | `lan.delete_dhcp_reservation()` |
-| Wi-Fi settings | Page data | `wifi-settings.html` | read | 🔹 static | `wifi.get_settings()` |
+| Wi-Fi settings | Page data | `wifi-settings.html` | read | 🟦 live-verified | `wifi.get_settings()` |
 | Wi-Fi settings | Wi-Fi | `req_wifiSetting` | write | 🔵 ui-captured | `wifi.set_mlo()` |
 | Wi-Fi settings | WPS | `req_wpsSetting` | write | 🔵 ui-captured | `wifi.set_mlo()` |
 | Wi-Fi settings | Start WPS | `req_wpsStartScan` | action | 🔵 ui-captured | `wifi.start_wps()` |

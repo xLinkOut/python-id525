@@ -52,7 +52,8 @@ class Status(StrEnum):
     """How an endpoint is supported by this library, from most to least trusted."""
 
     LIVE_VERIFIED = "live-verified"
-    """Implemented; behaviour observed on a real router (read-only probes)."""
+    """Implemented; behaviour observed on a real router (read-only probes, or a
+    ``--trace`` of the call run by the user)."""
     UI_CAPTURED = "ui-captured"
     """Implemented; request bytes proven identical to the router's own web UI,
     captured offline by running the UI code against a local mock."""
@@ -460,8 +461,8 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.SMS: PageInfo("SMS", Status.NO_DATA),  # messages come from req_smsReload
     _P.BACKUP: PageInfo("Backup & reboot", Status.NO_DATA),  # only a UI feature flag
     _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),
-    _P.LAN_SETTINGS: PageInfo("LAN settings", _STATIC),
-    _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _STATIC),
+    _P.LAN_SETTINGS: PageInfo("LAN settings", _LIVE),  # user trace, 2026-10-14
+    _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _LIVE),  # user trace, 2026-10-14
     _P.VOIP_SETTINGS: PageInfo("VoIP settings", _STATIC),
     _P.FIREWALL: PageInfo("Firewall", _STATIC),
     _P.DDNS: PageInfo("Dynamic DNS", _STATIC),
