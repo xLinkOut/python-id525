@@ -215,7 +215,7 @@ The coverage table above lists every one.
 ```bash
 export ID525_USERNAME=admin ID525_PASSWORD=...
 id525 status            # quick reads: clients cells utilization about sms session all
-id525 --host 192.168.224.1 --env-file .env all
+id525 --host 192.168.224.1 --env-file .env all   # file: ID525_USERNAME/ID525_PASSWORD or USERNAME/PASSWORD
 id525 lan get-settings  # any operation: id525 <section> <operation> [--arg value]
 id525 --write lan add-dhcp-reservation --name printer --ip 192.168.224.50 --mac 02:00:5e:00:00:aa
 id525 --write system reboot --confirm

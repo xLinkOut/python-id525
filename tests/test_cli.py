@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestServer
 
-from id525 import Id525ConfirmationRequiredError, Id525ReadOnlyError
+from id525 import Id525AuthenticationError, Id525ConfirmationRequiredError, Id525ReadOnlyError
 from id525.cli import (
     COMMANDS,
     build_parser,
@@ -17,6 +17,9 @@ from id525.cli import (
     parse_args,
     run,
     to_jsonable,
+)
+from id525.cli import (
+    credentials as cli_credentials,
 )
 from id525.operations import operations
 from id525.parsers import parse_network_status, parse_sms
@@ -46,9 +49,36 @@ def test_parser_rejects_unknown_command() -> None:
         build_parser().parse_args(["reboot"])
 
 
-def test_main_reports_connection_errors(capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_reports_connection_errors(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ID525_PASSWORD", PASSWORD)
     assert main(["--host", "127.0.0.1:9", "status"]) == 1
-    assert "error:" in capsys.readouterr().err
+    assert "failed" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("argv", [["status"], ["lan", "get-settings"]])
+async def test_no_password_is_refused_before_any_request(
+    server: TestServer,
+    router: FakeRouter,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+) -> None:
+    monkeypatch.delenv("ID525_PASSWORD", raising=False)
+    with pytest.raises(Id525AuthenticationError, match="no password"):
+        await run(cli_args(server, *argv))
+    assert router.calls == []
+
+
+def test_env_file_may_use_plain_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ID525_USERNAME", raising=False)
+    monkeypatch.delenv("ID525_PASSWORD", raising=False)
+    monkeypatch.setenv("USERNAME", "system-login")  # never taken from the environment
+    env = tmp_path / ".env"
+    env.write_text("USERNAME=boss\nPASSWORD=s3cret\n")
+    assert cli_credentials(parse_args(["--env-file", str(env), "status"])) == ("boss", "s3cret")
+    monkeypatch.setenv("ID525_PASSWORD", "from-env")
+    assert cli_credentials(parse_args(["--env-file", str(env), "status"])) == ("boss", "from-env")
 
 
 def test_quick_reads_still_parse() -> None:

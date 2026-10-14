@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING, Any
 
 from .client import Id525Client
 from .const import DEFAULT_HOST, DEFAULT_USERNAME
-from .exceptions import Id525Error
+from .exceptions import Id525AuthenticationError, Id525Error
 from .operations import Operation, operations
 from .trace import TraceRecorder
 
@@ -144,7 +144,11 @@ VALUE_OPTIONS = frozenset({"--host", "--env-file", "--scheme", "--trace-file"})
 
 def _add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--host", default=os.environ.get("ID525_HOST", DEFAULT_HOST))
-    parser.add_argument("--env-file", type=Path, help="file with ID525_USERNAME/ID525_PASSWORD")
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        help="file with ID525_USERNAME/ID525_PASSWORD (or USERNAME/PASSWORD)",
+    )
     parser.add_argument(
         "--scheme", choices=["https", "http"], default="https", help=argparse.SUPPRESS
     )
@@ -213,24 +217,42 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return build_parser().parse_args(argv)
 
 
+def credentials(args: argparse.Namespace) -> tuple[str, str]:
+    """Return (username, password) from the environment or the ``--env-file``.
+
+    ``ID525_USERNAME`` / ``ID525_PASSWORD`` win (environment first, then the
+    file); a file may also use plain ``USERNAME`` / ``PASSWORD`` keys. Plain
+    names are never read from the environment, where ``USERNAME`` is usually
+    the system login.
+    """
+    file_env = load_env_file(args.env_file) if args.env_file else {}
+    env = {**file_env, **os.environ}
+    username = env.get("ID525_USERNAME") or file_env.get("USERNAME") or DEFAULT_USERNAME
+    password = env.get("ID525_PASSWORD") or file_env.get("PASSWORD") or ""
+    return username, password
+
+
 def _client(
     args: argparse.Namespace, *, read_only: bool, tracer: TraceRecorder | None = None
 ) -> Id525Client:
-    env = {**(load_env_file(args.env_file) if args.env_file else {}), **os.environ}
+    username, password = credentials(args)
     return Id525Client(
-        args.host,
-        env.get("ID525_USERNAME", DEFAULT_USERNAME),
-        env.get("ID525_PASSWORD", ""),
-        scheme=args.scheme,
-        read_only=read_only,
-        tracer=tracer,
+        args.host, username, password, scheme=args.scheme, read_only=read_only, tracer=tracer
     )
+
+
+def _require_password(args: argparse.Namespace) -> None:
+    """Refuse to log in without a password: a rejected login counts towards the lockout."""
+    if not credentials(args)[1]:
+        msg = "no password: set ID525_PASSWORD or pass --env-file (nothing was sent)"
+        raise Id525AuthenticationError(msg)
 
 
 async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> Any:
     """Log in once, run the requested command(s), log out."""
     if hasattr(args, "commands"):
         names = list(COMMANDS) if "all" in args.commands else args.commands
+        _require_password(args)
         async with _client(args, read_only=True, tracer=tracer) as client:
             return {name: to_jsonable(await COMMANDS[name](client)) for name in names}
     op: Operation = args.operation
@@ -244,6 +266,7 @@ async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> 
     client = _client(args, read_only=not args.write, tracer=tracer)
     for endpoint in op.endpoints:  # refuse before logging in
         client.check_allowed(endpoint, confirmed=kwargs.get("confirm") is True)
+    _require_password(args)
     async with client:
         method = getattr(getattr(client, args.section), op.name)
         result = await method(**kwargs)
