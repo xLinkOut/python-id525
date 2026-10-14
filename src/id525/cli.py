@@ -107,6 +107,15 @@ def _base_type(hint: Any) -> Any:
     return hint
 
 
+def negative_flag(name: str) -> str:
+    """Return the opposite of a boolean flag: ``--disabled``, ``--dhcp-disabled``, ``--no-x``."""
+    if name.endswith("enabled"):
+        return "--" + name.removesuffix("enabled").replace("_", "-") + "disabled"
+    if name == "disabled":
+        return "--enabled"
+    return "--no-" + name.replace("_", "-")
+
+
 def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
     hints = typing.get_type_hints(op.function)
     for name, param in inspect.signature(op.function).parameters.items():
@@ -115,10 +124,13 @@ def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
         flag = f"--{name.replace('_', '-')}"
         kind = _base_type(hints.get(name, str))
         required = param.default is inspect.Parameter.empty
-        if kind is bool and param.default is None:  # tri-state: unset / --x / --no-x
-            parser.add_argument(flag, dest=name, action=argparse.BooleanOptionalAction)
-        elif kind is bool:
-            parser.add_argument(flag, dest=name, action="store_true", default=param.default is True)
+        if kind is bool and name == "confirm":
+            parser.add_argument(flag, dest=name, action="store_true")
+        elif kind is bool:  # always an explicit pair: --enabled / --disabled
+            group = parser.add_mutually_exclusive_group(required=required)
+            group.add_argument(flag, dest=name, action="store_true")
+            group.add_argument(negative_flag(name), dest=name, action="store_false")
+            parser.set_defaults(**{name: None if required else param.default})
         elif isinstance(kind, type) and issubclass(kind, enum.Enum):
             parser.add_argument(
                 flag,

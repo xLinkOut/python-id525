@@ -14,6 +14,7 @@ from id525.cli import (
     cli_operations,
     load_env_file,
     main,
+    negative_flag,
     parse_args,
     run,
     to_jsonable,
@@ -24,7 +25,7 @@ from id525.cli import (
 from id525.operations import operations
 from id525.parsers import parse_network_status, parse_sms
 
-from .conftest import PASSWORD, USERNAME, FakeRouter, load_fixture
+from .conftest import MUTATING, PASSWORD, USERNAME, FakeRouter, load_fixture
 
 
 def test_to_jsonable_models_are_json_serialisable() -> None:
@@ -141,3 +142,44 @@ def test_optional_arguments_default_to_none() -> None:
 def test_read_only_error_suggests_the_flag(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--host", "127.0.0.1:9", "lan", "delete-dhcp-reservation", "--index", "1"]) == 1
     assert "add --write" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("name", "negative"),
+    [
+        ("enabled", "--disabled"),
+        ("dhcp_enabled", "--dhcp-disabled"),
+        ("line_enabled", "--line-disabled"),
+        ("disabled", "--enabled"),
+        ("hidden", "--no-hidden"),
+    ],
+)
+def test_negative_flag(name: str, negative: str) -> None:
+    assert negative_flag(name) == negative
+
+
+def test_required_booleans_must_be_explicit(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        parse_args(["wifi", "set-wps"])
+    assert "--enabled --disabled is required" in capsys.readouterr().err
+    assert parse_args(["wifi", "set-wps", "--disabled"]).enabled is False
+    assert parse_args(["wifi", "set-wps", "--enabled"]).enabled is True
+    with pytest.raises(SystemExit):
+        parse_args(["wifi", "set-wps", "--enabled", "--disabled"])
+
+
+def test_boolean_defaults_follow_the_api() -> None:
+    assert parse_args(["cellular", "add-apn", "--apn", "x"]).enabled is True
+    assert parse_args(["cellular", "add-apn", "--apn", "x", "--disabled"]).enabled is False
+    unset = parse_args(["wifi", "update-network", "--interface", "5G_Main"])
+    assert (unset.enabled, unset.hidden) == (None, None)  # left unchanged
+    rule = ["port_forwarding", "add-rule", "--wan-port", "80", "--lan-ip", "192.168.224.9"]
+    assert parse_args([*rule, "--lan-port", "80"]).disabled is False
+    assert parse_args([*rule, "--lan-port", "80", "--disabled"]).disabled is True
+
+
+@pytest.mark.usefixtures("credentials")
+async def test_set_wps_disabled_reaches_the_router(server: TestServer, router: FakeRouter) -> None:
+    assert await run(cli_args(server, "--write", "wifi", "set-wps", "--disabled")) == {"ok": True}
+    sent = [json.loads(body) for name, body in router.bodies if name in MUTATING]
+    assert len(sent) == 1
