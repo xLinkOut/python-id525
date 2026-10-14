@@ -1,0 +1,25 @@
+{
+  "scenario": "dmz_enable_lenient_octets",
+  "page": "fw-portfwd",
+  "endpoint": "dmz_save",
+  "ui_ref": "fw-portfwd.html:280",
+  "call": "port_forwarding.enable_dmz",
+  "inputs": {
+    "ip": "10.1.2.03"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-portfwd",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "dmz_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"DmzSta\":\"1\",\"DmzIP\":\"10.1.2.03\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "octets are only checked with parseInt (1..254): any subnet, leading zeros",
+  "fixture_sha256": "0a623315c4c0e3515f15cf0dfd5a50c01f712b6a4d3f4d7026b81e9fa8509081"
+}

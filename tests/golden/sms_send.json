@@ -1,0 +1,33 @@
+{
+  "scenario": "sms_send",
+  "page": "adm-sms",
+  "endpoint": "req_smsCompose",
+  "ui_ref": "adm-sms.html:702",
+  "call": "sms.send",
+  "inputs": {
+    "recipients": "+390000000009",
+    "text": "Ciao! Prova & 100% \"ok\" — àèì"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_smsReload": {
+      "sms_update_time": "1",
+      "message": []
+    }
+  },
+  "refused": false,
+  "fixture": "adm-sms",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_smsCompose",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"Recipients\":\"+390000000009\",\"RecipientsNum\":1,\"SMScontext\":\"Ciao! Prova & 100% \\\"ok\\\" — àèì\"}"
+    }
+  ],
+  "other_calls": [
+    "req_smsReload"
+  ],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "6eb7a5f71ee1850e6c9b086828dcd5d271ede1344c6eaae560509119e5cc82ff"
+}

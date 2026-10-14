@@ -27,4 +27,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --locked
-      - run: uv run pytest
+      - run: uv run pytest -m "not browser"
+
+  browser:
+    # Network-guard tests of the offline UI capture harness (headless Chromium).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run playwright install --with-deps chromium
+      - run: uv run pytest -m browser --no-cov

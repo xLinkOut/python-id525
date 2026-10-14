@@ -51,3 +51,28 @@ class Id525SessionKickedError(Id525SessionError):
 
 class Id525SessionExpiredError(Id525SessionError):
     """The session expired and automatic re-login is disabled."""
+
+
+class Id525ReadOnlyError(Id525Error):
+    """The call would change the router but the client is read-only.
+
+    Create the client with ``read_only=False`` to allow it.
+    """
+
+
+class Id525ConfirmationRequiredError(Id525Error):
+    """A destructive operation (e.g. reboot) was called without ``confirm=True``."""
+
+
+class Id525ValidationError(Id525Error, ValueError):
+    """The input was rejected by the same checks the web UI runs before sending."""
+
+
+class Id525CommandError(Id525ResponseError):
+    """The router answered ``result: false`` to a command."""
+
+    def __init__(self, endpoint: str, error: object) -> None:
+        self.endpoint = endpoint
+        self.error = error
+        detail = f": {error}" if error else ""
+        super().__init__(f"router rejected {endpoint}{detail}")

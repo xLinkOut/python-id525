@@ -1,0 +1,21 @@
+{
+  "scenario": "wifi_radio_refused_mode_with_mlo",
+  "page": "wifi-settings",
+  "endpoint": "req_wifiSetting",
+  "ui_ref": "wifi-settings.html:1386",
+  "call": "wifi.update_radio",
+  "inputs": {
+    "band": "5G",
+    "mode": "11axa"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "wifi-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Please disable the Multi-Link Operation before changing to non 802.11be standard.",
+  "notes": "with MLO only the 802.11be modes are allowed",
+  "fixture_sha256": "da32988c25fd38280ee2d197e8633394556ee2d13d110991b27825ff6c215885"
+}

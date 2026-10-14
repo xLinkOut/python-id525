@@ -1,0 +1,29 @@
+{
+  "scenario": "lan_save_new_address",
+  "page": "lan-settings",
+  "endpoint": "req_LanInternetProtoSave",
+  "ui_ref": "lan-settings.html:563",
+  "call": "lan.update_settings",
+  "inputs": {
+    "ip": "192.168.1.1",
+    "dhcp_start": "192.168.1.20",
+    "dhcp_end": "192.168.1.219"
+  },
+  "call_kwargs": {
+    "confirm": true
+  },
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanInternetProtoSave",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"ipClass\":\"0\",\"subnetMaskClass\":\"0\",\"hostIP\":\"192.168.1.1\",\"subnetMask\":\"255.255.255.0\",\"leaseTime\":\"720\",\"startIP\":\"192.168.1.20\",\"endIP\":\"192.168.1.219\",\"dhcp_enable\":true}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "address change: the UI does not wait for the answer",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

@@ -1,0 +1,1928 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="lan_set_title">LAN Settings</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- GM WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    var platform_o = '';
+    var model = 'IDU';
+    var modeSelectType = 'Router';
+    var modeSelectType_CFG = 0;
+	var modeEoGRE = 0;
+    var ipClass = 'Class C';
+    var hostIP = '192.168.224.1';
+    var hostIP_O = '192.168.224.1';
+    var subnetMaskClass = 'Class C';
+    var subnetMask = '255.255.255.0';
+    var subnetMask_O = '255.255.255.0';
+    var subnetMaskClass_CFG = 0;//0:Class c, 1:Class B, 2:Class A
+    var lan_mtu = '0';
+    var lan_mtu_O = '0';
+    
+    var dhcp_startIP = '192.168.224.20';
+    var dhcp_startIP_O = dhcp_startIP;
+    var startIP_split = [];
+    var dhcp_endIP = '192.168.224.219';
+    var dhcp_endIP_O = dhcp_endIP;
+    var endIP_split = [];
+    var staticAddrList_str = '{&quot;dhcp_reservation_list&quot;:[{&quot;deviceName&quot;:&quot;device01&quot;,&quot;mac_addr&quot;:&quot;02:00:5e:00:00:01&quot;,&quot;ip_addr&quot;:&quot;192.168.224.92&quot;,&quot;subnetMask&quot;:&quot;255.255.255.0&quot;,&quot;connectionType&quot;:&quot;Ethernet&quot;,&quot;reservationStatus&quot;:1,&quot;index&quot;:4,&quot;interface_index&quot;:2},{&quot;deviceName&quot;:&quot;device02&quot;,&quot;mac_addr&quot;:&quot;02:00:5e:00:00:02&quot;,&quot;ip_addr&quot;:&quot;192.168.224.20&quot;,&quot;subnetMask&quot;:&quot;255.255.255.0&quot;,&quot;connectionType&quot;:&quot;Ethernet&quot;,&quot;reservationStatus&quot;:1,&quot;index&quot;:7,&quot;interface_index&quot;:2},{&quot;deviceName&quot;:&quot;device03&quot;,&quot;mac_addr&quot;:&quot;02:00:5e:00:00:03&quot;,&quot;ip_addr&quot;:&quot;192.168.224.33&quot;,&quot;subnetMask&quot;:&quot;255.255.255.0&quot;,&quot;connectionType&quot;:&quot;Ethernet&quot;,&quot;reservationStatus&quot;:1,&quot;index&quot;:12,&quot;interface_index&quot;:2}]}';
+    var staticAddrListJson = {};
+
+    var old_IP = '';
+    var old_MAC = '';
+    var old_DevName = '';
+    var edit_instance = 0;
+    var interface_id = 0;
+    var staticAddrList = [];
+    var clientListJsonArray = Array();
+    var staticAddrListStatus = [];
+    var ethPortSelect = 'LAN Port';
+
+    var dhcp_enable_int = 1;
+    var dhcp_enable;
+    var dhcp_enable_O;
+    var pri_dns = '';
+    var sec_dns = '';
+    var leaseTime = '720';
+    var leaseTime_O = leaseTime;
+    var eth_routerMac = 'NA';
+    var lastSixMac = '';
+    var domainName ='';
+    var timerId;
+	var ethWanPortIdx = '2';
+
+    function response_print(response){
+        console.log("type: "+response.type);
+        console.log("url: "+response.url);
+        console.log("status: "+response.status);
+        console.log("statusText: "+response.statusText);
+        console.log("ok: "+response.ok);     
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+	function serverStatusCheck(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+        var checkObj = document.getElementById(platform + '-dhcpServer');
+        dhcp_enable = checkObj.checked;
+        if(checkObj.checked && modeSelectType_CFG == 0){
+            document.getElementById(platform + '-dhcpstartIPTextTitleTd').style = "color: var(--headingText);";
+            document.getElementById(platform + '-dhcpstartIPText').disabled = false;
+            document.getElementById(platform + '-dhcpEndingIPTextTitleTd').style = "color: var(--headingText);";
+            document.getElementById(platform + '-dhcpEndingIPText').disabled = false;
+            document.getElementById(platform + '-dhcpLeaseText').disabled = false;
+        }else{
+            document.getElementById(platform + '-dhcpstartIPTextTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + '-dhcpstartIPText').disabled = true;
+            document.getElementById(platform + '-dhcpEndingIPTextTitleTd').style = "color: var(--disabledText);";
+            document.getElementById(platform + '-dhcpEndingIPText').disabled = true;
+            document.getElementById(platform + '-dhcpLeaseText').disabled = true;
+        }
+        //Hardcode disable DNS and domain name for now
+        //document.getElementById(platform + '-dhcpDNText').disabled = true;
+    }
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("lan-settings.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseIP');
+        mobile_CollapsibleAddListener('collapseISAL');
+        mobile_CollapsibleAddListener('collapseEthPort');
+
+        saveLoadingListener();
+        saveDialogListener();
+        saveMoreInfoListener();
+        saveEditAddrListener();
+        saveAddAddrListener();
+        
+        if(modeSelectType_CFG == 0){
+            modeSelectType = 'Router';
+        }else{
+            modeSelectType = 'Bridge';
+        }
+
+		if(modeEoGRE == 1){
+			modeSelectType = 'Eogre';
+		}
+
+        if(subnetMask_O.indexOf("255.255.255.") == 0){
+            ipClass = 'Class C';
+        }else if(subnetMask_O.indexOf("255.255.") == 0){
+            ipClass = 'Class B';
+        }else{
+            ipClass = 'Class A';
+        }
+
+//console.log("staticAddrList_str: " + staticAddrList_str.replace(/&quot;/g,'"'));
+        var tmp_str = decodeURIComponent(staticAddrList_str);
+        staticAddrListJson = JSON.parse(tmp_str.replace(/&quot;/g,'"'));
+        staticAddrList = staticAddrListJson.dhcp_reservation_list;
+//console.log("staticAddrList mac_addr: " + staticAddrList[0].mac_addr );
+        startIP_split = dhcp_startIP.split('.');
+        endIP_split = dhcp_endIP.split('.');
+        
+        if(dhcp_enable_int == 1){
+            dhcp_enable = true;
+        }else{
+            dhcp_enable = false;
+        }
+        dhcp_enable_O = dhcp_enable;
+        /*
+        if(eth_routerMac != '' && eth_routerMac != 'NA') {
+			eth_routerMac = eth_routerMac.toUpperCase();
+			lastSixMac = eth_routerMac.substring(6, 12);			
+		}
+		*/
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function initJS_function(pf){
+        document.getElementById(pf + "-EthPortTextTd").style = 'font: normal normal 300 14px/14px Roboto;';
+        document.getElementById(pf + "-dhcpBtn").onclick = function(){show_DHCPDisableConfirm();};
+        document.getElementById(pf + "-addBtn").onclick = function(){toggle_AddAddr_modal();};
+        if(pf != "mobile"){
+            document.getElementById(pf + "-sortMacBtn").onclick = function(){sortMAC();};
+            document.getElementById(pf + "-sortIPBtn").onclick = function(){sortIP();};
+            document.getElementById(pf + "-sortNameBtn").onclick = function(){sortName();};
+        }
+        document.getElementById(pf + "-cellularEthPortSaveBtn").onclick = function(){EthPort4actSave();};
+        document.getElementById(pf + "-dhcpServer").onchange = function(){serverStatusCheck();};
+        document.getElementById(pf + "-dhcpLeaseText").oninput = function(){maxLeng(pf + '-dhcpLeaseText',5);};
+        document.getElementById(pf + "-dhcpEndingIPText").oninput = function(){endIPInput();};
+        document.getElementById(pf + "-dhcpstartIPText").oninput = function(){startIPInput();};
+        document.getElementById(pf + "-lanHSMText").oninput = function(){subnetMaskInput();};
+        document.getElementById(pf + "-lanHIPAddressText").oninput = function(){ipAddressInput();};
+
+        document.getElementById(pf + "-EthPort_WAN").onclick = function(){selectObj(pf + '-EthPortSelect', i18next.t('lan_set_eth_wan_port'));};
+        document.getElementById(pf + "-EthPort_LAN").onclick = function(){selectObj(pf + '-EthPortSelect', i18next.t('lan_set_eth_lan_port'));};
+		dropdownItemKeyboardNavigation(pf + "-EthPort_WAN");
+		dropdownItemKeyboardNavigation(pf + "-EthPort_LAN");
+
+        document.getElementById("confirm_dialog_btn").onclick = function(){click_DHCPDisableConfirm();};
+        document.getElementById("addAddr_modal_btn").onclick = function(){addAddrSave();};
+        document.getElementById("_dialog_modal_btn").onclick = function(){toggle_dialog_modal();};
+
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+        if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+        document.getElementById(platform + '-lanHIPAddressText').value = hostIP;
+        document.getElementById(platform + '-lanHSMText').value = subnetMask;
+        
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            var isConnected = false;
+            for(var j=0 ; j<(clientListJsonArray.length-1) ; j++){
+                if(staticAddrList[i].mac_addr === clientListJsonArray[j].MAC){
+                    isConnected = true;
+                    break;
+                }
+            }
+            if(isConnected){
+                staticAddrList[i].Status = "Connected";
+            }else{
+                staticAddrList[i].Status = "Not Connected";
+            }
+        }
+        staticAddrListStatus = Array.from(staticAddrList);
+        initAddrListTable(staticAddrList);
+
+        if(modeSelectType_CFG == 1 || modeEoGRE == 1){
+            document.getElementById(platform + '-staticAddrListDiv').style.display = "none";
+            document.getElementById(platform + '-dhcpServer').disabled = true;
+        }
+
+		//document.getElementById(platform + '-lanHNText').innerHTML = 'JioODU_' + lastSixMac;
+        document.getElementById(platform + '-dhcpServer').checked = dhcp_enable;
+        document.getElementById(platform + '-dhcpstartIPText').value = dhcp_startIP;
+        document.getElementById(platform + '-dhcpEndingIPText').value = dhcp_endIP;
+        //Hardcode to host IP for now
+        document.getElementById(platform + '-dhcpLeaseText').value = leaseTime;
+        serverStatusCheck();
+        selectObj_init (platform);
+
+        if(model != 'IDU'){
+            document.getElementById(platform + '-EthPortSettings_div').style.display = "none";
+        }
+		
+		document.getElementById(platform + '-EthPortTitleTd').innerHTML = i18next.t('lan_set_eth_port_title', {ethPortIdx: ethWanPortIdx});
+		document.getElementById(platform + '-EthPortTextTd').innerHTML = i18next.t('lan_set_eth_port_des', {ethPortIdx: ethWanPortIdx});
+    }
+
+    function selectObj_init (platform) {
+        if(ethPortSelect == "WAN Port"){
+            selectObj(platform + "-EthPortSelect", i18next.t('lan_set_eth_wan_port'));
+        }else{
+            selectObj(platform + "-EthPortSelect", i18next.t('lan_set_eth_lan_port'));
+        }
+    }
+
+    function initAddrListTable(staticAddrArray){
+        var tbodystaticAddrList = document.getElementById(platform + '-tbodystaticAddrList');
+        var tbodystaticAddrListCon = '';
+        var tbodystaticAddrListAll = '';
+        var moreIcon = '';
+        var editIcon = '';
+        var deleteIcon = '';
+        tbodystaticAddrList.innerHTML = '';
+        for(var i=0 ; i<staticAddrArray.length ; i++)
+        {
+            tbodystaticAddrListCon = '<tr class="cardViewTableTR">';
+            
+            tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-25 cardViewTableTD"><label>' +staticAddrArray[i].deviceName+ '</label></td>';
+            if(platform != 'mobile'){
+                tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-25 cardViewTableTD"><label>' +staticAddrArray[i].ip_addr+ '</label></td>';
+                tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="w-25 cardViewTableTD"><label>' +staticAddrArray[i].mac_addr+ '</label></td>';
+            }
+            //moreIcon = '<button class="btn" onclick="addrMore(' + i + ')"><img src="/images/iconMore.svg"></button>';
+            editIcon = '<button class="btn" id="staticAddrEdit'+i+'"><img src="/images/ic_edit.svg" alt="' +i18next.t('lan_set_edit_alt')+ '"></button>';
+            deleteIcon = '<button class="btn" id="staticAddrDel'+i+'"><img src="/images/ic_delete.svg" alt="' +i18next.t('lan_set_del_alt')+ '"></button>';
+            //tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>'+ moreIcon + editIcon + deleteIcon + '</label></td>';
+            tbodystaticAddrListCon = tbodystaticAddrListCon + '<td class="cardViewTableTD"><label>'+ editIcon + deleteIcon + '</label></td>';
+            
+            tbodystaticAddrListCon += '</tr>';
+            tbodystaticAddrListAll += tbodystaticAddrListCon;
+        }
+        tbodystaticAddrList.innerHTML = tbodystaticAddrListAll;
+        for(var i=0 ; i<staticAddrArray.length ; i++)(function(i){
+            document.getElementById("staticAddrEdit"+i).onclick = function(){addrEdit(i);};
+            document.getElementById("staticAddrDel"+i).onclick = function(){pre_addrDelete(i);};
+        })(i);
+    }
+
+    function op_response_error_print(response){
+        //console.log("res_error: " + JSON.stringify(response));
+        setTimeout(() => {document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des1');}, 2000);  
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 60500);
+    }
+    function show_BridgeConfigError(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('lan_set_dialog_err_des1');
+        
+        toggle_dialog_modal();
+    }
+    
+    function response_error_print(response){
+        //console.log("res_error: " + JSON.stringify(response));
+        clearTimeout(timerId);
+        if(response.statusText === 'fetch error'){
+        setTimeout(() => {document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des1');}, 2000);  
+        setTimeout(() => {window.location.href = "https://" + hostIP;}, 20000);
+        }else{
+            document.getElementById("RequestVerifyToken").value = response.RequestVerifyToken;
+            setTimeout(toggle_modal,1000);
+            setTimeout(show_LanConfigError,1000);
+        }
+    }
+    function internetProtoSave_response(data_json){
+        //console.log("response: " + JSON.stringify(data_json));
+        if(data_json.result){
+            setTimeout(() => {document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des1');},2000);
+            setTimeout(toggle_modal,60000);
+            setTimeout(() => {window.location.href = "https://" + hostIP;}, 60500);
+        }else {
+            document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+            setTimeout(toggle_modal,1000);
+            setTimeout(show_LanConfigError,1000);
+        }
+    }
+    function show_LanConfigError(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('lan_set_dialog_err_des2');
+        
+        toggle_dialog_modal();
+    }
+    function startIPInput() {
+        dhcp_startIP = document.getElementById(platform + '-dhcpstartIPText').value;
+    }
+    function endIPInput() {
+        dhcp_endIP = document.getElementById(platform + '-dhcpEndingIPText').value;
+    }
+    function show_DHCPDisableConfirm(){
+		if(dhcp_enable){
+			internetProtoSave();
+		}
+		else{
+			document.getElementById('confirm_dialog_modal_header').innerHTML = i18next.t('lan_set_dialog_title3');
+			document.getElementById('confirm_dialog_modal_text').innerHTML = i18next.t('lan_set_dialog_des2');
+			document.getElementById('confirm_dialog_modal_warning').innerHTML = i18next.t('lan_set_dialog_des3');
+			
+			confirm_toggle_dialog_modal();
+		}
+    }
+	function click_DHCPDisableConfirm(){
+		confirm_toggle_dialog_modal();
+		internetProtoSave();
+	}
+	function autoChangeDHCPRangeBaseHostIP()
+	{//Only for class C
+		var tmp1;
+		var new_startIP;
+		var new_endIP;
+		tmp1 = hostIP.split('.');
+		new_startIP = dhcp_startIP.split('.');
+		new_endIP = dhcp_endIP.split('.');
+
+		for(var i=0 ; i<3 ; i++){
+			new_startIP[i] = tmp1[i];
+			new_endIP[i] = tmp1[i];
+		}
+
+		if(parseInt(tmp1[3], 10) >= 127){
+			new_startIP[3] = "20";
+			new_endIP[3] = "60";
+		}
+		else{
+			new_startIP[3] = "200";
+			new_endIP[3] = "240";
+		}
+
+		dhcp_startIP = new_startIP[0]+"."+new_startIP[1]+"."+new_startIP[2]+"."+new_startIP[3];
+		dhcp_endIP = new_endIP[0]+"."+new_endIP[1]+"."+new_endIP[2]+"."+new_endIP[3];
+	}
+    function internetProtoSave() {
+        //lan_mtu = document.getElementById(platform + '-lanMTUText').value;
+        leaseTime = document.getElementById(platform + '-dhcpLeaseText').value;
+
+        if(!(validateIPaddress(hostIP) && validateIPaddress(subnetMask))){
+            show_LanConfigError();
+        }else if(hostIP == hostIP_O && subnetMask == subnetMask_O
+        	&& dhcp_enable == dhcp_enable_O && dhcp_startIP == dhcp_startIP_O 
+        	&& dhcp_endIP == dhcp_endIP_O && leaseTime == leaseTime_O //&& lan_mtu == lan_mtu_O
+        ){
+            show_EditError(i18next.t('lan_set_dialog_err1'));
+            return;
+        }else{
+            var hostIP_array = hostIP.split('.');
+            var subnetIP_array = subnetMask.split('.');
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+            if(subnetMask.indexOf("255.255.255.") == 0){
+                ipClass = 'Class C';
+            }else if(subnetMask.indexOf("255.255.") == 0){
+                ipClass = 'Class B';
+            }else{
+                ipClass = 'Class A';
+            }
+            if(ipClass == 'Class C'){//192.0.0.0-223.255.255.255
+                if((compareIP(hostIP, "192.0.1.1") == -1) || (compareIP(hostIP, "223.255.255.254") == 1)){
+                    show_EditError(i18next.t('lan_set_dialog_err2', {class_ip:'C'}));
+                    return;
+                }else{
+                    req.ipClass='0';
+                }
+            }else if(ipClass == 'Class B'){//128.0.0.0-191.255.255.255
+                if((compareIP(hostIP, "128.0.0.1") == -1) || (compareIP(hostIP, "191.255.255.254") == 1)){
+                    show_EditError(i18next.t('lan_set_dialog_err2', {class_ip:'B'}));
+                    return;
+                }else{
+                    req.ipClass='1';
+                }
+            }else{//0.0.0.0-127.255.255.255
+                if((compareIP(hostIP, "0.0.0.1") == -1) || (compareIP(hostIP, "127.255.255.254") == 1)){
+                    show_EditError(i18next.t('lan_set_dialog_err2', {class_ip:'A'}));
+                    return;
+                }else{
+                    if(hostIP_array[0] == 127){
+                        show_LanConfigError();
+                        return;
+                    }
+                    req.ipClass='2';
+                }
+            }
+            if(ipClass == 'Class C'){
+                if(subnetMask.indexOf("255.255.255.") != 0 || subnetIP_array[3] == 254 || subnetIP_array[3] == 255){
+                    show_EditError(i18next.t('lan_set_dialog_err3', {subnet_mask:'255.255.255.x'}));
+                    return;
+                }else{
+                    req.subnetMaskClass='0';
+                    if(!checkIP_classC(hostIP, subnetMask)){
+                        show_LanConfigError();
+                        return;
+                    }
+                }
+            }else if(ipClass == 'Class B'){
+                if(subnetMask.indexOf("255.255.") != 0  || subnetIP_array[3] != 0){
+                    show_EditError(i18next.t('lan_set_dialog_err3', {subnet_mask:'255.255.x.0'}));
+                    return;
+                }else{
+                    req.subnetMaskClass='1';
+                    if(!checkIP_classB(hostIP, subnetMask)){
+                        show_LanConfigError();
+                        return;
+                    }
+                }
+            }else{
+                if(subnetMask.indexOf("255.") != 0 || subnetIP_array[2] != 0 || subnetIP_array[3] != 0){
+                    show_EditError(i18next.t('lan_set_dialog_err3', {subnet_mask:'255.x.0.0'}));
+                    return;
+                }else{
+                    req.subnetMaskClass='2';
+                    if(!checkIP_classA(hostIP, subnetMask)){
+                        show_LanConfigError();
+                        return;
+                    }
+                }
+            }
+            var ipRange = {};
+            switch(parseInt(req.ipClass)){
+                case 0://class C
+                    ipRange = get_network_brosdcast_IP_classC(hostIP, subnetMask);
+                    break;
+                case 1://class B
+                    ipRange = get_network_brosdcast_IP_classB(hostIP, subnetMask);
+                    break;
+                case 2://class A
+                    ipRange = get_network_brosdcast_IP_classA(hostIP, subnetMask);
+                    break;
+                default:
+            }
+            
+            var network_array = ipRange.networkIP.split('.');
+            var brosdcast_array = ipRange.brosdcastIP.split('.');
+
+            req.hostIP = hostIP;
+            req.subnetMask = subnetMask;
+/*
+            if(parseInt(lan_mtu) >= 1280 && parseInt(lan_mtu) <= 1500){
+                req.lan_mtu = lan_mtu;
+            }else{
+                show_EditError("MTU is invalid. Please input valid MTU (1280-1500).");
+                return;
+            }
+*/
+			if(parseInt(req.ipClass) == 0 && (modeEoGRE == 1 || modeSelectType_CFG == 1)){
+				autoChangeDHCPRangeBaseHostIP();
+			}
+
+			if(dhcp_enable){
+				if(!validateIPaddress(dhcp_startIP)){
+					show_EditError(i18next.t('lan_set_dialog_err4'));
+				return;
+				}else if(!validateIPaddress(dhcp_endIP)){
+					show_EditError(i18next.t('lan_set_dialog_err5'));
+				return;
+				}else if(compareIP(dhcp_startIP, dhcp_endIP) == 1){
+					show_EditError(i18next.t('lan_set_dialog_err6'));
+				return;
+				}else if(((compareIP(hostIP, dhcp_startIP) == 1) && (compareIP(hostIP, dhcp_endIP) == -1)) ||
+							(hostIP == dhcp_startIP) || (hostIP == dhcp_endIP)){
+					if(dhcp_startIP == ipRange.networkIP){
+						show_EditError(i18next.t('lan_set_dialog_err7'));
+				return;
+					}else if(dhcp_endIP == ipRange.brosdcastIP){
+						show_EditError(i18next.t('lan_set_dialog_err8'));
+				return;
+					}else{
+						show_EditError(i18next.t('lan_set_dialog_err9'));
+				return;
+					}
+				}else{
+					if( !((compareIP(dhcp_startIP, ipRange.networkIP) == 1) && (compareIP(dhcp_startIP, ipRange.brosdcastIP) == -1)) ){
+						show_EditError(i18next.t('lan_set_dialog_err4'));
+						return;
+					}else if( !((compareIP(dhcp_endIP, ipRange.networkIP) == 1) && (compareIP(dhcp_endIP, ipRange.brosdcastIP) == -1)) ){
+						show_EditError(i18next.t('lan_set_dialog_err5'));
+						return;
+					}
+
+					if(parseInt(leaseTime) >= 2 && parseInt(leaseTime) <= 43200){
+						req.leaseTime = leaseTime;
+					}else{
+						show_EditError(i18next.t('lan_set_dialog_err10'));
+						return;
+					}
+				}
+			}
+			else{
+				req.leaseTime = leaseTime;
+			}
+
+			req.startIP = dhcp_startIP;
+			req.endIP = dhcp_endIP;
+			req.dhcp_enable = dhcp_enable;
+
+            document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des4');
+            toggle_modal();
+
+			if(hostIP == hostIP_O){
+	            do_fetch_api("POST", "/cgi-bin/cgi/req_LanInternetProtoSave.cgi", req)
+	            .then(response => {
+	                return response
+	                }).then(internetProtoSave_response).catch(response_error_print);
+            }else{
+            	do_fetch_api("POST", "/cgi-bin/cgi/req_LanInternetProtoSave.cgi", req);
+            	const data_rep = {};
+            	data_rep.result = true;
+            	timerId = setTimeout(internetProtoSave_response,5000, data_rep);
+            }
+
+        }
+    }
+
+    function EthPort4act_response(data_json){
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 500);
+        }else {
+            document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+            setTimeout(() => {
+                window.location.href = "/cgi-bin/cm/lan-settings.html";
+            }, 1000);
+        }
+    }
+    function EthPort4actSave(){
+    	document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des4');
+        toggle_modal();
+    	//prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        if("WAN Port" == ethPortSelect){
+        	req.ethWanEnabled = 1;
+        }else {
+        	req.ethWanEnabled = 0;	
+        }
+        //console.log("res: " + JSON.stringify(req));
+        do_fetch_api("POST", "/cgi-bin/cgi/req_ethWanEnabled.cgi", req, 10000)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(EthPort4act_response).catch(response_print);
+    }
+
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        document.getElementById('_dialog_modal_btn').innerHTML = i18next.t('ok');
+        document.getElementById('_dialog_modal_btn').onclick = function() {toggle_dialog_modal()};
+        
+        toggle_dialog_modal();
+    }
+    function addrSave_catch_response(){
+        setTimeout(toggle_modal,60000);
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 60500);
+    }
+    function editAddrSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 500);
+    }
+    function editAddrSave(idx){
+        toggle_EditAddr_modal();
+        if(!validateIPaddress(document.getElementById('editIPText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr1'));
+			return;
+        }else if(!validateAddIPaddress(dhcp_startIP, dhcp_endIP, document.getElementById('editIPText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr2'));
+			return;
+        }else if(!checkMACFormat(document.getElementById('editMACText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr3'));
+			return;
+        }else if(document.getElementById('editDevNameText').value.length > 32){
+            show_EditError(i18next.t('lan_set_add_editErr4'));
+			return;
+        }else if(isAlreadyAssigned(document.getElementById('editIPText').value, document.getElementById('editMACText').value, clientListJsonArray)){
+            show_EditError(i18next.t('lan_set_add_editErr5'));
+			return;
+        }else if(isEditExistDevName(document.getElementById('editDevNameText').value, staticAddrList, idx)){
+            show_EditError(i18next.t('lan_set_add_editErr6'));
+			return;
+        }else if(isEditExistMac(document.getElementById('editMACText').value, staticAddrList, idx)){
+            show_EditError(i18next.t('lan_set_add_editErr7'));
+			return;
+        }else if(isEditExistIP(document.getElementById('editIPText').value, staticAddrList, idx)){
+            show_EditError(i18next.t('lan_set_add_editErr8'));
+			return;
+        }else if(!validateDeviceNameStr(document.getElementById('editDevNameText').value, staticAddrList, idx)){
+            show_EditError(i18next.t('lan_set_add_editErr9'));
+			return;
+        }else{
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+            if(document.getElementById('editDevNameText').value == old_DevName)
+                req.deviceName = '0';
+            else
+                req.deviceName = document.getElementById('editDevNameText').value;
+            if(document.getElementById('editIPText').value == old_IP)
+                req.Static_IP = '0';
+            else
+                req.Static_IP = document.getElementById('editIPText').value;
+            if(document.getElementById('editMACText').value == old_MAC)
+                req.editMAC = '0';
+            else
+                req.editMAC = document.getElementById('editMACText').value;
+
+            req.instance = edit_instance;
+            req.interface_index = interface_id;
+            document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des4');
+            toggle_modal();
+
+            //console.log("req:" + JSON.stringify(req));
+
+            do_fetch_api("POST", "/cgi-bin/cgi/req_LanStaticAddrModify.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(editAddrSave_response).catch(addrSave_catch_response);
+
+        }
+    }
+    function addAddrSave_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 500);
+    }
+    function validateAddIPaddress(startIP, endIP, addIP){
+	/*
+        var addIP_split = addIP.split('.');
+        var startIP_split = startIP.split('.');
+        var endIP_split = endIP.split('.'); 
+        var range1 = parseInt(endIP_split[0], 10) - parseInt(startIP_split[0], 10);
+        var range2 = parseInt(endIP_split[1], 10) - parseInt(startIP_split[1], 10);
+        var range3 = parseInt(endIP_split[2], 10) - parseInt(startIP_split[2], 10);
+        var range4 = parseInt(endIP_split[3], 10) - parseInt(startIP_split[3], 10);
+        var add_range1 = parseInt(addIP_split[0], 10) - parseInt(startIP_split[0], 10);
+        var add_range2 = parseInt(addIP_split[1], 10) - parseInt(startIP_split[1], 10);
+        var add_range3 = parseInt(addIP_split[2], 10) - parseInt(startIP_split[2], 10);
+        var add_range4 = parseInt(addIP_split[3], 10) - parseInt(startIP_split[3], 10);
+        
+        if(add_range1 < 0 || add_range2 < 0 || add_range3 < 0 || add_range4 < 0){
+            return false;
+        }
+        
+        if((range1 - add_range1) >= 0 && (range2 - add_range2) >= 0 && (range3 - add_range3) >= 0 && (range4 - add_range4) >= 0){
+            return true;
+        }else{
+            return false;
+        }
+	*/
+		if((ipCmp(addIP, startIP) == -1 ) || (ipCmp(addIP, endIP) == 1 )){
+			return false;
+		}else{
+            return true;
+		}
+    }
+    function isExistDevName(devName, staticAddrList){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(devName == staticAddrList[i].deviceName){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isExistMac(mac, staticAddrList){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(mac.toUpperCase() == staticAddrList[i].mac_addr.toUpperCase()){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isExistIP(addIP, staticAddrList){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(addIP == staticAddrList[i].ip_addr){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isAlreadyAssigned(addIP, addMac, clientAddrList){
+        for(var i=0 ; i<(clientAddrList.length-1) ; i++){
+            if(addIP == clientAddrList[i].IP_address && addMac != clientAddrList[i].MAC){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isEditExistDevName(devName, staticAddrList, idx){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(devName == staticAddrList[i].deviceName && i != idx){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isEditExistMac(mac, staticAddrList, idx){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(mac.toUpperCase() == staticAddrList[i].mac_addr.toUpperCase() && i != idx){
+                return true;
+            }
+        }
+        return false;
+    }
+    function isEditExistIP(addIP, staticAddrList, idx){
+        for(var i=0 ; i<staticAddrList.length ; i++){
+            if(addIP == staticAddrList[i].ip_addr && i != idx){
+                return true;
+            }
+        }
+        return false;
+    }
+    function addAddrSave(){
+        toggle_AddAddr_modal();
+        
+        if(!validateIPaddress(document.getElementById('addIPText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr1'));
+			return;
+        }else if(!checkMACFormat(document.getElementById('addMACText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr3'));
+			return;
+        }else if(document.getElementById('addDevNameText').value.length <= 0){
+            show_EditError(i18next.t('lan_set_add_editErr10'));
+			return;
+        }else if(document.getElementById('addDevNameText').value.length > 32){
+            show_EditError(i18next.t('lan_set_add_editErr4'));
+			return;
+        }else if(!validateAddIPaddress(dhcp_startIP, dhcp_endIP, document.getElementById('addIPText').value)){
+            show_EditError(i18next.t('lan_set_add_editErr2'));
+			return;
+        }else if(isExistDevName(document.getElementById('addDevNameText').value, staticAddrList)){
+            show_EditError(i18next.t('lan_set_add_editErr6'));
+			return;
+        }else if(isExistMac(document.getElementById('addMACText').value, staticAddrList)){
+            show_EditError(i18next.t('lan_set_add_editErr7'));
+			return;
+        }else if(isExistIP(document.getElementById('addIPText').value, staticAddrList)){
+            show_EditError(i18next.t('lan_set_add_editErr8'));
+			return;
+        }else if(isAlreadyAssigned(document.getElementById('addIPText').value, document.getElementById('addMACText').value, clientListJsonArray)){
+            show_EditError(i18next.t('lan_set_add_editErr5'));
+			return;
+        }else if(!validateDeviceNameStr(document.getElementById('addDevNameText').value, staticAddrList)){
+            show_EditError(i18next.t('lan_set_add_editErr9'));
+			return;
+        }else if(staticAddrList.length >= 20){
+            show_EditError(i18next.t('lan_set_add_editErr11'));
+			return;
+        }else{
+            //prepare json data
+            const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+            req.deviceName = document.getElementById('addDevNameText').value;
+            req.Static_IP = document.getElementById('addIPText').value;
+            req.MAC = document.getElementById('addMACText').value;
+            req.interface_index = 1;
+
+            document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des4');
+            toggle_modal();
+
+            //console.log("req:" + JSON.stringify(req));
+
+            do_fetch_api("POST", "/cgi-bin/cgi/req_LanStaticAddrAdd.cgi", req)
+            .then(response => {setTimeout(toggle_modal,1000); return response}).then(addAddrSave_response).catch(addrSave_catch_response);
+
+        }
+    }
+
+/* Change select object text when selected item(s) */
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+        //console.log(text+ "!!!" + selectItem.innerHTML);
+        selectItem.innerHTML = text;
+        if(id.indexOf("EthPortSelect") != -1){
+            if(text == i18next.t('lan_set_eth_wan_port')){
+                ethPortSelect = "WAN Port";
+            }else{
+                ethPortSelect = "LAN Port";
+            }
+        }else if(id.indexOf("") != -1){
+        }
+    }
+    function maxLeng(id, leng) {
+        if (document.getElementById(id).value.length > leng) {
+            document.getElementById(id).value = document.getElementById(id).value.slice(0,leng); 
+        }
+        //lan_mtu = document.getElementById(platform + '-lanMTUText').value;
+    }
+    function ipAddressInput() {
+        hostIP = document.getElementById(platform + '-lanHIPAddressText').value;
+    }
+    function subnetMaskInput() {
+        subnetMask = document.getElementById(platform + '-lanHSMText').value;
+    }
+    function deleteAddr_response(data_json){
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+        }else {
+        }
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/lan-settings.html";}, 500);
+    }
+    function addrDelete(idx){
+    	toggle_dialog_modal();//hide dialog
+    	document.getElementById('_dialog_modal_btn').innerHTML = i18next.t('ok');
+        document.getElementById('_dialog_modal_btn').onclick = function() {toggle_dialog_modal()};
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.instance = staticAddrList[idx].index;
+        req.interface_id = staticAddrList[idx].interface_index;
+
+        document.getElementById('_modal_text').innerHTML = i18next.t('lan_set_dialog_des4');
+        toggle_modal();
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_LanStaticAddrDelete.cgi", req, 10000)
+        .then(response => {setTimeout(toggle_modal,1000); return response}).then(deleteAddr_response).catch(addrSave_catch_response);
+    }
+    function pre_addrDelete(idx){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('lan_set_dialog_title3');
+        document.getElementById('_dialog_modal_text').innerHTML = i18next.t('lan_set_dialog_des5');
+        document.getElementById('_dialog_modal_warning').innerHTML = "";
+        document.getElementById('_dialog_modal_btn').innerHTML = i18next.t('delete');
+        document.getElementById('_dialog_modal_btn').onclick = function() {addrDelete(idx)};
+        
+        toggle_dialog_modal();//show dialog
+    }
+    function addrEdit(idx){
+        //document.getElementById('_editAddr_modal_header').innerHTML = "Edit IPv4 Static Address";
+        old_DevName = staticAddrList[idx].deviceName;
+        document.getElementById('editDevNameText').value = staticAddrList[idx].deviceName;
+        old_IP = staticAddrList[idx].ip_addr;
+        document.getElementById('editIPText').value = staticAddrList[idx].ip_addr;
+        old_MAC = staticAddrList[idx].mac_addr;
+        document.getElementById('editMACText').value = staticAddrList[idx].mac_addr;
+        edit_instance = staticAddrList[idx].index;
+        interface_id = staticAddrList[idx].interface_index;
+        document.getElementById('editAddrBtn').onclick = function() {editAddrSave(idx)};
+        toggle_EditAddr_modal();
+    }
+    function addrMore(idx){
+        document.getElementById('_MoreInfo_modal_header').innerHTML = i18next.t('lan_set_dialog_title4');
+        document.getElementById('_MoreInfoDevNameText').innerHTML = staticAddrList[idx].deviceName;
+        document.getElementById('_MoreInfoIPText').innerHTML = staticAddrList[idx].ip_addr;
+        document.getElementById('_MoreInfoHSMText').innerHTML = staticAddrList[idx].subnetMask;
+        document.getElementById('_MoreInfoMACText').innerHTML = staticAddrList[idx].mac_addr;
+        //document.getElementById('_MoreInfoConTypeText').innerHTML = staticAddrList[idx].connectionType;
+        toggle_MoreInfo_modal();
+    }
+    //Static IPv4 sort
+    var sortNameStatus = 1;
+    var sortIPStatus = 1;
+    var sortMACStatus = 1;
+    function sortName(){
+        sortNameStatus = sortNameStatus%2;
+        pageIdx = 0;
+        sortIPStatus = 1;
+        sortMACStatus = 1;
+        document.getElementById(platform + '-sortIPImg').src="/images/iconSort.svg";
+        if(platform != 'mobile'){
+            document.getElementById(platform + '-sortNameImg').src="/images/iconSort.svg";
+            document.getElementById(platform + '-sortMacImg').src="/images/iconSort.svg";
+        }
+        switch(sortNameStatus){
+            case 1:
+                //A-Z
+                document.getElementById(platform + '-sortNameImg').src="/images/iconA-Z.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.deviceName < b.deviceName) { return -1; }
+                    if(a.deviceName > b.deviceName) { return 1; }
+                    return 0;
+                });
+            break;
+            case 0:
+                //Z-A
+                document.getElementById(platform + '-sortNameImg').src="/images/iconZ-A.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.deviceName > b.deviceName) { return -1; }
+                    if(a.deviceName < b.deviceName) { return 1; }
+                    return 0;
+                });
+            break;
+            default:
+            break;
+        }
+        initAddrListTable(staticAddrList);
+        //console.log('sortNameStatus: ' + sortNameStatus);
+        sortNameStatus++;
+    }
+    
+    function sortIP(){
+        sortIPStatus = sortIPStatus%2;
+        pageIdx = 0;
+        sortNameStatus = 1;
+        sortMACStatus = 1;
+        
+        document.getElementById(platform + '-sortIPImg').src="/images/iconSort.svg";
+        if(platform != 'mobile'){
+            document.getElementById(platform + '-sortNameImg').src="/images/iconSort.svg";
+            document.getElementById(platform + '-sortMacImg').src="/images/iconSort.svg";
+        }
+        switch(sortIPStatus){
+            case 1:
+                //A-Z
+                document.getElementById(platform + '-sortIPImg').src="/images/iconA-Z.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.ip_addr < b.ip_addr) { return -1; }
+                    if(a.ip_addr > b.ip_addr) { return 1; }
+                    return 0;
+                });
+            break;
+            case 0:
+                //Z-A
+                document.getElementById(platform + '-sortIPImg').src="/images/iconZ-A.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.ip_addr > b.ip_addr) { return -1; }
+                    if(a.ip_addr < b.ip_addr) { return 1; }
+                    return 0;
+                });
+            break;
+            default:
+            break;
+        }
+        initAddrListTable(staticAddrList);
+        //console.log('sortIPStatus: ' + sortIPStatus);
+        sortIPStatus++;
+    }
+
+    function sortMAC(){
+        sortMACStatus = sortMACStatus%2;
+        pageIdx = 0;
+        sortNameStatus = 1;
+        sortIPStatus = 1;
+        document.getElementById(platform + '-sortIPImg').src="/images/iconSort.svg";
+        if(platform != 'mobile'){
+            document.getElementById(platform + '-sortNameImg').src="/images/iconSort.svg";
+            document.getElementById(platform + '-sortMacImg').src="/images/iconSort.svg";
+        }
+        switch(sortMACStatus){
+            case 1:
+                //A-Z
+                document.getElementById(platform + '-sortMacImg').src="/images/iconA-Z.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.mac_addr < b.mac_addr) { return -1; }
+                    if(a.mac_addr > b.mac_addr) { return 1; }
+                    return 0;
+                });
+            break;
+            case 0:
+                //Z-A
+                document.getElementById(platform + '-sortMacImg').src="/images/iconZ-A.svg";
+                staticAddrList.sort(function(a, b) {
+                    if(a.mac_addr > b.mac_addr) { return -1; }
+                    if(a.mac_addr < b.mac_addr) { return 1; }
+                    return 0;
+                });
+            break;
+            default:
+            break;
+        }
+        initAddrListTable(staticAddrList);
+        //console.log('sortMACStatus: ' + sortMACStatus);
+        sortMACStatus++;
+    }
+
+    //Modal
+    function toggle_AddAddr_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_AddAddr_modal'));
+        _myModal.toggle();
+    }
+    function saveAddAddrListener() {
+        var myModalEl = document.getElementById('_AddAddr_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function toggle_EditAddr_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_EditAddr_modal'));
+        _myModal.toggle();
+    }
+    function saveEditAddrListener() {
+        var myModalEl = document.getElementById('_EditAddr_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function toggle_MoreInfo_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_MoreInfo_modal'));
+        _myModal.toggle();
+    }
+    function saveMoreInfoListener() {
+        var myModalEl = document.getElementById('_MoreInfo_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function confirm_toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('confirm_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+    
+    function setAltToImgItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+    }
+    function setAriaLabelToInputItem(p_id){
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .modal-body .cardViewSelect{ 
+        width: 100%!important;
+    }
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .modal-body .cardViewSelect{ 
+        width: 50%!important;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+			<div class="row">
+				<div class="col">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_IP_AddrSet">LAN IP Address Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_hostIP">Host IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xxl-lanHIPAddressText" data-i18n-aria-label="lan_set_hostIP"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_subnet">Host Subnet Mask</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xxl-lanHSMText" data-i18n-aria-label="lan_set_subnet"></input>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>   
+				</div>  
+				<div class="col"> 
+                <table class="table table-borderless">    
+                <thead>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_DHCP_Set">DHCP Server Settings</th>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_DHCP_server">DHCP Server</td>
+                    <td class="w-25">
+                        <input class="switch_check" type="checkbox" id="xxl-dhcpServer" data-i18n-aria-label="lan_set_DHCP_server" value="" checked>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" id='xxl-dhcpstartIPTextTitleTd' data-i18n="lan_set_start_addr">Starting IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xxl-dhcpstartIPText" data-i18n-aria-label="lan_set_start_addr"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xxl-dhcpEndingIPTextTitleTd" data-i18n="lan_set_end_addr">Ending IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xxl-dhcpEndingIPText" data-i18n-aria-label="lan_set_end_addr"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                      <td class="w-25 cardViewTd" data-i18n="lan_set_leaseTime">Lease Time (mins)</td>
+                      <td class="w-25">
+                        <div class="cardViewSelect">
+                        <input type="number" class="cardViewInputTextWithLabel" id="xxl-dhcpLeaseText" data-i18n-aria-label="lan_set_leaseTime"></input>
+                        <label class="cardViewInputSubLabel">(2 - 43200)</label>
+                        </div>
+                      </td>
+                  </tr>
+                </tbody>
+                </table>                
+                <button class="inCard_SaveBtn" id="xxl-dhcpBtn" data-i18n="save">Save</button>
+				</div>
+            </div>
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between" id="xxl-staticAddrListDiv">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row" class="">
+                      <label class="cardViewTitle" data-i18n="lan_set_StaticIP_list">IPv4 Static Address Assignment from DHCP Address Pool</label>
+                      <button class="cardViewTitleBtn" id="xxl-addBtn"><img src="/images/iconAddNew.svg" data-i18n-img-alt="lan_set_static_ip_add"><span data-i18n="add_entry"> Add Entry</span></button>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_deviceName">Device Name</label>
+                        <button class="cardViewSortBtn" id="xxl-sortNameBtn">
+                            <img class="cardViewSortBtn" id="xxl-sortNameImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortName">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_IP_Addr">IP Address</label>
+                        <button class="cardViewSortBtn" id="xxl-sortIPBtn">
+                            <img id="xxl-sortIPImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortIP">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_mac_Addr">MAC Address</label>
+                        <button class="cardViewSortBtn" id="xxl-sortMacBtn">
+                            <img id="xxl-sortMacImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortMAC">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="lan_set_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xxl-tbodystaticAddrList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-0 fxCardViewBorder" id="xxl-EthPortSettings_div">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_eth_port">Ethernet Port Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-EthPortTitleTd">Ethernet Port 1 acts as</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xxl-EthPortSelect">LAN Port</button>
+                        <button type="button" aria-label="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xxl-EthPortSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xxl-EthPort_LAN" data-i18n="lan_set_eth_lan_port">LAN Port</a></li>
+                          <li><a class="dropdown-item" href="#" id="xxl-EthPort_WAN" data-i18n="lan_set_eth_wan_port">WAN Port</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xxl-EthPortTextTd">Ethernet Port 1 can act as WAN port or LAN port.<br>New settings will take effect after the device reboot.</td>
+                  </tr>
+                </tbody>
+                </table>
+                <br><br>
+                <button class="inCard_SaveBtn" id="xxl-cellularEthPortSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_IP_AddrSet">LAN IP Address Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- <tr>
+                    <td class="w-25 cardViewTd">Host Name</td>
+                    <td class="w-25">
+                      <label class="cardViewText" id="xl-lanHNText">JioODU_123456</label>
+                    </td>
+                  </tr> -->
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_hostIP">Host IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xl-lanHIPAddressText" data-i18n-aria-label="lan_set_hostIP"></input>
+                      </div>
+                    </td>
+                  </tr>                  
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_subnet">Host Subnet Mask</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xl-lanHSMText" data-i18n-aria-label="lan_set_subnet"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <!--<tr>
+                     <td class="w-25 cardViewTd">MTU</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="number" oninput="maxLeng('xl-lanMTUText',4)" class="cardViewInputTextWithLabel" id="xl-lanMTUText"></input>
+                      <label class="cardViewInputSubLabel">(1280 - 1500)</label>
+                      </div>
+                    </td> 
+                  </tr> -->
+                </tbody>
+                </table>                
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_DHCP_Set">DHCP Server Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_DHCP_server">DHCP Server</td>
+                    <td class="w-25">
+                      <input class="switch_check" type="checkbox" id="xl-dhcpServer" data-i18n-aria-label="lan_set_DHCP_server" value="" checked>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" id='xl-dhcpstartIPTextTitleTd' data-i18n="lan_set_start_addr">Starting IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xl-dhcpstartIPText" data-i18n-aria-label="lan_set_start_addr"></input>
+                      </div>
+                    </td>
+                  </tr>                  
+                  <tr>
+                    <td class="w-25 cardViewTd" id='xl-dhcpEndingIPTextTitleTd' data-i18n="lan_set_end_addr">Ending IP Address</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xl-dhcpEndingIPText" data-i18n-aria-label="lan_set_end_addr"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" data-i18n="lan_set_leaseTime">Lease Time (mins)</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="number" class="cardViewInputTextWithLabel" id="xl-dhcpLeaseText" data-i18n-aria-label="lan_set_leaseTime"></input>
+                      <label class="cardViewInputSubLabel">(2 - 43200)</label>
+                      </div>
+                    </td>
+                  </tr>
+                  <!--
+                  <tr>
+                    <td class="w-25 cardViewTd">Domain Name</td>
+                    <td class="w-25">
+                      <div class="cardViewSelect">
+                      <input type="text" class="cardViewInputText" id="xl-dhcpDNText" oninput="" value=""></input>
+                      </div>
+                    </td>
+                  </tr>
+                  -->
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-dhcpBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between" id="xl-staticAddrListDiv">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless cardViewTable">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row" class="">
+                      <label class="cardViewTitle" data-i18n="lan_set_StaticIP_list">IPv4 Static Address Assignment from DHCP Address Pool</label>
+                      <button class="cardViewTitleBtn" id="xl-addBtn"><img src="/images/iconAddNew.svg" data-i18n-img-alt="lan_set_static_ip_add"><span data-i18n="add_entry"> Add Entry</span></button>
+                    </th>
+                  </tr>
+                  <tr class="cardViewTableFirstTR">
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_deviceName">Device Name</label>
+                        <button class="cardViewSortBtn" id="xl-sortNameBtn">
+                            <img id="xl-sortNameImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortName">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_IP_Addr">IP Address</label>
+                        <button class="cardViewSortBtn" id="xl-sortIPBtn">
+                            <img id="xl-sortIPImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortIP">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD">
+                        <label data-i18n="lan_set_mac_Addr">MAC Address</label>
+                        <button class="cardViewSortBtn" id="xl-sortMacBtn">
+                            <img id="xl-sortMacImg" src="/images/iconSort.svg" data-i18n-img-alt="lan_set_sortMAC">
+                        </button>
+                    </td>
+                    <td class="w-25 cardViewTableFirstTD"><label data-i18n="lan_set_actions">Actions</label></td>
+                  </tr>
+                </thead>
+                <tbody id="xl-tbodystaticAddrList">
+                </tbody>
+                </table>                
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between" id="xl-EthPortSettings_div">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_eth_port">Ethernet Port Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-EthPortTitleTd">Ethernet Port 1 acts as</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect">
+                        <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="xl-EthPortSelect">LAN Port</button>
+                        <button type="button" aria-label="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="xl-EthPortSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                          <li><a class="dropdown-item" href="#" id="xl-EthPort_LAN" data-i18n="lan_set_eth_lan_port">LAN Port</a></li>
+                          <li><a class="dropdown-item" href="#" id="xl-EthPort_WAN" data-i18n="lan_set_eth_wan_port">WAN Port</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-EthPortTextTd">Ethernet port 1 can act as WAN port or LAN port.<br>New settings will take effect after the device reboot.</td>
+                  </tr>
+                </tbody>
+                </table>
+                <br><br>
+                <button class="inCard_SaveBtn" id="xl-cellularEthPortSaveBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile"> 
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseIP-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseIP">
+                        <span data-i18n="lan_set_IP_AddrSet">LAN IP Address Settings</span>
+                        <img id="collapseIP-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseIP" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <!-- <tr>
+                                <td class="cardViewTd">Host Name</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <label class="cardViewText" id="mobile-lanHNText">JioODU_123456</label>
+                                </td>
+                              </tr> -->
+                              <tr>
+                                <td class="cardViewTd" data-i18n="lan_set_hostIP">Host IP Address</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="text" class="cardViewInputText" id="mobile-lanHIPAddressText" data-i18n-aria-label="lan_set_hostIP"></input>
+                                  </div>
+                                </td>
+                              </tr>                              
+                              <tr>
+                                <td class="cardViewTd" data-i18n="lan_set_subnet">Host Subnet Mask</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="text" class="cardViewInputText" id="mobile-lanHSMText" data-i18n-aria-label="lan_set_subnet"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <!-- <tr>
+                                <td class="cardViewTd">MTU</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="number" oninput="maxLeng('mobile-lanMTUText',4)" class="cardViewInputTextWithLabel" id="mobile-lanMTUText"></input>
+                                  <label class="cardViewInputSubLabel">(1280 - 1500)</label>
+                                  </div>
+                                </td>
+                              </tr> -->
+                            </tbody>
+                            </table>                
+                            <table class="table table-borderless">
+                            <thead>
+                              <tr>
+                                <th colspan="2" scope="row" class="cardViewTitle" data-i18n="lan_set_DHCP_Set">DHCP Server Settings</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" data-i18n="lan_set_DHCP_server">DHCP Server</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div>
+                                  <input class="switch_check" type="checkbox" id="mobile-dhcpServer" data-i18n-aria-label="lan_set_DHCP_server" value="" checked>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id='mobile-dhcpstartIPTextTitleTd' data-i18n="lan_set_start_addr">Starting IP Address</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="text" class="cardViewInputText" id="mobile-dhcpstartIPText" data-i18n-aria-label="lan_set_start_addr"></input>
+                                  </div>
+                                </td>
+                              </tr> 
+                              <tr>
+                                <td class="cardViewTd" id='mobile-dhcpEndingIPTextTitleTd' data-i18n="lan_set_end_addr">Ending IP Address</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="text" class="cardViewInputText" id="mobile-dhcpEndingIPText" data-i18n-aria-label="lan_set_end_addr"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" data-i18n="lan_set_leaseTime">Lease Time (mins)</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                                  <input type="number" class="cardViewInputTextWithLabel" id="mobile-dhcpLeaseText" data-i18n-aria-label="lan_set_leaseTime"></input>
+                      			  <label class="cardViewInputSubLabel">(2 - 43200)</label>
+                                  </div>
+                                </td>
+                              </tr> 
+                              <!--
+                              <tr>
+                                <td class="cardViewTd">Domain Name</td>
+                              </tr>
+                              <tr>
+                                <td class="">
+                                  <div class="cardViewSelect">
+                      			  <input type="text" class="cardViewInputText" id="mobile-dhcpDNText" oninput="" value=""></input>
+                      			  </div>
+                                </td>
+                              </tr>
+                              -->
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-dhcpBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between"  id="mobile-staticAddrListDiv">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseISAL-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseISAL">
+                        <span data-i18n="lan_set_StaticIP_list">IPv4 Static Address Assignment from DHCP Address Pool</span>
+                        <img id="collapseISAL-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseISAL" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless cardViewTable">
+                            <thead>
+                              <tr>
+                                <th colspan="2" scope="row" class="">
+                                  <button class="cardViewTitleBtn" id="mobile-addBtn"><img src="/images/iconAddNew.svg" data-i18n-img-alt="lan_set_static_ip_add"><span data-i18n="add_entry"> Add Entry</span></button>
+                                </th>
+                              </tr>
+                              <tr class="cardViewTableFirstTR">
+                                <td class="w-50 cardViewTableFirstTD">
+                                    <label data-i18n="lan_set_deviceName">Device Name</label>
+                                    <!-- 
+                                    <button class="cardViewSortBtn" id="mobile-sortIPBtn" onclick="sortIP()">
+                                        <img id="mobile-sortIPImg" src="/images/iconSort.svg">
+                                    </button> 
+                                    -->
+                                </td>
+                                <td class="w-50 cardViewTableFirstTD"><label data-i18n="lan_set_actions">Actions</label></td>
+                              </tr>
+                            </thead>
+                            <tbody id="mobile-tbodystaticAddrList">
+                            </tbody>
+                            </table>    
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row ms-0 me-0 mt-4 justify-content-between" id="mobile-EthPortSettings_div">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseEthPort-header">
+                        <a class="btn" 
+                        data-bs-toggle="collapse" href="#collapseEthPort">
+                        <span data-i18n="lan_set_eth_port">Ethernet Port Settings</span>
+                        <img id="collapseEthPort-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseEthPort" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-EthPortTitleTd">Ethernet Port 1 acts as</td>
+                              <tr>
+                              </tr>
+                                <td class="w-50 cardViewTd">
+                                  <div class="cardViewSelect">
+                                    <button class="btn btn-secondary cardViewSelectDownLeft" type="button" id="mobile-EthPortSelect">LAN Port</button>
+                                    <button type="button" aria-label="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split cardViewSelectDownRight" id="mobile-EthPortSelectRight" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden"></span></button>
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                                      <li><a class="dropdown-item" href="#" id="mobile-EthPort_LAN" data-i18n="lan_set_eth_lan_port">LAN Port</a></li>
+                                      <li><a class="dropdown-item" href="#" id="mobile-EthPort_WAN" data-i18n="lan_set_eth_wan_port">WAN Port</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="w-50 cardViewTd" id="mobile-EthPortTextTd">Ethernet port 1 can act as WAN port or LAN port.<br>New settings will take effect after the device reboot.</td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-cellularEthPortSaveBtn" data-i18n="save">Save</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+<!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text">Authenticating, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_modal_btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_AddAddr_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+                    <label class="modal-title dialog_modal_header" id="_addAddr_modal_header">
+                    <span data-i18n="lan_set_dialog_title1">Add IPv4 Static Address</span>
+                    <p id="noteLabel" data-i18n="lan_set_dialog_subtitle1">
+                        <br>(The IPv4 static address will take effect after DHCP leases time expired or device rebooted)
+                    </p>
+                    </label>
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_deviceName">Device Name</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="addDevNameTextDiv">
+                            <input class="cardViewInputText" id="addDevNameText" data-i18n-aria-label="lan_set_deviceName"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_IP_Addr">IP Address</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="addIPTextDiv">
+                            <input class="cardViewInputText" id="addIPText" data-i18n-aria-label="lan_set_IP_Addr"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_mac_Addr">MAC Address</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="addMACTextDiv">
+                            <input class="cardViewInputText" id="addMACText" data-i18n-aria-label="lan_set_mac_Addr"></input>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="addAddr_modal_btn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_EditAddr_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+                    <label class="modal-title dialog_modal_header" id="_editAddr_modal_header">
+                    <span data-i18n="lan_set_dialog_title2">Edit IPv4 Static Address</span>
+                    <p id="noteLabelEdit" data-i18n="lan_set_dialog_subtitle1">
+                        <br>(The IPv4 static address will take effect after DHCP leases time expired or device rebooted)
+                    </p>
+                    </label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_deviceName">Device Name</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="editDevNameTextDiv">
+                            <input class="cardViewInputText" id="editDevNameText" data-i18n-aria-label="lan_set_deviceName"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_IP_Addr">IP Address</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="editIPTextDiv">
+                            <input class="cardViewInputText" id="editIPText" data-i18n-aria-label="lan_set_IP_Addr"></input>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_mac_Addr">MAC Address</div>
+                        <div class="p-2 w-50 flex-fill cardViewSelect" id="editMACTextDiv">
+                            <input class="cardViewInputText" id="editMACText" data-i18n-aria-label="lan_set_mac_Addr"></input>
+                        </div>
+                    </div>
+					<button class="inModal_Btn" id="editAddrBtn" data-i18n="save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="_MoreInfo_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_MoreInfo_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_deviceName">Device Name</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_MoreInfoDevNameText"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_IP_Addr">IP Address</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_MoreInfoIPText"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_subnet">Host Subnet Mask</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_MoreInfoHSMText"></label>
+                        </div>
+                    </div>
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle" data-i18n="lan_set_mac_Addr">MAC Address</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_MoreInfoMACText"></label>
+                        </div>
+                    </div>
+<!--
+                    <div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 w-50 align-items-center flex-fill inModalTitle">Connection Type</div>
+                        <div class="p-2 w-50 flex-fill inModalTitle">
+                            <label class="inTable_modal_text" id="_MoreInfoConTypeText"></label>
+                        </div>
+                    </div>
+-->
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade dialog_modal" id="confirm_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="confirm_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="confirm_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="confirm_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="confirm_dialog_btn" data-i18n="lan_set_continue">CONTINUE</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    <!--/form--> 
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('lan_set_title');
+            setAltToImgItem("_fx_pc");
+            setAltToImgItem("_fx_pc_xl");
+            setAltToImgItem("_fx_mobile");
+            setAltToImgItem("_loadingModal");
+            setAltToImgItem("_dialog_modal");
+            setAltToImgItem("_AddAddr_modal");
+            setAltToImgItem("_EditAddr_modal");
+            setAltToImgItem("_MoreInfo_modal");
+            setAltToImgItem("confirm_dialog_modal");
+            setAriaLabelToInputItem("_fx_pc");
+            setAriaLabelToInputItem("_fx_pc_xl");
+            setAriaLabelToInputItem("_fx_mobile");
+            setAriaLabelToInputItem("_loadingModal");
+            setAriaLabelToInputItem("_dialog_modal");
+            setAriaLabelToInputItem("_AddAddr_modal");
+            setAriaLabelToInputItem("_EditAddr_modal");
+            setAriaLabelToInputItem("_MoreInfo_modal");
+            setAriaLabelToInputItem("confirm_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('lan_set_title');
+            document.getElementById(platform + '-EthPortTitleTd').innerHTML = i18next.t('lan_set_eth_port_title', {ethPortIdx: ethWanPortIdx});
+    		document.getElementById(platform + '-EthPortTextTd').innerHTML = i18next.t('lan_set_eth_port_des', {ethPortIdx: ethWanPortIdx});
+            selectObj_init (platform);
+            setAltToImgItem("_fx_pc");
+            setAltToImgItem("_fx_pc_xl");
+            setAltToImgItem("_fx_mobile");
+            setAltToImgItem("_loadingModal");
+            setAltToImgItem("_dialog_modal");
+            setAltToImgItem("_AddAddr_modal");
+            setAltToImgItem("_EditAddr_modal");
+            setAltToImgItem("_MoreInfo_modal");
+            setAltToImgItem("confirm_dialog_modal");
+            setAriaLabelToInputItem("_fx_pc");
+            setAriaLabelToInputItem("_fx_pc_xl");
+            setAriaLabelToInputItem("_fx_mobile");
+            setAriaLabelToInputItem("_loadingModal");
+            setAriaLabelToInputItem("_dialog_modal");
+            setAriaLabelToInputItem("_AddAddr_modal");
+            setAriaLabelToInputItem("_EditAddr_modal");
+            setAriaLabelToInputItem("_MoreInfo_modal");
+            setAriaLabelToInputItem("confirm_dialog_modal");
+        }
+    });
+    document.getElementById("noteLabelEdit").style = 'color: var(--errorColor);text-align: left;font: normal normal 500 12px/12px Roboto;margin: 0;';
+    document.getElementById("noteLabel").style = 'color: var(--errorColor);text-align: left;font: normal normal 500 12px/12px Roboto;margin: 0;';
+</script>
+</html>

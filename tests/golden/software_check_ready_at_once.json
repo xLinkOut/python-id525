@@ -1,0 +1,30 @@
+{
+  "scenario": "software_check_ready_at_once",
+  "page": "adm-sw",
+  "endpoint": "acs_check_update",
+  "ui_ref": "adm-sw.html:452",
+  "call": "software.check_for_update",
+  "inputs": {},
+  "call_kwargs": {
+    "poll_interval": 0
+  },
+  "answers": {
+    "acs_check_update": {
+      "result": "ready",
+      "AvailSoftwareVersion": "ID525_REL_1.0.10.01"
+    }
+  },
+  "refused": false,
+  "fixture": "adm-sw",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "acs_check_update",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "no poll when the first answer is already ready",
+  "fixture_sha256": "3df89336eb65128b13daa732c697452fc65748c5ed51940e50634253d3e40ec0"
+}

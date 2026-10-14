@@ -1,0 +1,99 @@
+"""Scenario model and DOM helpers shared by all pages."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from playwright.async_api import Page as BrowserPage
+
+    from id525.endpoints import Endpoint, Page
+
+    type Driver = Callable[[BrowserPage, dict[str, Any]], Awaitable[None]]
+
+
+@dataclass(frozen=True)
+class Scenario:
+    """One user interaction in the router UI, and the client call equivalent to it.
+
+    ``drive`` performs the interaction in the browser; ``call`` names the client
+    method (``"section.method"``) that must send the very same sequence of
+    mutating requests when given ``inputs``. ``endpoint`` is the endpoint the
+    scenario documents (it must be among them). With ``refused=True`` the UI
+    must refuse to send anything (client-side validation) and the client must
+    raise ``Id525ValidationError``.
+    """
+
+    name: str
+    page: Page
+    endpoint: Endpoint
+    call: str
+    inputs: dict[str, Any]
+    drive: Driver
+    refused: bool = False
+    notes: str = ""
+    call_kwargs: dict[str, Any] = field(default_factory=dict)
+    """Extra arguments for the client call only (e.g. ``confirm=True``)."""
+    answers: dict[str, Any] = field(default_factory=dict)
+    """Canned router answers, endpoint -> JSON object, or a list of objects
+    answered in turn (the last one repeats). Merged over ``{"result": true}``;
+    replayed identically by the golden test so client and UI see the same."""
+    fixture: str | None = None
+    """Page fixture to serve instead of ``tests/fixtures/<page>.html``, e.g.
+    ``"synthetic/fw-portfwd-rules"`` (see :mod:`tools.uicapture.synthetic`)."""
+    synthetic: bool = False
+    """The page data the interaction starts from (e.g. table rows) was invented
+    because the real dump had none: the request *shape* is the UI's, but field
+    types of existing entries are an assumption. Lowers the status claim."""
+
+
+async def set_value(page: BrowserPage, element_id: str, value: str) -> None:
+    """Type a value into an input like a user would (fires input/change/keyup)."""
+    await page.evaluate(
+        """([id, value]) => {
+            const el = document.getElementById(id);
+            if (!el) throw new Error("no element #" + id);
+            el.value = value;
+            for (const type of ["input", "keyup", "change"]) {
+                el.dispatchEvent(new Event(type, {bubbles: true}));
+            }
+        }""",
+        [element_id, value],
+    )
+
+
+async def click(page: BrowserPage, element_id: str) -> None:
+    """Click an element the way a user could.
+
+    Modals are not rendered by the shims, so visibility can't be used; instead
+    an element inside a ``.modal`` the UI has not opened (no ``show`` class) is
+    refused: a user can't press a button of a dialog that is not open.
+    """
+    state = await page.evaluate(
+        """(id) => {
+            const el = document.getElementById(id);
+            if (!el) return "missing";
+            const modal = el.closest(".modal");
+            if (modal && !modal.classList.contains("show")) return "closed-modal";
+            el.click();
+            return "ok";
+        }""",
+        element_id,
+    )
+    if state == "missing":
+        msg = f"no element #{element_id}"
+        raise LookupError(msg)
+    if state == "closed-modal":
+        msg = f"#{element_id} is in a modal the UI did not open"
+        raise LookupError(msg)
+
+
+async def platform_prefix(page: BrowserPage) -> str:
+    """Return the UI's responsive-layout id prefix (``xxl``/``xl``/``mobile``)."""
+    prefix: str = await page.evaluate(
+        "window.innerWidth >= 1400 ? 'xxl' : (window.innerWidth >= 576 ? 'xl' : 'mobile')"
+    )
+    return prefix

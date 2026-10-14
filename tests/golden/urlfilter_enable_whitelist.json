@@ -1,0 +1,26 @@
+{
+  "scenario": "urlfilter_enable_whitelist",
+  "page": "fw-urlfilter",
+  "endpoint": "urlfilter_status_save",
+  "ui_ref": "fw-urlfilter.html:397",
+  "call": "url_filter.set_filter",
+  "inputs": {
+    "enabled": true,
+    "mode": "whitelist"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "fw-urlfilter",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "urlfilter_status_save",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"state\":1,\"mode\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "041662422c148b358c5ed23b64c7d7fccde57ece708e2bd9db0835f24932b358"
+}

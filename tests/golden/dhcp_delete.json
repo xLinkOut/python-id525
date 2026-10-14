@@ -1,0 +1,25 @@
+{
+  "scenario": "dhcp_delete",
+  "page": "lan-settings",
+  "endpoint": "req_LanStaticAddrDelete",
+  "ui_ref": "lan-settings.html:880",
+  "call": "lan.delete_dhcp_reservation",
+  "inputs": {
+    "index": 7
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanStaticAddrDelete",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"instance\":7,\"interface_id\":2}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

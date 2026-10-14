@@ -1,0 +1,29 @@
+{
+  "scenario": "traceroute_router_fails",
+  "page": "self-tracert",
+  "endpoint": "req_traceRouteTest",
+  "ui_ref": "self-tracert.html:182",
+  "call": "diagnostics.traceroute",
+  "inputs": {
+    "host": "192.0.2.200"
+  },
+  "call_kwargs": {},
+  "answers": {
+    "req_traceRouteTest": {
+      "result": false
+    }
+  },
+  "refused": false,
+  "fixture": "self-tracert",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_traceRouteTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"traceHost\":\"192.0.2.200\",\"traceRouteID\":1}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "71e1299f73f1b8539ec5e171e27e449b505fe9a99bfe50a8dfb3a620d9aa24b3"
+}

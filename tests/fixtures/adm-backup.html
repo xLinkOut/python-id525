@@ -1,0 +1,936 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="backup_title">Backup & Restore</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+		<script nonce="cdide4o6gf" language="JavaScript" src="/js/common.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = '';
+	var platform_o = "";
+	var MAX_RESTORE_FILE_SIZE_128KB=131072;
+	var uploading = 0;
+	var xhr_reboot = null;
+	var hidden_backup_and_restore = "1";
+
+	function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+	function response_print(response){
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);
+    }
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("adm-backup.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        if(hidden_backup_and_restore == "0")
+        {
+            mobile_CollapsibleAddListener('collapseSU');
+            mobile_CollapsibleAddListener('collapseBR');
+        }
+        mobile_CollapsibleAddListener('collapseReset');
+        mobile_CollapsibleAddListener('collapseReboot');
+		saveLoadingListener();
+		saveDialogListener();
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+	}
+	function initJS_function(pf){
+        if(hidden_backup_and_restore == "0")
+        {
+		    document.getElementById(pf + "-backupbtn").onclick = function(){BackupConfig();};
+		    document.getElementById(pf + "-restore_div").style = "width:100%;";
+		    document.getElementById(pf + "-input_restore").style = "width: 80%; color: #B5B5B5; text-align: left; font: normal normal 300 18px/21px Roboto;";
+		    document.getElementById(pf + "-BkupRestoreUPActBtn").onclick = function(){RestoreConfig();};
+        }
+		if(pf == "xxl")
+		{
+			document.getElementById(pf + "-info_restore").style = "padding-right:0px;";
+			document.getElementById(pf + "-info_reboot").style = "padding-right:0px;";
+		}
+		else if(pf == "xl")
+			document.getElementById(pf + "-info_restore").style = "padding-top:1%;";
+		document.getElementById(pf + "-toggle_restore_modal_btn").onclick = function(){toggle_restore_modal();};
+		document.getElementById(pf + "-toggle_reboot_modal_btn").onclick = function(){toggle_reboot_modal();};
+		document.getElementById("restore_default_request_btn").onclick = function(){restore_default_request();};
+		document.getElementById("confRebootConfirmed_btn").onclick = function(){confRebootConfirmed();};
+		document.getElementById("toggle_dialog_modal_btn").onclick = function(){toggle_dialog_modal();};
+        if(hidden_backup_and_restore == "0")
+        {
+		    document.getElementById(pf + "-restoreFile").style = "display:none;";
+		    document.getElementById(pf + "-restoreFile_label").style = "float:right";
+		    document.getElementById(pf + "-restoreFile_label").setAttribute("for", pf + "-restoreFile");
+		    document.getElementById(pf + "-restoreFile_label").setAttribute("tabindex", "0");
+		    document.getElementById(pf + "-restoreFile").onchange = function(){getfileName();};
+        }
+	}
+	function process_response(data_json)
+	{
+		if(!data_json.result)
+		{
+			document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+		}
+		else
+		{
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+		}
+	}
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+			initJS_function(platform);
+			platform_o = platform;
+        }
+        if(hidden_backup_and_restore == "1")
+        {
+		    _fx_pc_backup_and_restore.style.display = "none";
+		    _fx_pc_xl_backup.style.display = "none";
+		    _fx_pc_xl_restore.style.display = "none";
+		    _fx_mobile_backup.style.display = "none";
+		    _fx_mobile_restore.style.display = "none";
+        }
+        else
+        {
+		    _fx_pc_backup_and_restore.style.display = "flex";
+		    _fx_pc_xl_backup.style.display = "flex";
+		    _fx_pc_xl_restore.style.display = "flex";
+		    _fx_mobile_backup.style.display = "flex";
+		    _fx_mobile_restore.style.display = "flex";
+		    save_restoreFile_label_Listener();
+        }
+    }
+	function BackupConfig()
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+		    const req = {}; //create javascript object;
+            req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		    //console.log('RequestVerifyToken=' + req.RequestVerifyToken);
+		    do_fetch_api("POST", "/cgi-bin/cgi/bkupConfig_apply.cgi", req).then(getFile).catch(response_print);
+        }
+	}
+	function restore_default_request()
+	{
+		toggle_restore_modal();
+		document.getElementById('_modal_text').innerHTML = i18next.t('restore_loading');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/restore_default.cgi", req).then(process_response).catch(response_print_reset_default);
+	}
+	function response_print_reset_default(data_json)
+	{
+		setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 50000);
+    }
+	function confRebootConfirmed()
+	{
+		toggle_reboot_modal();
+		document.getElementById('_modal_text').innerHTML = i18next.t('reboot_loading');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/reboot.cgi", req)
+			.then(process_response)
+			.catch(response_print)
+			.finally(() => {
+				setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 50000);
+			});
+	}
+
+	function getfileName()
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+		    //console.log("getfileName")
+		    document.getElementById(platform + '-backup_error').style.display = 'none';
+		    var filename;
+		    var pathandfile = document.getElementById(platform + "-restoreFile").value;
+		    var last = pathandfile.lastIndexOf("\\");
+		    if(last == -1)
+		    {
+			    filename = pathandfile;
+		    }
+		    else
+		    {
+			    filename = pathandfile.substring(last+1,pathandfile.length);
+			    document.getElementById(platform + "-input_restore").value = filename;
+		    }
+		}
+	}
+	function getFile(data_json)
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+		    document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+		    var isSafari = Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
+
+		    var link = document.createElement("a");
+		    link.href = "/backup.conf";
+
+		    if (isSafari == true)
+		    {
+			    //Dispatching click event.
+			    if (document.createEvent)
+			    {
+				    var e = document.createEvent('MouseEvents');
+				    e.initEvent('click' ,true ,true);
+				    link.dispatchEvent(e);
+			    }
+		    }
+		    else
+		    {
+			    if (window.navigator.msSaveOrOpenBlob) {//for IE
+				    httpGet("/backup.conf");
+			    }
+			    else {
+				    link.download = "backup.conf";
+				    document.body.appendChild(link);
+				    link.click();
+				    document.body.removeChild(link);
+				    delete link;
+			    }
+		    }
+		}
+	}
+	function Restore_query_callback()
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+			if( xhr_reboot.readyState == 4 )
+			{
+				if( xhr_reboot.status == 200 )
+				{
+					var response_text = xhr_reboot.responseText;
+	
+					if( response_text != null && response_text.length > 0 )
+					{
+						response_text = escape_nl( response_text );
+						response_text = response_text.substr(response_text.indexOf('{') , response_text.length);
+	
+						var json_obj = JSON.parse(response_text);
+	
+						if (json_obj.restoreVerify == true)
+						{
+							document.getElementById('_modal_text').innerHTML = i18next.t('reboot_loading');
+							setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+						}
+						else
+						{
+							document.getElementById('_dialog_modal_header').innerHTML = i18next.t('restore_err_des1');
+							document.getElementById('_dialog_modal_text').innerHTML = i18next.t('restore_err_des2');
+							toggle_dialog_modal();
+						}
+					}
+					else
+					{
+						//console.log("response_text : " + response_text);
+					}
+				}
+				else
+				{
+					document.getElementById('_modal_text').innerHTML = i18next.t('reboot_loading');
+					setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+				}
+			}
+		}
+	}
+	function RestoreConfig()
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+			var RestoreFile = document.getElementById(platform + "-restoreFile" );
+			if( RestoreFile.value == "" )
+			{
+				document.getElementById(platform + '-backup_error').style.display = 'block';
+				document.getElementById(platform + '-restoreFile_label').focus();
+			}
+			else
+			{
+				toggle_modal();
+	
+				fileSize = RestoreFile.files.item(0).size;
+				if((fileSize > 0) && ( fileSize<= MAX_RESTORE_FILE_SIZE_128KB))
+				{
+					const file = RestoreFile.files[0];
+					const formData = new FormData();
+					formData.append('file', file);
+					do_upload_api("POST", "/cgi-bin/cgi/upload_file.cgi", formData).then(upload_file_response);
+				}
+				else
+				{
+					document.getElementById('_dialog_modal_header').innerHTML = i18next.t('restore_err_des1');
+					document.getElementById('_dialog_modal_text').innerHTML = i18next.t('restore_err_des2');
+					toggle_dialog_modal();
+				}
+			}
+		}
+		return true;
+	}
+	function upload_file_response(data_json)
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+			if(data_json.result)
+			{
+				const req = {}; //create javascript object;
+				req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+	//			console.log("req = " + JSON.stringify(req));
+				do_fetch_api("POST", "/cgi-bin/cgi/restoreCofig_apply.cgi", req).then(do_restore_response).catch(response_print);
+			}
+			else
+			{
+				document.getElementById('_dialog_modal_header').innerHTML = i18next.t('restore_err_des1');
+				document.getElementById('_dialog_modal_text').innerHTML = i18next.t('restore_err_des2');
+				toggle_dialog_modal();
+			}
+		}
+	}
+	function do_restore_response(data_json)
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+			if(data_json.result)
+			{
+				document.getElementById('_modal_text').innerHTML = i18next.t('reboot_loading');
+				setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+			}
+			else
+			{
+				//upload file failed.
+				//console.log(" do_upgrade_response failed")
+				setTimeout(() => {toggle_modal();}, 1000);
+				document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+			}
+		}
+	}
+	function escape_nl(str)
+	{
+        if(hidden_backup_and_restore == "0")
+        {
+			return str.replace(/(\r\n|[\r\n])/g, "\\n");
+		}
+	}
+	function toggle_modal()
+	{
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img()
+	{
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+        img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener()
+	{
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+			toggle_modal()
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+			toggle_modal()
+        });
+    }
+	function toggle_restore_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_restore_modal'));
+        _myModal.toggle();
+    }
+	function toggle_reboot_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_reboot_modal'));
+        _myModal.toggle();
+    }
+	function save_restoreFile_label_Listener() {
+        if(hidden_backup_and_restore == "0")
+        {
+			var myLabel = document.getElementById(platform + '-restoreFile_label');
+			myLabel.addEventListener('keydown', function(event) {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					document.getElementById(platform + '-restoreFile').click();
+				}
+			});
+		}
+	}
+    function setAltToImgItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+    }
+    function setAriaLabelToInputItem(p_id){
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.progress {
+		border-radius: 12px;
+		height: 14px;
+		width: 50%;
+		margin-left: auto;
+		margin-right:auto; 
+	}
+	.progress-bar {
+		border-radius: 12px;
+		height: 14px;
+		width: 0%;
+		background: #00AFAA;
+	}
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.warningmsg {
+		color: var(--warningcolor);
+		text-align: left;
+		letter-spacing: 0px;
+		color: #DE6421;
+		opacity: 1;
+	}
+}
+	#xxl-restoreFile_label:focus,
+	#xl-restoreFile_label:focus,
+	#mobile-restoreFile_label:focus {
+		outline: rgb(229, 151, 0) auto 1px;
+	}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row me-0 ms-0 mt-4 justify-content-between" id="_fx_pc_backup_and_restore">
+			<div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+					<thead>
+						<tr>
+							<th colspan="2" scope="row" class="cardViewTitle" data-i18n="backup_set">Backup Current Settings</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="cardViewTr">
+							<td class="cardViewTd" data-i18n="backup_set">Backup current settings</td>
+						</tr>
+					</tbody>
+                </table>
+				<div>
+					<button class="inCard_SaveBtn" id="xxl-backupbtn" data-i18n="backup">Backup</button>
+				</div>
+			</div>
+			<div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="restore_set_file">Restore Settings From File</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="restore_config">Restore Configuration</td>
+						<td class="cardViewTd">
+							<div class="cardViewSelect" id="xxl-restore_div">
+									<input class="cardViewInputTextWithLabel" id="xxl-input_restore" value="" data-i18n-aria-label="restore_config" disabled>
+									<label id="xxl-restoreFile_label">
+										<img src="/images/ic_upload.svg" alt="'+ i18next.t('restore_config') +'"/>
+									</label>
+									<input id="xxl-restoreFile" name="backup.conf" class="file" type="file" aria-label="file"/>
+							</div>
+							<label class="cardViewInputErrorText" id="xxl-backup_error" data-i18n="restore_config_des">Please choose Restore Configuration</label>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+				<div>
+					<button id="xxl-BkupRestoreUPActBtn" class="inCard_SaveBtn" data-i18n="restore">Restore</button>
+				</div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between">
+			<div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+                <table class="table table-borderless">
+					<thead>
+						<tr>
+							<th class="cardViewTitle" colspan="2" scope="row" data-i18n="restore_default">Restore Default Settings</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="w-50 cardViewTd" data-i18n="restore_default_des">
+								Click the Restore button will reset current settings to factory default settings.
+							</td>
+							<td class="w-50 cardViewTd" id="xxl-info_restore">
+								<button class="inCard_SaveBtn" id="xxl-toggle_restore_modal_btn" data-i18n="restore">Restore</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="reboot_dev">Reboot Device</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="w-50 cardViewTd" data-i18n="reboot_des">
+							Click the Reboot button to restart the device.
+						</td>
+						<td class="w-50 cardViewTd" id="xxl-info_reboot">
+							<button class="inCard_SaveBtn" id="xxl-toggle_reboot_modal_btn" data-i18n="reboot">Reboot</button>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-4 justify-content-between" id="_fx_pc_xl_backup">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="backup_set">Backup Current Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="backup_set">Backup current settings</td>
+					</tr>
+                </tbody>
+                </table>
+				<div>
+					<button class="inCard_SaveBtn" id="xl-backupbtn" data-i18n="backup">Backup</button>
+				</div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between" id="_fx_pc_xl_restore">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="restore_set_file">Restore Settings From File</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="restore_config">Restore Configuration</td>
+						<td class="cardViewTd">
+							<div class="cardViewSelect" id="xl-restore_div">
+									<input class="cardViewInputTextWithLabel" id="xl-input_restore" value="" data-i18n-aria-label="restore_config" disabled></input>
+									<label id="xl-restoreFile_label">
+										<img src="/images/ic_upload.svg" alt="'+ i18next.t('restore_config') +'"/>
+									</label>
+									<input id="xl-restoreFile" name="backup.conf" class="file" type="file" aria-label="file"/>
+							</div>
+							<label class="cardViewInputErrorText" id="xl-backup_error" data-i18n="restore_config_des">Please choose Restore Configuration</label>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+				<div>
+					<button id="xl-BkupRestoreUPActBtn" class="inCard_SaveBtn" data-i18n="restore">Restore</button>
+				</div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="restore_default">Restore Default Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="restore_default_des">Click the Restore button will reset current settings to factory default settings.</td>
+					</tr>
+                </tbody>
+                </table>
+				<div id="xl-info_restore">
+					<button class="inCard_SaveBtn" id="xl-toggle_restore_modal_btn" data-i18n="restore">Restore</button>
+				</div>
+            </div>
+        </div>
+		<div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="reboot_dev">Reboot Device</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="reboot_des">Click the Reboot button to restart the device.</td>
+					</tr>
+                </tbody>
+                </table>
+				<div>
+					<button class="inCard_SaveBtn" id="xl-toggle_reboot_modal_btn" data-i18n="reboot">Reboot</button>
+				</div>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between" id="_fx_mobile_backup">
+            <div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseSU-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseSU">
+                        <span data-i18n="backup_set">Backup Current Settings</span>
+                        <img id="collapseSU-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseSU" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+								<tr>
+									<td class="cardViewTd" data-i18n="backup_set">Backup current settings</td>
+								</tr>
+                            </tbody>
+                            </table>
+							<button class="inCard_SaveBtn" id="mobile-backupbtn" data-i18n="backup">Backup</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between" id="_fx_mobile_restore">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseBR-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseBR">
+                        <span data-i18n="restore_set_file">Restore Settings From File</span>
+                        <img id="collapseBR-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseBR" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+								<tr>
+									<td class="cardViewTd" data-i18n="restore_config">Restore Configuration</td>
+								</tr>
+								<tr>
+									<td>
+										<div class="cardViewSelect" id="mobile-restore_div">
+												<input class="cardViewInputTextWithLabel" id="mobile-input_restore" value="" data-i18n-aria-label="restore_config" disabled></input>
+												<label id="mobile-restoreFile_label">
+													<img src="/images/ic_upload.svg" alt="'+ i18next.t('restore_config') +'"/>
+												</label>
+												<input class="cardViewInputSubInput" id="mobile-restoreFile" name="backup.conf" class="file" type="file" aria-label="file"/>
+										</div>
+										<label class="cardViewInputErrorText" id="mobile-backup_error" data-i18n="restore_config_des">Please choose Restore Configuration</label>
+									</td>
+								</tr>
+                            </tbody>
+                            </table>
+							<button id="mobile-BkupRestoreUPActBtn" class="inCard_SaveBtn" data-i18n="restore">Restore</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+		<div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseReset-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseReset">
+                        <span data-i18n="restore_default">Restore Default Settings</span>
+                        <img id="collapseReset-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseReset" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+								<tr>
+									<td class="cardViewTd" data-i18n="restore_default_des">Click the Restore button will reset current settings to factory default settings.</td>
+								</tr>
+                            </tbody>
+                            </table>
+							<button class="inCard_SaveBtn" id="mobile-toggle_restore_modal_btn" data-i18n="restore">Restore</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseReboot-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseReboot">
+                        <span data-i18n="reboot_dev">Reboot Device</span>
+                        <img id="collapseReboot-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseReboot" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+								<tr>
+									<td class="cardViewTd" data-i18n="reboot_des">Click the Reboot button to restart the device.</td>
+								</tr>
+                            </tbody>
+                            </table>
+							<button class="inCard_SaveBtn" id="mobile-toggle_reboot_modal_btn" data-i18n="reboot">Reboot</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+	<div class="modal fade dialog_modal" id="_restore_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_reboot_modal_header" data-i18n="restore_config">Restore Confirmation</label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="" data-i18n="restore_dialog_des1">Are you sure?<br>
+					Do you want to restore the device.</label>
+					<br>
+					<label class="dialog_modal_warning" id="" data-i18n="restore_dialog_des2">WARNING: This option resets the device to factory default.<br>
+					Current configuration will be erased.</label>
+					<br>
+					<button class="inModal_Btn" id="restore_default_request_btn" data-i18n="restore">Restore</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_reboot_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_reboot_modal_header" data-i18n="reboot_dialog_title">Reboot Confirmation</label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="" data-i18n="reboot_dialog_des1">Are you sure?<br>
+					Do you want to reboot the device.</label>
+					<br>
+					<label class="dialog_modal_warning" id="" data-i18n="reboot_dialog_des2">WARNING: All current sessions will be closed.<br>
+					Device will be down for about 90-120 seconds.</label>
+					<br>
+					<button class="inModal_Btn" id="confRebootConfirmed_btn" data-i18n="reboot">Reboot</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img></div>
+                        <div class="loadingModal_text" id="_modal_text" data-i18n="reboot_save_loading">Saving settings, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="toggle_dialog_modal_btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_BackupRestore');
+	        if(hidden_backup_and_restore == "0")
+	        {
+                document.getElementById(platform + "-input_restore").value = i18next.t('restore_browse');
+	        }
+			setAltToImgItem("_fx_pc");
+			setAltToImgItem("_fx_pc_xl");
+			setAltToImgItem("_fx_mobile");
+			setAltToImgItem("_loadingModal");
+			setAltToImgItem("_dialog_modal");
+			setAriaLabelToInputItem("_fx_pc");
+			setAriaLabelToInputItem("_fx_pc_xl");
+			setAriaLabelToInputItem("_fx_mobile");
+			setAriaLabelToInputItem("_loadingModal");
+			setAriaLabelToInputItem("_dialog_modal");
+        }
+    });
+</script>
+</html>

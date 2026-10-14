@@ -17,7 +17,7 @@ from id525 import (
     LoginState,
     SimState,
 )
-from id525.const import Endpoint, Page
+from id525.endpoints import Page
 
 from .conftest import PASSWORD, USERNAME, ClientFactory, FakeRouter
 
@@ -303,20 +303,6 @@ async def test_only_allow_listed_endpoints(make_client: ClientFactory) -> None:
     client = await make_client()
     with pytest.raises(TypeError, match="not allow-listed"):
         await client._post("reboot", "{}")  # type: ignore[arg-type]
-
-
-def test_allow_list_contains_no_write_endpoint() -> None:
-    """Safety guard: changing the allow-list must be a deliberate, reviewed act."""
-    assert {e.value for e in Endpoint} == {
-        "token_query",
-        "login_req",
-        "logout_req",
-        "login_query",
-        "net_status_retrieve",
-        "client_status_retrieve",
-        "req_smsReload",
-    }
-    assert {p.value for p in Page} == {"cellular-status", "util-status", "help-about"}
 
 
 async def test_external_session_is_not_closed(server: TestServer) -> None:

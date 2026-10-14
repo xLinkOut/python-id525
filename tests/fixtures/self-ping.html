@@ -1,0 +1,594 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="ping_title">Ping Test</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- Generic WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    var platform_o = '';
+    
+    var pingTimes = 0;
+    var pingCount = 10;
+    var pingHost = '192.168.224.1';
+    var pingSize = 32;
+    var pingTimer;
+    var pingTestResult;
+    
+    var isStopTest = false;
+
+    function response_print(response){
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);        
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("self-ping.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapsePT', true);
+        saveLoadingListener();
+        saveDialogListener();
+        
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function initJS_function(pf){
+        document.getElementById("_dialog_btn").onclick = function(){toggle_dialog_modal();};
+        document.getElementById(pf + "-PingTestBtn").onclick = function(){testStart();};
+        document.getElementById(pf + "-PacketSizeText").oninput = function(){pingSizeInput();};
+        document.getElementById(pf + "-CountText").oninput = function(){pingCountInput();};
+        document.getElementById(pf + "-IPAddressText").oninput = function(){pingHostInput();};
+
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+//console.log('platform: '+platform);
+        if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+        document.getElementById(platform + '-CountText').value = pingCount;
+        document.getElementById(platform + '-IPAddressText').value = pingHost;
+        document.getElementById(platform + '-PacketSizeText').value = pingSize;
+    }
+    
+    function testStart(){
+        pingTimes = 0;
+        pingTestResult = document.getElementById(platform + '-PingTestResult');
+        if(document.getElementById(platform + '-PingTestBtn').innerHTML === i18next.t('Btn_start')){
+            pingCount = parseInt(document.getElementById(platform + '-CountText').value, 10);
+            pingHost = document.getElementById(platform + '-IPAddressText').value;
+            pingSize = parseInt(document.getElementById(platform + '-PacketSizeText').value, 10);
+            if(pingHost.length <= 0){
+                show_EditError(i18next.t('ping_res_hostEmpty'));
+            }else if(pingSize <= 0 || document.getElementById(platform + '-PacketSizeText').value.length <= 0){
+                show_EditError(i18next.t('ping_res_sizeIssue'));
+            }else if(pingCount <= 0 || document.getElementById(platform + '-CountText').value.length <= 0){
+                show_EditError(i18next.t('ping_res_countIssue'));
+            }else{
+                pingTestResult.innerHTML = '';
+                document.getElementById(platform + '-PingTestBtn').innerHTML = i18next.t('Btn_stop');
+                isStopTest = false;
+                pingTimer = setTimeout(pingTest, 500);
+            }
+        }else{
+            toggle_modal();
+            isStopTest = true;
+            setTimeout(() => {
+                document.getElementById(platform + '-PingTestBtn').innerHTML = i18next.t('Btn_start');
+                toggle_modal();
+                clearTimeout(pingTimer);
+            }, 2100);
+        }
+    }
+    
+    function pingTest_response(data_json){
+        document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+            document.getElementById(platform + '-PingTestBtn').innerHTML = i18next.t('Btn_start');
+            var tmp_str = i18next.t('ping_res_Fail'); + '<br>';
+            pingTestResult.innerHTML += tmp_str;
+        }else {
+            pingTimes++;
+            //Start ping...
+            if(pingTimes > pingCount){
+                pingTimes = 0;
+                document.getElementById(platform + '-PingTestBtn').innerHTML = i18next.t('Btn_start');
+            }else{
+                //console.log('ping_result: '+ data_json.ping_result);
+                if(!isStopTest){
+                    pingTimer = setTimeout(pingTest, 1000);
+                }
+                var tmp_str = data_json.ping_result + '<br>';
+                pingTestResult.innerHTML += tmp_str.replace(/seq=0/g,'');
+            }
+        }
+    }
+    function pingTest(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.pingCount = pingCount;
+        req.pingHost = pingHost;
+        req.pingSize = pingSize;
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_pingTest.cgi", req)
+        .then(response => {return response}).then(pingTest_response).catch(response_print);
+    }
+    
+    function pingCountInput() {
+        pingCount = parseInt(document.getElementById(platform + '-CountText').value, 10);
+    }
+    
+    function pingHostInput() {
+        pingHost = document.getElementById(platform + '-IPAddressText').value;
+    }
+    
+    function pingSizeInput() {
+        pingSize = parseInt(document.getElementById(platform + '-PacketSizeText').value, 10);
+    }
+    
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+    
+    function hidePass_toggle(toggleid, id)
+	{
+		var password_eye = document.getElementById(toggleid);
+		var password_input = document.getElementById(id);
+		if(password_input.type === "password")
+		{
+			password_input.type = "text";
+			password_eye.src = "/images/iconPasswordShow.svg";
+		}
+		else if(password_input.type === "text")
+		{
+			password_input.type = "password";
+			password_eye.src = "/images/iconPasswordHide.svg";
+		}
+	}
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+        //console.log(text+ "!!!" + selectItem.innerHTML);
+        selectItem.innerHTML = text;
+        if(id.indexOf("") != -1){
+        }else if(id.indexOf("") != -1){
+        
+        }
+    }
+//Modal
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+
+    function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .modal-body .cardViewSelect{ 
+        width: 50%!important;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row" class="cardViewTitle" data-i18n="ping_title" >Ping Test</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xxl-IPAddressTitleTd" data-i18n="ping_title_host">Host Name or IP Address</td>
+                    <td class="w-25 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xxl-IPAddressText" data-i18n-aria-label="ping_title_host"></input>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-CountTitleTd" data-i18n="ping_title_count">
+                    Count
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-CountTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="number" class="cardViewInputText" id="xxl-CountText" data-i18n-aria-label="ping_title_count"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd" id="xxl-PacketSizeTitleTd" data-i18n="ping_title_size">
+                    Packet Size (bytes)
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-PacketSizeTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="number" id="xxl-PacketSizeText" class="cardViewInputText" data-i18n-aria-label="ping_title_size"></input>
+                      </div>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-tmp1">
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-tmp2">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="w-25 cardViewTd" id="xxl-PingTestTd">
+                      <button class="inCard_SaveBtn" id="xxl-PingTestBtn" data-i18n="Btn_start" >Start</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTitle" id="xxl-PingTestResultTitleTd" data-i18n="ping_title_result">
+                    Ping Test Result
+                    </td>
+                    <td colspan="3" class="w-25 cardViewTd" id="xxl-PingTestResultTd">
+                      <label class="cardViewText" id="xxl-PingTestResult"></label>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="4" scope="row" class="cardViewTitle" data-i18n="ping_title">Ping Test</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-IPAddressTitleTd" data-i18n="ping_title_host">Host Name or IP Address</td>
+                    <td class="w-50 cardViewTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="text" class="cardViewInputText" id="xl-IPAddressText" data-i18n-aria-label="ping_title_host"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-CountTitleTd" data-i18n="ping_title_count">
+                    Count
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-CountTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="number" class="cardViewInputText" id="xl-CountText" data-i18n-aria-label="ping_title_count"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-PacketSizeTitleTd" data-i18n="ping_title_size">
+                    Packet Size (bytes)
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-PacketSizeTd">
+                      <div class="cardViewSelect" id="">
+                      <input type="number" id="xl-PacketSizeText" class="cardViewInputText" data-i18n-aria-label="ping_title_size"></input>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="w-50 cardViewTd" id="xl-PingTestTd">
+                      <button class="inCard_SaveBtn" id="xl-PingTestBtn" >Start</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTitle" id="xl-PingTestResultTitleTd" data-i18n="ping_title_result">
+                    Ping Test Result
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-PingTestResultTd">
+                      <label class="cardViewText" id="xl-PingTestResult"></label>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapsePT-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapsePT">
+                        <span data-i18n="ping_title">Ping Test</span>
+                        <img id="collapsePT-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapsePT" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-IPAddressTitleTd" data-i18n="ping_title_host">Host Name or IP Address</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="text" class="cardViewInputText" id="mobile-IPAddressText" data-i18n-aria-label="ping_title_host"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CountTitleTd" data-i18n="ping_title_count">
+                                Count
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CountTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="number" class="cardViewInputText" id="mobile-CountText" data-i18n-aria-label="ping_title_count"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PacketSizeTitleTd" data-i18n="ping_title_size">
+                                Packet Size (bytes)
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PacketSizeTd">
+                                  <div class="cardViewSelect" id="">
+                                  <input type="number" class="cardViewInputText" id="mobile-PacketSizeText" data-i18n-aria-label="ping_title_size"></input>
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PingTestTd">
+                                  <button class="inCard_SaveBtn" id="mobile-PingTestBtn" >Start</button>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTitle" id="mobile-PingTestResultTitleTd" data-i18n="ping_title_result">
+                                Ping Test Result
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-PingTestResultTd">
+                                  <label class="cardViewText" id="mobile-PingTestResult"></label>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+<!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text" data-i18n="Stop_meg">Stopping, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf" type="module">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        if(inited == 0){
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            //console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('ping_title');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+    });
+</script>
+</html>

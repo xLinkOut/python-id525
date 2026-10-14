@@ -1,0 +1,31 @@
+{
+  "scenario": "check_connections",
+  "page": "self-diag",
+  "endpoint": "req_DiagnosticConnectedTest",
+  "ui_ref": "self-diag.html:221",
+  "call": "diagnostics.check_connections",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "req_DiagnosticConnectedTest": {
+      "ethConnected": 1,
+      "wifiConnected": 1,
+      "usbConnected": 0,
+      "cellularConnected": "Connected",
+      "ethWanConnected": 0
+    }
+  },
+  "refused": false,
+  "fixture": "self-diag",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_DiagnosticConnectedTest",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "afacf9e510e45683050d4d562f10ce9341e1c74dd3f93984954ff8f10afaf6ef"
+}

@@ -1,0 +1,18 @@
+{
+  "scenario": "wifi_wps_start_refused_wpa3",
+  "page": "wifi-settings",
+  "endpoint": "req_wpsStartScan",
+  "ui_ref": "wifi-settings.html:1462",
+  "call": "wifi.start_wps",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "synthetic/wifi-settings-wpa3",
+  "synthetic": true,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "b2d9a71ccc98c04a156e616c60af2b711e6d009749fb92b8d28df2242c797824"
+}

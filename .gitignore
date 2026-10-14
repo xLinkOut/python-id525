@@ -16,3 +16,6 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+
+# debug traces (id525 --trace): may hold device data even redacted
+*.jsonl

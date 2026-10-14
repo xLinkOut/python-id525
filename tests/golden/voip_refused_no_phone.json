@@ -1,0 +1,20 @@
+{
+  "scenario": "voip_refused_no_phone",
+  "page": "voip-settings",
+  "endpoint": "voip_apply",
+  "ui_ref": "voip-settings.html:1",
+  "call": "voip.update",
+  "inputs": {
+    "dns_srv": true
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "voip-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Please input valid telephone number.",
+  "notes": "",
+  "fixture_sha256": "1d6b14de2c874af1d7405f49d80f57e938ebeaf2d04d42ace52294461ecbb963"
+}

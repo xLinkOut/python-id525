@@ -1,0 +1,1059 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="self_diag_title">Self Diagnostic</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+    var platform = '';
+    var platform_o = '';
+    var model = 'IDU';
+    var model_tbody = 'MiFi';
+    
+    var isStopTest = false;
+    
+    var EthConTestText;
+    var WifiConTestText;
+    var USBConTestText;
+    var CellularConTestText;
+    var EthWanConTestText;
+    var InternetTestText;
+    var SystemLoadingText;
+    var TestResultText;
+
+    function response_print(response){
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        //setTimeout(() => {toggle_modal();}, 1000);        
+    }
+    function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("self-diag.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseSDT', true);
+        saveLoadingListener();
+        saveDialogListener();
+        
+        if(window.innerWidth >= 1400)
+            platform_o = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform_o = 'xl';
+        else if(window.innerWidth < 576)
+            platform_o = 'mobile';
+        initJS_function(platform_o);
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+        /* Add your onload function call here: End */
+    }
+    function initJS_function(pf){
+        if(pf != "xxl"){
+            document.getElementById(pf + "-TestResultTitleTdMiFi").style = 'vertical-align: inherit;';
+            document.getElementById(pf + "-TestResultTitleTd").style = 'vertical-align: inherit;';
+            document.getElementById(pf + "-TestResultTitleTdIDU").style = 'vertical-align: inherit;';
+            document.getElementById(pf + "-TestResultTitle").style = 'font: normal normal 400 18px/21px Roboto;padding: 6px 0px 6px 0px;';
+            document.getElementById(pf + "-TestResultTitleMiFi").style = 'font: normal normal 400 18px/21px Roboto;padding: 6px 0px 6px 0px;';
+            document.getElementById(pf + "-TestResultTitleIDU").style = 'font: normal normal 400 18px/21px Roboto;padding: 6px 0px 6px 0px;';
+        }
+        document.getElementById(pf + "-TestResultTd").style = 'vertical-align: inherit';
+        document.getElementById(pf + "-TestResultTdMiFi").style = 'vertical-align: inherit';
+        document.getElementById(pf + "-TestResultTdIDU").style = 'vertical-align: inherit';
+        document.getElementById(pf + "-diagnosticTitle").style = 'vertical-align: baseline';
+
+        document.getElementById(pf + "-TestStartBtn").onclick = function(){testStart();};
+        document.getElementById("_dialog_btn").onclick = function(){toggle_dialog_modal();};
+    }
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+//console.log('platform: '+platform);
+        if(platform != platform_o){
+            initJS_function(platform);
+            platform_o = platform;
+        }
+
+        if(model == 'ODU'){
+            model_tbody = '';
+	        document.getElementById(platform + '-diag-MiFi').style.display = 'none';
+            document.getElementById(platform + '-diag-IDU').style.display = 'none';
+            WifiConTestText = document.getElementById(platform + '-WifiConTestTextIDU');//Todo if ODU support WiFi
+            EthConTestText = document.getElementById(platform + '-EthConTestText' + model_tbody);
+        }else if(model == 'IDU'){
+            model_tbody = 'IDU';
+	        document.getElementById(platform + '-diag-MiFi').style.display = 'none';
+            document.getElementById(platform + '-diag').style.display = 'none';
+            WifiConTestText = document.getElementById(platform + '-WifiConTestText' + model_tbody);
+            EthConTestText = document.getElementById(platform + '-EthConTestText' + model_tbody);
+        }else{
+            model_tbody = 'MiFi';
+			document.getElementById(platform + '-diag').style.display = 'none';
+            document.getElementById(platform + '-diag-IDU').style.display = 'none';
+            WifiConTestText = document.getElementById(platform + '-WifiConTestText' + model_tbody);
+            EthConTestText = document.getElementById(platform + '-EthConTestText');
+        }
+
+		USBConTestText = document.getElementById(platform + '-USBConTestTextMiFi');
+        CellularConTestText = document.getElementById(platform + '-CellularConTestText' + model_tbody);
+        EthWanConTestText = document.getElementById(platform + '-EthWanConTestText');
+        InternetTestText = document.getElementById(platform + '-InternetTestText' + model_tbody);
+        SystemLoadingText = document.getElementById(platform + '-SystemLoadingText' + model_tbody);
+        TestResultText = document.getElementById(platform + '-TestResultText' + model_tbody);
+    }
+    
+    function testStart(){
+        if(document.getElementById(platform + '-TestStartBtn').innerHTML === i18next.t('Btn_start')){
+            EthConTestText.innerHTML = '';
+            WifiConTestText.innerHTML = '';
+            USBConTestText.innerHTML = '';
+            CellularConTestText.innerHTML = '';
+            EthWanConTestText.innerHTML = '';
+            InternetTestText.innerHTML = '';
+            SystemLoadingText.innerHTML = '';
+            TestResultText.innerHTML = '';
+            document.getElementById(platform + '-TestStartBtn').innerHTML = i18next.t('Btn_stop');
+            isStopTest = false;
+            setTimeout(connectedTest, 1000);
+        }else{
+            toggle_modal();
+            TestResultText.innerHTML = i18next.t('self_diag_err_des');
+            isStopTest = true;
+            setTimeout(() => {
+                document.getElementById(platform + '-TestStartBtn').innerHTML = i18next.t('Btn_start');
+                toggle_modal();
+            }, 1100);
+        }
+    }
+    
+    function connectedTest_response(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        //console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result){
+            //console.log("res: " + JSON.stringify(data_json));
+        }else {
+            if(data_json.ethConnected == 1){
+                EthConTestText.innerHTML = i18next.t('self_diag_connected');
+                EthConTestText.style.color = '#3F4042'; /*old: #656667*/
+            }else{
+                EthConTestText.innerHTML = i18next.t('self_diag_not_connected');
+                EthConTestText.style.color = '#B50000'; /*old: #FF4F60*/
+            }
+            if(data_json.wifiConnected == 1){
+                WifiConTestText.innerHTML = i18next.t('self_diag_connected');
+                WifiConTestText.style.color = '#3F4042'; /*old: #656667*/
+            }else{
+                WifiConTestText.innerHTML = i18next.t('self_diag_not_connected');
+                WifiConTestText.style.color = '#B50000'; /*old: #FF4F60*/
+            }
+            if(data_json.usbConnected == 1){
+                USBConTestText.innerHTML = i18next.t('self_diag_connected');
+                USBConTestText.style.color = '#3F4042'; /*old: #656667*/
+            }else{
+                USBConTestText.innerHTML = i18next.t('self_diag_not_connected');
+                USBConTestText.style.color = '#B50000'; /*old: #FF4F60*/
+            }
+            if(data_json.cellularConnected.indexOf("Connected") != -1 ||
+                data_json.cellularConnected.indexOf("Roaming") != -1){
+                CellularConTestText.innerHTML = i18next.t('self_diag_connected');
+                CellularConTestText.style.color = '#3F4042'; /*old: #656667*/
+            }else{
+                CellularConTestText.innerHTML = i18next.t('self_diag_not_connected');
+                CellularConTestText.style.color = '#B50000'; /*old: #FF4F60*/
+            }
+            if(data_json.ethWanConnected == 1){
+                EthWanConTestText.innerHTML = i18next.t('self_diag_connected');
+                EthWanConTestText.style.color = '#3F4042'; /*old: #656667*/
+            }else{
+                EthWanConTestText.innerHTML = i18next.t('self_diag_not_connected');
+                EthWanConTestText.style.color = '#B50000'; /*old: #FF4F60*/
+            }
+        }
+        if(!isStopTest){
+            setTimeout(() => {
+				InternetTestText.style.color = '#3F4042'; /*old: #656667*/
+				InternetTestText.innerHTML = i18next.t('self_diag_status_des1');
+				setTimeout(pingTest, 500);
+            }, 500);
+        }
+    }
+    function connectedTest(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_DiagnosticConnectedTest.cgi", req)
+        .then(response => {return response}).then(connectedTest_response).catch(response_print);
+    }
+    
+    function pingTest_response(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        
+        if(!data_json.result){
+            var tmp_str = data_json.ping_result;
+            InternetTestText.innerHTML = i18next.t('self_diag_status_des2');
+            InternetTestText.style.color = '#B50000'; /*old: #FF4F60*/
+        }else {
+            var tmp_str = data_json.ping_result;
+            InternetTestText.innerHTML = i18next.t('self_diag_status_des3');
+            InternetTestText.style.color = '#3F4042'; /*old: #656667*/
+        }
+        if(!isStopTest){
+            setTimeout(cpuUsageTest, 500);
+        }
+    }
+    function pingTest(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+        req.pingCount = 1;
+        req.pingHost = 'www.google.com';
+        req.pingSize = 8;
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_pingTest.cgi", req)
+        .then(response => {return response}).then(pingTest_response).catch(response_print);
+    }
+    
+    function cpuUsageTest_response(data_json){
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+        if(!data_json.result){
+            var tmp_str = data_json.ping_result;
+            SystemLoadingText.innerHTML = i18next.t('self_diag_status_des4');
+            SystemLoadingText.style.color = '#B50000'; /*old: #FF4F60*/
+        }else {
+            var tmp_str = data_json.ping_result;
+            SystemLoadingText.innerHTML = data_json.CPU_Usage;
+            SystemLoadingText.style.color = '#3F4042'; /*old: #656667*/
+        }
+        if(!isStopTest){
+            setTimeout(testResult, 500);
+        }
+    }
+    function cpuUsageTest(){
+        //prepare json data
+        const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+
+        //console.log("req:" + JSON.stringify(req));
+
+        do_fetch_api("POST", "/cgi-bin/cgi/req_cpuUsageTest.cgi", req)
+        .then(response => {return response}).then(cpuUsageTest_response).catch(response_print);
+    }
+    
+    function testResult(){
+        //if(InternetTestText.innerHTML == 'Pass' && (CellularConTestText.innerHTML == 'Connected' || EthWanConTestText.innerHTML == 'Connected')){
+		if(InternetTestText.innerHTML == i18next.t('self_diag_status_des3') && CellularConTestText.innerHTML == i18next.t('self_diag_connected')){
+            TestResultText.innerHTML = i18next.t('self_diag_status_des5');
+            TestResultText.style.color = '#3F4042'; /*old: #656667*/
+        }else{
+            TestResultText.innerHTML = i18next.t('self_diag_status_des6');
+            TestResultText.style.color = '#B50000'; /*old: #FF4F60*/
+        }
+        document.getElementById(platform + '-TestStartBtn').innerHTML = i18next.t('Btn_start');
+        isStopTest = false;
+    }
+    
+    function show_EditError(msg){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = msg;
+        
+        toggle_dialog_modal();
+    }
+    
+    function hidePass_toggle(toggleid, id)
+	{
+		var password_eye = document.getElementById(toggleid);
+		var password_input = document.getElementById(id);
+		if(password_input.type === "password")
+		{
+			password_input.type = "text";
+			password_eye.src = "/images/ic_login_show.svg";
+		}
+		else if(password_input.type === "text")
+		{
+			password_input.type = "password";
+			password_eye.src = "/images/ic_login_hide.svg";
+		}
+	}
+    function selectObj(id,text) {
+        var selectItem = document.getElementById(id);
+        //console.log(text+ "!!!" + selectItem.innerHTML);
+        selectItem.innerHTML = text;
+        if(id.indexOf("") != -1){
+        
+        }else if(id.indexOf("") != -1){
+        
+        }
+    }
+//Modal
+    function toggle_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+    var counter = 0;
+    function toggle_img(){
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+         img1.style.transform = "rotate("+degree+"deg)";
+    }
+    function saveLoadingListener() {
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            //myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            //clearInterval(myTimer);
+            //counter = 0;
+        });
+    }
+    function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            
+        });
+    }
+
+    function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+    }
+    </script>
+    <style nonce="cdide4o6gf">
+    .h50 {height:50px;}
+
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{ 
+        width: 100%;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+@media only screen and (min-width: 576px) {
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+}
+    </style>
+    <body id="Body">
+    <input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="self_diag_test_title">Self Diagnostic Test</th>
+                  </tr>
+                  <tr>
+                    <td colspan="3" class="cardViewTd" id="xxl-diagnosticTitle" data-i18n="self_diag_test_des">
+                        You can perform self diagnostic test to check if you are able to access Internet via your 5G device.
+                    </td>
+                    <td class="w-25 cardViewTd" id="">
+                        <button class="inCard_SaveBtn" id="xxl-TestStartBtn" data-i18n="Btn_start">Start</button>
+                    </td>
+                  </tr>
+
+                </thead>
+                <tbody id="xxl-diag">
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-EthConTestTitleTd" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                    <td class="w-25 cardViewTd">
+                      <label class="cardViewText" id="xxl-EthConTestText"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTitleTd" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTd">
+                      <label class="cardViewText" id="xxl-InternetTestText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-CellularConTitleTd" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-CellularConTestTd">
+                      <label class="cardViewText" id="xxl-CellularConTestText"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTitleTd" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTd">
+                      <label class="cardViewText" id="xxl-SystemLoadingText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50">
+                    </td>
+                    <td class="w-25 cardViewTd">
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-TestResultTitleTd" data-i18n="self_diag_testResult">
+                    Test Result
+                    </td>
+                    <td rowspan="2" class="w-25 cardViewTd" id="xxl-TestResultTd">
+                      <label class="cardViewText" id="xxl-TestResultText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-tmp2"></td>
+                  </tr>
+                </tbody>
+                <tbody id="xxl-diag-MiFi">
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-WifiConTestTitleTdMiFi" data-i18n="self_diag_wifiLAN_conn">
+                    Wi-Fi LAN connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-WifiConTestTdMiFi">
+                      <label class="cardViewText" id="xxl-WifiConTestTextMiFi"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTitleTdMiFi" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTdMiFi">
+                      <label class="cardViewText" id="xxl-InternetTestTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-USBConTestTitleTdMiFi" data-i18n="self_diag_usbLAN_conn">
+                    USB LAN connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-USBConTestTdMiFi">
+                      <label class="cardViewText" id="xxl-USBConTestTextMiFi"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTitleTdMiFi" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTdMiFi">
+                      <label class="cardViewText" id="xxl-SystemLoadingTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-CellularConTitleTdMiFi" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-CellularConTestTdMiFi">
+                      <label class="cardViewText" id="xxl-CellularConTestTextMiFi"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-TestResultTitleTdMiFi" data-i18n="self_diag_testResult">
+                    Test Result
+                    </td>
+                    <td rowspan="2" class="w-25 cardViewTd" id="xxl-TestResultTdMiFi">
+                      <label class="cardViewText" id="xxl-TestResultTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" class="w-25 cardViewTd h50" id="xxl-tmp2"></td>
+                  </tr>
+                </tbody>
+                <tbody id="xxl-diag-IDU">
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-WifiConTestTitleTdIDU" data-i18n="self_diag_wifiLAN_conn">
+                    Wi-Fi LAN connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-WifiConTestTdIDU">
+                      <label class="cardViewText" id="xxl-WifiConTestTextIDU"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTitleTdIDU" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-InternetTestTdIDU">
+                      <label class="cardViewText" id="xxl-InternetTestTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-EthConTestTitleTdIDU" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                    <td class="w-25 cardViewTd">
+                      <label class="cardViewText" id="xxl-EthConTestTextIDU"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTitleTdIDU" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-SystemLoadingTdIDU">
+                      <label class="cardViewText" id="xxl-SystemLoadingTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-CellularConTitleTdIDU" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-CellularConTestTdIDU">
+                      <label class="cardViewText" id="xxl-CellularConTestTextIDU"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-TestResultTitleTdIDU" data-i18n="self_diag_testResult">
+                    Test Result
+                    </td>
+                    <td rowspan="2" class="w-25 cardViewTd" id="xxl-TestResultTdIDU">
+                      <label class="cardViewText" id="xxl-TestResultTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-25 cardViewTd h50" id="xxl-EthWanConTitleTd" data-i18n="self_diag_ethWAN_conn">
+                    Ethernet WAN connection test
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-EthWanConTestTd">
+                      <label class="cardViewText" id="xxl-EthWanConTestText"></label>
+                    </td>
+                    <td class="w-25 cardViewTd" id="xxl-tmp2"></td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" scope="row" class="cardViewTitle" data-i18n="self_diag_test_title">Self Diagnostic Test</th>
+                  </tr>
+                  <tr>
+                    <td colspan="1" class="cardViewTd" id="xl-diagnosticTitle" data-i18n="self_diag_test_des">
+                        You can perform self diagnostic test to check if you are able to access Internet via your 5G device.
+                    </td>
+                    <td class="w-50 cardViewTd" id="">
+                        <button class="inCard_SaveBtn" id="xl-TestStartBtn"  data-i18n="Btn_start">Start</button>
+                    </td>
+                  </tr>
+                </thead>
+                <tbody id="xl-diag">
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-EthConTestTitleTd" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                    <td class="w-50 cardViewTd">
+                      <label class="cardViewText" id="xl-EthConTestText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTitleTd" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTestTd">
+                      <label class="cardViewText" id="xl-CellularConTestText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTitleTd" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTd">
+                      <label class="cardViewText" id="xl-InternetTestText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTitleTdM" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTd">
+                      <label class="cardViewText" id="xl-SystemLoadingText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTitleTd">
+                      <label class="cardViewText" id="xl-TestResultTitle" data-i18n="self_diag_testResult">Test Result</label>
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTd">
+                      <label class="cardViewText" id="xl-TestResultText"></label>
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody id="xl-diag-MiFi">
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-WifiConTestTitleTdMiFi" data-i18n="self_diag_wifiLAN_conn">
+                    Wi-Fi LAN connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-WifiConTestTdMiFi">
+                      <label class="cardViewText" id="xl-WifiConTestTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-USBConTestTitleTdMiFi" data-i18n="self_diag_usbLAN_conn">
+                    USB LAN connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-USBConTestTdMiFi">
+                      <label class="cardViewText" id="xl-USBConTestTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTitleTdMiFi" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTestTdMiFi">
+                      <label class="cardViewText" id="xl-CellularConTestTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTitleTdMiFi" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTdMiFi">
+                      <label class="cardViewText" id="xl-InternetTestTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTitleTdMiFi" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTdMiFi">
+                      <label class="cardViewText" id="xl-SystemLoadingTextMiFi"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTitleTdMiFi">
+                      <label class="cardViewText" id="xl-TestResultTitleMiFi" data-i18n="self_diag_testResult">Test Result</label>
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTdMiFi">
+                      <label class="cardViewText" id="xl-TestResultTextMiFi"></label>
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody id="xl-diag-IDU">
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-WifiConTestTitleTdIDU" data-i18n="self_diag_wifiLAN_conn">
+                    Wi-Fi LAN connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-WifiConTestTdIDU">
+                      <label class="cardViewText" id="xl-WifiConTestTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-EthConTestTitleTdIDU" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                    <td class="w-50 cardViewTd">
+                      <label class="cardViewText" id="xl-EthConTestTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTitleTdIDU" data-i18n="self_diag_net_conn">
+                    Cellular network connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-CellularConTestTdIDU">
+                      <label class="cardViewText" id="xl-CellularConTestTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-EthWanConTitleTd" data-i18n="self_diag_ethWAN_conn">
+                    Ethernet WAN connection test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-EthWanConTestTd">
+                      <label class="cardViewText" id="xl-EthWanConTestText"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTitleTdIDU" data-i18n="self_diag_internet_access">
+                    Internet access test
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-InternetTestTdIDU">
+                      <label class="cardViewText" id="xl-InternetTestTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTitleTdIDU" data-i18n="self_diag_sys_loading">
+                    System loading
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-SystemLoadingTdIDU">
+                      <label class="cardViewText" id="xl-SystemLoadingTextIDU"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTitleTdIDU">
+                      <label class="cardViewText" id="xl-TestResultTitleIDU" data-i18n="self_diag_testResult">Test Result</label>
+                    </td>
+                    <td class="w-50 cardViewTd" id="xl-TestResultTdIDU">
+                      <label class="cardViewText" id="xl-TestResultTextIDU"></label>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseSDT-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseSDT">
+                        <span data-i18n="self_diag_test_title">Self Diagnostic Test</span>
+                        <img id="collapseSDT-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseSDT" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                              <tr>
+                                <td colspan="1" class="cardViewTd" id="mobile-diagnosticTitle" data-i18n="self_diag_test_des">
+                                    You can perform self diagnostic test to check if you are able to access Internet via your 5G device.
+                                </td>
+                              <tr>
+                              </tr>
+                                <td class="cardViewTd" id="">
+                                    <button class="inCard_SaveBtn" id="mobile-TestStartBtn" data-i18n="Btn_start">Start</button>
+                                </td>
+                              </tr>
+                            </thead>
+                            <tbody id="mobile-diag">
+                              <tr>
+                                <td class="cardViewTd" id="mobile-EthConTestTitleTd" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <label class="cardViewText" id="mobile-EthConTestText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTitleTd" data-i18n="self_diag_net_conn">
+                                Cellular network connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTestTd">
+                                  <label class="cardViewText" id="mobile-CellularConTestText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTitleTd" data-i18n="self_diag_internet_access">
+                                Internet access test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTd">
+                                  <label class="cardViewText" id="mobile-InternetTestText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTitleTd" data-i18n="self_diag_sys_loading">
+                                System loading
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTd">
+                                  <label class="cardViewText" id="mobile-SystemLoadingText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTitleTd">
+                                  <label class="cardViewText" id="mobile-TestResultTitle" data-i18n="self_diag_testResult">Test Result</label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTd">
+                                  <label class="cardViewText" id="mobile-TestResultText"></label>
+                                </td>
+                              </tr>
+                            </tbody>
+                            <tbody id="mobile-diag-MiFi">
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WifiConTestTitleTdMiFi" data-i18n="self_diag_wifiLAN_conn">
+                                Wi-Fi LAN connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WifiConTestTdMiFi">
+                                  <label class="cardViewText" id="mobile-WifiConTestTextMiFi"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-USBConTestTitleTdMiFi" data-i18n="self_diag_usbLAN_conn">
+                                USB LAN connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-USBConTestTdMiFi">
+                                  <label class="cardViewText" id="mobile-USBConTestTextMiFi"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTitleTdMiFi" data-i18n="self_diag_net_conn">
+                                Cellular network connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTestTdMiFi">
+                                  <label class="cardViewText" id="mobile-CellularConTestTextMiFi"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTitleTdMiFi" data-i18n="self_diag_internet_access">
+                                Internet access test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTdMiFi">
+                                  <label class="cardViewText" id="mobile-InternetTestTextMiFi"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTitleTdMiFi" data-i18n="self_diag_sys_loading">
+                                System loading
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTdMiFi">
+                                  <label class="cardViewText" id="mobile-SystemLoadingTextMiFi"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTitleTdMiFi">
+                                  <label class="cardViewText" id="mobile-TestResultTitleMiFi" data-i18n="self_diag_testResult">Test Result</label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTdMiFi">
+                                  <label class="cardViewText" id="mobile-TestResultTextMiFi"></label>
+                                </td>
+                              </tr>
+                            </tbody>
+                            <tbody id="mobile-diag-IDU">
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WifiConTestTitleTdIDU" data-i18n="self_diag_wifiLAN_conn">
+                                Wi-Fi LAN connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-WifiConTestTdIDU">
+                                  <label class="cardViewText" id="mobile-WifiConTestTextIDU"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-EthConTestTitleTdIDU" data-i18n="self_diag_ethLAN_conn">Ethernet LAN connection test</td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd">
+                                  <label class="cardViewText" id="mobile-EthConTestTextIDU"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTitleTdIDU" data-i18n="self_diag_net_conn">
+                                Cellular network connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-CellularConTestTdIDU">
+                                  <label class="cardViewText" id="mobile-CellularConTestTextIDU"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-EthWanConTitleTd" data-i18n="self_diag_ethWAN_conn">
+                                Ethernet WAN connection test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-EthWanConTestTd">
+                                  <label class="cardViewText" id="mobile-EthWanConTestText"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTitleTdIDU" data-i18n="self_diag_internet_access">
+                                Internet access test
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-InternetTestTdIDU">
+                                  <label class="cardViewText" id="mobile-InternetTestTextIDU"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTitleTdIDU" data-i18n="self_diag_sys_loading">
+                                System loading
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-SystemLoadingTdIDU">
+                                  <label class="cardViewText" id="mobile-SystemLoadingTextIDU"></label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTitleTdIDU">
+                                  <label class="cardViewText" id="mobile-TestResultTitleIDU" data-i18n="self_diag_testResult">Test Result</label>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td class="cardViewTd" id="mobile-TestResultTdIDU">
+                                  <label class="cardViewText" id="mobile-TestResultTextIDU"></label>
+                                </td>
+                              </tr>
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+<!-- modal implementation -->
+    <div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img><!--img id="_login_loading_img2" class="d-none" src="images/iconLoadingStep-2.svg"></img--></div>
+                        <div class="loadingModal_text" id="_modal_text">Stopping, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label> 
+                    <button class="btn-close" aria-label="Close" data-bs-dismiss="modal" type="button"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="_dialog_btn" data-i18n="ok">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        //console.log("loaded: "+ JSON.stringify(loaded));
+        if(inited == 0){
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            //console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_SelfDiag');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+        }
+    });
+</script>
+</html>

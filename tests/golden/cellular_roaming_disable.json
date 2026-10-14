@@ -1,0 +1,23 @@
+{
+  "scenario": "cellular_roaming_disable",
+  "page": "cellular-settings",
+  "endpoint": "req_ChangeRoaming",
+  "ui_ref": "cellular-settings.html:863",
+  "call": "cellular.disable_roaming",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_ChangeRoaming",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"roaming_status\":0}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "one click on the (checked) switch: the UI then sends the number 0",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

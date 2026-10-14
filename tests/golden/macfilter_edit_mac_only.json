@@ -1,0 +1,26 @@
+{
+  "scenario": "macfilter_edit_mac_only",
+  "page": "fw-macfilter",
+  "endpoint": "macfilter_edit",
+  "ui_ref": "fw-macfilter.html:712",
+  "call": "mac_filter.modify_rule",
+  "inputs": {
+    "instance": 6,
+    "mac": "02:00:5E:00:01:0D"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/fw-macfilter-rules",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "macfilter_edit",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"edit_instance\":6,\"desc\":\"console-1\",\"clientMac\":\"02:00:5E:00:01:0D\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "8337a16e565cef8dfbb90bbc03ec7416b30c7d8f477da0551844bf6864e1a640"
+}

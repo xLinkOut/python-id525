@@ -1,0 +1,20 @@
+{
+  "scenario": "cellular_apn_add_refused_invalid",
+  "page": "cellular-settings",
+  "endpoint": "req_addUserApn",
+  "ui_ref": "cellular-settings.html:1462",
+  "call": "cellular.add_apn",
+  "inputs": {
+    "apn": "bad-apn.it"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "cellular-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "WARNING: The string length of APN is at most 32.",
+  "notes": "",
+  "fixture_sha256": "489a5964e718d575359b87bebe63e7cb91a72fc3d41860e4c915e5ca79bd84ad"
+}

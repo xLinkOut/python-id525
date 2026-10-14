@@ -1,0 +1,28 @@
+{
+  "scenario": "dhcp_modify_all",
+  "page": "lan-settings",
+  "endpoint": "req_LanStaticAddrModify",
+  "ui_ref": "lan-settings.html:677",
+  "call": "lan.modify_dhcp_reservation",
+  "inputs": {
+    "index": 12,
+    "name": "tv salotto",
+    "ip": "192.168.224.40",
+    "mac": "02:00:5e:00:00:cd"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "lan-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_LanStaticAddrModify",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"deviceName\":\"tv salotto\",\"Static_IP\":\"192.168.224.40\",\"editMAC\":\"02:00:5e:00:00:cd\",\"instance\":12,\"interface_index\":2}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "eb0fff5eab061e4cc1d90a3a74f06b9320711c27d69f99d9abf02c3d9ee9fc1e"
+}

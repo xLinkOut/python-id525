@@ -1,0 +1,31 @@
+{
+  "scenario": "ddns_unchanged_afraid",
+  "page": "fw-ddns",
+  "endpoint": "set_ddns_config",
+  "ui_ref": "fw-ddns.html:334",
+  "call": "ddns.set_settings",
+  "inputs": {},
+  "call_kwargs": {},
+  "answers": {
+    "get_ddns_config": {
+      "ddns_enable": "1",
+      "ddns_host_name": "myhome.example.org",
+      "ddns_user_name": "user.name_1",
+      "ddns_password": "s3cr3t!pw",
+      "ddns_url": "afraid.org-v2-basic"
+    }
+  },
+  "refused": false,
+  "fixture": "fw-ddns",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "set_ddns_config",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"DDNS_Status\":\"1\",\"DDNS_Hostname\":\"myhome.example.org\",\"DDNS_Login\":\"user.name_1\",\"DDNS_Auth\":\"s3cr3t!pw\",\"DDNS_Server\":\"afraid.org-v2-basic\"}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "untouched form: every value is resent as received",
+  "fixture_sha256": "c20cb8109c105cd6d372607891d90ea7c5fe63c8843e9f69ec16108a0eea2274"
+}

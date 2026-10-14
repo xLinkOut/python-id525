@@ -1,0 +1,1031 @@
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title data-i18n="softUp_title">Software Upgrade</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <!-- GM WebUI CSS -->
+        <link rel="stylesheet" href="/css/styleGeneric.css">
+        <!-- Bootstrap javascript -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts to generate navigation menu and headline, DO NOT modify -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/generic.js"></script>
+        <!-- Generic WebUI scripts -->
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/i18next.min.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18next-fetch-backend.js"></script>
+		<script nonce="cdide4o6gf" type="module" src="/js/i18n.js"></script>
+        <script nonce="cdide4o6gf" type="text/javascript" src="/js/scriptGeneric.js"></script>
+		<script nonce="cdide4o6gf" type="text/javascript" src="/js/validate.js"></script>
+		<script nonce="cdide4o6gf" language="JavaScript" src="/js/common.js?"></script>
+    </head>
+    <script nonce="cdide4o6gf" type="module" language="JavaScript">
+        import Translator from '/js/i18n.js';
+        new Translator;
+	</script>
+    <script nonce="cdide4o6gf" language="JavaScript">
+
+    var platform = '';
+	var platform_o = "";
+	var sw = "";
+	var uploading = 0;
+	var fileSize = 0;
+	var MAX_RESTORE_FILE_SIZE_128KB=131072;
+	var xhr_reboot = null;
+	var fw_date = " (IST)";
+	var upgrade_status = "";
+	var avail_software = "";
+	var check_for_update_counter=0;
+	var user_confirm_ok = 0;
+	var MAX_FW_FILE_SIZE = 200000000;
+
+	function update_content(data_json){
+        //console.log("result: "+ data_json.result);
+        //console.log("token: "+ data_json.RequestVerifyToken);
+        document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+    }
+
+	function response_print(response){
+        //console.log("type: "+response.type);
+        //console.log("url: "+response.url);
+        //console.log("status: "+response.status);
+        //console.log("statusText: "+response.statusText);
+        //console.log("ok: "+response.ok);
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sw.html";}, 3000);
+    }
+
+    function bodyLoad() {
+        /* menuOnLoad() is needed for every page, input parameter indicates actived menu item */
+        menuOnLoad("adm-sw.html");
+        do_fetch_api("POST", "/cgi-bin/cgi/token_query.cgi", '{}').then(update_content).catch(response_print);
+        /* Add your onload function call here: Start */
+        mobile_CollapsibleAddListener('collapseSD');
+        mobile_CollapsibleAddListener('collapseSU');
+		saveAddAddrListener();
+		saveLoadingListener();
+		saveDialogListener();
+		saveUpgradeListener();
+		saveCancelUpgradeListener();
+		saveupgradeRouter_acsListener();
+		save_upgrade_progress_Listener();
+
+		if(window.innerWidth >= 1400)
+			platform_o = 'xxl';
+		else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+			platform_o = 'xl';
+		else if(window.innerWidth < 576)
+			platform_o = 'mobile';
+		initJS_function(platform_o);
+		document.getElementById(platform_o + "-input_upgrade_sw").value = "";
+
+        onScreenWidthChange();//First time Init
+        window.onresize = function(event) {
+            onScreenWidthChange();
+        }
+
+		if(upgrade_status == "Software Update failure")
+		{
+			show_error_upgrade();
+		}
+		if(upgrade_status == "waiting_reboot_cmd")
+		{
+			document.getElementById('_modal_text').innerHTML = i18next.t('softUp_rebooting');
+			toggle_modal();
+
+			const req = {}; //create javascript object;
+			req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+			//console.log("req = " + JSON.stringify(req));
+			do_fetch_api("POST", "/cgi-bin/cgi/reboot.cgi", req)
+				.then(process_response)
+				.catch(response_print)
+				.finally(() => {
+				setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+			});
+		}
+		if(upgrade_status == "something_error")
+		{
+			show_something_error_upgrade();
+		}
+        /* Add your onload function call here: End */
+	}
+	function initJS_function(pf){
+		document.getElementById(pf + "-check_update_btn").onclick = function(){check_upgrade();};
+		
+		document.getElementById(pf + "-input_sw_card_div").style = "width:100%;";
+		if(pf == "xxl")
+		{
+			document.getElementById(pf + "-input_upgrade_sw").style = "width: 80%; color: #B5B5B5; text-align: left; font: normal normal 300 18px/21px Roboto;";
+			document.getElementById(pf + "-firmware_label").style = "float:right;";
+			document.getElementById(pf + "-sw_upgrdebtn").style = "margin: 0 12px 30px 0;";
+		}
+		else if(pf == "xl")
+		{
+			document.getElementById(pf + "-input_upgrade_sw").style = "width: 80%; color: #B5B5B5; text-align: left; font: normal normal 300 18px/21px Roboto;";
+			document.getElementById(pf + "-firmware_label").style = "float:right";
+		}
+		else if(pf == "mobile")
+		{
+			document.getElementById(pf + "-input_upgrade_sw").style = "width:86%; color: #B5B5B5; text-align: left; font: normal normal 300 18px/21px Roboto;";
+		}
+		document.getElementById(pf + "-firmware_label").setAttribute("for", pf + "-firmware");
+		document.getElementById(pf + "-firmware_label").setAttribute("tabindex", "0");
+		document.getElementById(pf + "-firmware").style = "display:none;";
+
+		document.getElementById(pf + "-firmware").onchange = function(){getfileName_form_upgrade();};
+		document.getElementById(pf + "-upgrade_info").style = "padding:0;";
+		document.getElementById(pf + "-sw_upgrdebtn").onclick = function(){toggle_upgradeRouter();};
+		document.getElementById("_upgrade_modal_info").style = "font: normal normal 500 18px/21px Roboto;";
+		document.getElementById("_upgrade_modal_acs_info").style = "font: normal normal 500 18px/21px Roboto;";
+		document.getElementById("_upgrade_progress_info").style = "font: normal normal 500 18px/21px Roboto;";
+
+		document.getElementById("upgradeRouter_btn").onclick = function(){upgradeRouter();};
+		document.getElementById("upgradeRouter_acs_btn").onclick = function(){upgradeRouter_acs();};
+		<!-- document.getElementById("UpgradeProgressPercent").style = "width: 0%;"; -->
+		document.getElementById("toggle_dialog_modal_btn").onclick = function(){toggle_dialog_modal();};
+		document.getElementById("toggle_upgradeRouter_acs_btn").onclick = function(){toggle_upgradeRouter_acs();};
+		document.getElementById("cancel_update_btn").onclick = function(){cancel_update();};
+	}
+	function process_response(data_json)
+	{
+		if(!data_json.result)
+		{
+			document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+		}
+		else
+		{
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+		}
+	}
+    function onScreenWidthChange(){
+        if(window.innerWidth >= 1400)
+            platform = 'xxl';
+        else if(window.innerWidth < 1400 && window.innerWidth >= 576 )
+            platform = 'xl';
+        else if(window.innerWidth < 576)
+            platform = 'mobile';
+
+		if(platform != platform_o){
+			initJS_function(platform);
+			platform_o = platform;
+        }
+
+		document.getElementById(platform + "-software_version").innerHTML = sw;
+		document.getElementById(platform + "-check_update_btn").disabled = true;
+		save_firmware_label_Listener();
+    }
+	function getfileName()
+	{
+		document.getElementById(platform + '-backup_error').style.display = 'none';
+		var filename;
+		var pathandfile = document.getElementById(platform + "-restoreFile").value;
+		var last = pathandfile.lastIndexOf("\\");
+		if(last == -1)
+		{
+			filename = pathandfile;
+		}
+		else
+		{
+			filename = pathandfile.substring(last+1,pathandfile.length);
+			document.getElementById(platform + "-input_restore").value = filename;
+		}
+	}
+	function upgradeRouter()
+	{
+		if( document.getElementById(platform + "-firmware").value == "" )
+		{
+			//console.log("No firmware input");
+		}
+		else
+		{
+			toggle_upgradeRouter();
+
+			document.getElementById('_modal_text').innerHTML = i18next.t('softUp_downloading');
+			toggle_modal();
+
+			var FIRMWARE = document.getElementById( platform + "-firmware" );
+			fileSize = FIRMWARE.files.item(0).size;
+
+			if(fileSize > 0 && fileSize < MAX_FW_FILE_SIZE)
+			{
+					const file = FIRMWARE.files[0];
+					const formData = new FormData();
+					formData.append('file', file);
+					do_upload_api("POST", "/cgi-bin/cgi/upload_file.cgi", formData).then(upload_file_response).catch(response_print);;
+			}
+			else
+			{
+				//console.log("fileSize error failed")
+				setTimeout(() => {toggle_modal();}, 1000);
+				show_something_error_upgrade();
+			}
+		}
+	}
+	function upload_file_response(data_json)
+	{
+		if(data_json.result)
+		{
+			document.getElementById('_modal_text').innerHTML = i18next.t('softUp_upgrading');
+
+			const req = {}; //create javascript object;
+			req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+			//console.log("req = " + JSON.stringify(req));
+			do_fetch_api("POST", "/cgi-bin/cgi/do_upgrade.cgi", req).then(do_upgrade_response).catch(response_print);
+		}
+		else
+		{
+			//console.log("upload_file_response failed")
+			setTimeout(() => {toggle_modal();}, 1000);
+			show_something_error_upgrade();
+			document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+		}
+	}
+	function do_upgrade_response(data_json)
+	{
+		if(data_json.result)
+		{
+			<!-- toggle_modal(); -->
+
+			document.getElementById('_modal_text').innerHTML = i18next.t('softUp_rebooting');
+			<!-- toggle_modal(); -->
+
+			document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+
+			const req = {}; //create javascript object;
+			req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+			//console.log("req = " + JSON.stringify(req));
+			<!-- do_fetch_api("POST", "/cgi-bin/cgi/reboot.cgi", req).then(do_upgrade_response).catch(response_print); -->
+			do_fetch_api("POST", "/cgi-bin/cgi/reboot.cgi", req);
+			setTimeout(() => {window.location.href = "/cgi-bin/cm/login.html";}, 90000);
+		}
+		else
+		{
+			//upload file failed.
+			//console.log(" do_upgrade_response failed")
+			setTimeout(() => {toggle_modal();}, 1000);
+			show_something_error_upgrade();
+			document.getElementById("RequestVerifyToken").value = data_json.RequestVerifyToken;
+		}
+	}
+	function getfileName_form_upgrade()
+	{
+		<!-- document.getElementById(platform + '-firmware_error').style.display = 'none'; -->
+		var filename;
+		var pathandfile = document.getElementById(platform + "-firmware").value;
+		var last = pathandfile.lastIndexOf("\\");
+
+		if(last == -1)
+			filename = pathandfile;
+		else
+			filename = pathandfile.substring(last+1,pathandfile.length);
+
+		if(filename.includes(".bin") == false)
+		{
+			if(filename.length === 0)
+			{
+				document.getElementById(platform + '-firmware_error').innerHTML = i18next.t('softUp_err_des1');
+			}
+			else
+			{
+				document.getElementById(platform + '-firmware_error').innerHTML = i18next.t('softUp_err_des2');
+			}
+			document.getElementById(platform + '-firmware_error').style.display = 'block';
+			document.getElementById(platform + "-input_upgrade_sw").style = "width: 90%; color: var(--tdwarningColor);";
+			document.getElementById(platform + "-sw_upgrdebtn").disabled = true;
+			document.getElementById(platform + "-input_upgrade_sw").value = filename;
+			document.getElementById(platform + "-firmware_label").focus();
+			return;
+		}
+		document.getElementById(platform + '-firmware_error').style.display = 'none';
+		document.getElementById(platform + "-input_upgrade_sw").style = "width: 90%; color: var(--headingText);";
+		document.getElementById(platform + "-sw_upgrdebtn").disabled = false;
+		document.getElementById(platform + "-input_upgrade_sw").value = filename;
+	}
+	function toggle_upgradeRouter()
+	{
+		if( document.getElementById(platform + "-firmware").value == "" )
+		{
+			document.getElementById(platform + '-firmware_error').innerHTML = i18next.t('softUp_err_des1');
+			document.getElementById(platform + '-firmware_error').style.display = 'block';
+			document.getElementById(platform + "-sw_upgrdebtn").disabled = true;
+			document.getElementById(platform + "-firmware_label").focus();
+			return;
+		}
+		else
+		{
+			var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_upgrade_modal'));
+			_myModal.toggle();
+		}
+    }
+	function saveAddAddrListener() {
+        var myModalEl = document.getElementById('_upgrade_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_error_update()
+	{
+		var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_upgrade_modal'));
+		_myModal.toggle();
+    }
+	function saveAddAddrListener() {
+        var myModalEl = document.getElementById('_upgrade_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+
+        });
+    }
+	function toggle_upgrade_progress()
+	{
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_upgrade_progress'));
+        _myModal.toggle();
+    }
+	function save_upgrade_progress_Listener() {
+        var myModalEl = document.getElementById('_upgrade_progress');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+		<!-- redirect("/cgi-bin/cm/adm-sw.html"); -->
+		<!-- document.getElementById('_upgrade_progress').setAttribute("data-bs-dismiss", "modal"); -->
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+		<!-- document.getElementById('_upgrade_progress').setAttribute("data-bs-dismiss", "modal"); -->
+		<!-- redirect("/cgi-bin/cm/adm-sw.html"); -->
+        });
+    }
+	function save_firmware_label_Listener() {
+		var myLabel = document.getElementById(platform + '-firmware_label');
+		myLabel.addEventListener('keydown', function(event) {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				document.getElementById(platform + '-firmware').click();
+			}
+		});
+	}
+	function toggle_modal()
+	{
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_loadingModal'));
+        _myModal.toggle();
+    }
+	var counter = 0;
+    function toggle_img()
+	{
+        let img1 = document.getElementById('_loading_img1');
+        var degree = (10 * counter++)%360;
+        img1.style.transform = "rotate("+degree+"deg)";
+    }
+	function saveLoadingListener()
+	{
+        var myTimer;
+        var myModalEl = document.getElementById('_loadingModal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+            myTimer = setInterval(toggle_img, 30);
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            clearInterval(myTimer);
+            counter = 0;
+        });
+    }
+	function toggle_dialog_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_dialog_modal'));
+        _myModal.toggle();
+    }
+    function saveDialogListener() {
+        var myModalEl = document.getElementById('_dialog_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+//			toggle_modal()
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+//			toggle_modal()
+        });
+    }
+	function toggle_check_upgrade_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('check_upgrade_modal'));
+        _myModal.toggle();
+    }
+    function saveUpgradeListener() {
+        var myModalEl = document.getElementById('check_upgrade_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        	cancel_update();
+        });
+    }
+	function toggle_cancel_upgrade_modal(){
+        var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cancel_upgrade_modal'));
+        _myModal.toggle();
+    }
+    function saveCancelUpgradeListener() {
+        var myModalEl = document.getElementById('cancel_upgrade_modal');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        });
+    }
+	function show_error_upgrade(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('softUp_err_des3');
+		document.getElementById('_dialog_modal_warning').style = "color: var(--errorColor);"
+        toggle_dialog_modal();
+    }
+	function show_something_error_upgrade(){
+        document.getElementById('_dialog_modal_header').innerHTML = i18next.t('Error_meg_title');
+        document.getElementById('_dialog_modal_text').innerHTML = "";
+        document.getElementById('_dialog_modal_warning').innerHTML = i18next.t('softUp_err_des3');
+		document.getElementById('_dialog_modal_warning').style = "color: var(--errorColor);"
+        toggle_dialog_modal();
+    }
+	function check_upgrade()
+	{
+		document.getElementById('_modal_text').innerHTML = i18next.t('softUp_connecting');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		//console.log('RequestVerifyToken=' + req.RequestVerifyToken);
+		do_fetch_api("POST", "/cgi-bin/cgi/acs_check_update.cgi", req)
+			.then(post_acs_check_update).catch(response_print);
+	}
+	function checking_new_firmware_status(data_json){
+		const req = {}; //create javascript object;
+        req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		//console.log('RequestVerifyToken=' + req.RequestVerifyToken);
+		do_fetch_api("POST", "/cgi-bin/cgi/acs_check_update_status.cgi", req)
+			.then(post_acs_check_update).catch(response_print);
+	}
+	function post_acs_check_update(data_json){
+		//console.log("result: " + JSON.stringify(data_json));
+		document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+		if("inprogress" == data_json.result){
+			if(check_for_update_counter < 20){
+				check_for_update_counter += 1;	
+				setTimeout(checking_new_firmware_status, 6000);
+			}else{
+				//console.log("wait up to 2 minutes, cancel the operation.");
+				toggle_modal();
+				document.getElementById('cancel_upgrade_modal_text').innerHTML = i18next.t('softUp_des1');
+				document.getElementById('cancel_upgrade_modal_text_1').innerHTML = i18next.t('softUp_des2', {sw:sw,fw_date:fw_date});
+				toggle_cancel_upgrade_modal();
+			}
+		}else if("ready" == data_json.result){
+			toggle_modal();
+			check_upgrade_response(data_json);
+		}
+	}
+	function check_upgrade_response(data_json)
+	{
+		//console.log("res: " + JSON.stringify(data_json));
+        if(!data_json.result)
+		{
+            document.getElementById('RequestVerifyToken').value = data_json.RequestVerifyToken;
+        }
+		else
+		{
+			//setTimeout(toggle_modal, 10000);
+			avail_software = data_json.AvailSoftwareVersion
+			//console.log("avail_software = "+avail_software);
+			//console.log("sw = "+sw);
+			if(avail_software.length != 0)
+			{
+				document.getElementById('check_upgrade_modal_text').innerHTML = i18next.t('softUp_des3');
+				document.getElementById('check_upgrade_modal_text_1').innerHTML = i18next.t('softUp_des4', {software:avail_software});
+				toggle_check_upgrade_modal();
+			}
+			else
+			{
+				document.getElementById('cancel_upgrade_modal_text').innerHTML = i18next.t('softUp_des5');
+				document.getElementById('cancel_upgrade_modal_text_1').innerHTML = i18next.t('softUp_des2', {sw:sw,fw_date:fw_date});
+				toggle_cancel_upgrade_modal();
+			}
+        }
+    }
+	function toggle_upgradeRouter_acs()
+	{
+		user_confirm_ok = 1;
+		var _myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('_upgrade_modal_acs'));
+		_myModal.toggle();
+	}
+	function saveupgradeRouter_acsListener() {
+        var myModalEl = document.getElementById('_upgrade_modal_acs');
+        myModalEl.addEventListener('show.bs.modal', function (event) {
+			toggle_check_upgrade_modal();
+        });
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {        	
+        });
+    }
+	function upgradeRouter_acs()
+	{
+		user_confirm_ok = 1;
+		toggle_upgradeRouter_acs();
+		document.getElementById('_modal_text').innerHTML = i18next.t('softUp_des6');
+		toggle_modal();
+
+		const req = {}; //create javascript object;
+		req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+		req.CheckUpdate = "1";
+		//console.log("req = " + JSON.stringify(req));
+		do_fetch_api("POST", "/cgi-bin/cgi/acs_update_confirm.cgi", req)
+			.then(response => {setTimeout(toggle_modal, 300000); return response})
+			.then(response => {setTimeout(response_cancel_update, 300500); return response}).catch(response_print);
+	}
+	function cancel_update()
+	{
+		if(0 == user_confirm_ok){
+			const req = {}; //create javascript object;
+			req.RequestVerifyToken = document.getElementById('RequestVerifyToken').value;
+			req.CheckUpdate = "0";
+			//console.log("req = " + JSON.stringify(req));
+			do_fetch_api("POST", "/cgi-bin/cgi/acs_update_confirm.cgi", req)
+				.then(response_cancel_update).catch(response_print);
+		}
+	}
+	function response_cancel_update(data_json)
+	{
+        //console.log("res: " + JSON.stringify(data_json));
+        setTimeout(() => {window.location.href = "/cgi-bin/cm/adm-sw.html";}, 1000);
+    }
+
+	function set_EAA_ToItem(p_id){
+        var _ImgLength = document.getElementById(p_id).getElementsByTagName("IMG").length;
+        var _Imgs = document.getElementById(p_id).getElementsByTagName("IMG");
+        for(var _i=0;_i<_ImgLength;_i++)
+        {
+            if(_Imgs[_i].hasAttribute("data-i18n-img-alt")){
+                var i18nImgKey = _Imgs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nImgKey.length > 0){
+                    _Imgs[_i].setAttribute("alt", i18next.t(i18nImgKey));
+                }else{
+                    _Imgs[_i].setAttribute("alt", "");
+                }
+            }
+        }
+        
+        var _InputLength = document.getElementById(p_id).getElementsByTagName("INPUT").length;
+        var _Inputs = document.getElementById(p_id).getElementsByTagName("INPUT");
+        for(var _i=0;_i<_InputLength;_i++)
+        {
+            if(_Inputs[_i].hasAttribute("data-i18n-img-alt") && _Inputs[_i].type == 'image'){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-img-alt");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("alt", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("alt", "");
+                }
+            }
+            if(_Inputs[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nKey = _Inputs[_i].getAttribute("data-i18n-aria-label");
+                if(i18nKey.length > 0){
+                    _Inputs[_i].setAttribute("aria-label", i18next.t(i18nKey));
+                }else{
+                    _Inputs[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+        
+        var _BtnLength = document.getElementById(p_id).getElementsByTagName("BUTTON").length;
+        var _Btns = document.getElementById(p_id).getElementsByTagName("BUTTON");
+        for(var _i=0;_i<_BtnLength;_i++)
+        {
+            if(_Btns[_i].hasAttribute("data-i18n-aria-label")){
+                var i18nImgKey = _Btns[_i].getAttribute("data-i18n-aria-label");
+                if(i18nImgKey.length > 0){
+                    _Btns[_i].setAttribute("aria-label", i18next.t(i18nImgKey));
+                }else{
+                    _Btns[_i].setAttribute("aria-label", "");
+                }
+            }
+        }
+	}
+
+    </script>
+
+    <style nonce="cdide4o6gf">
+    .fxCardViewBorder .inCard_SaveBtn {
+      width: 100%;
+      height: 48px;
+    }
+    .cardViewSelect{
+        width: 100%;
+    }
+    .cardViewSelect ul{
+        width: 250px;
+    }
+	.progress {
+		border-radius: 12px;
+		height: 14px;
+		width: 50%;
+		margin-left: auto;
+		margin-right:auto; 
+	}
+	.progress-bar {
+		border-radius: 12px;
+		height: 14px;
+		width: 0%;
+		background: #49b9ed;
+	}
+@media only screen and (min-width: 576px) {
+    .cardViewSelect{ 
+        width: 250px;
+    }
+    .cardViewSelect ul{ 
+        width: 250px;
+    }
+    .fxCardViewBorder .inCard_SaveBtn {
+      float: right;
+      width: 264px;
+      height: 48px;
+      margin: 0 12px 30px 0;
+    }
+	.warningmsg {
+		color: var(--warningcolor);
+		text-align: left;
+		letter-spacing: 0px;
+		color: #DE6421;
+		opacity: 1;
+	}
+}
+	#xxl-firmware_label:focus,
+	#xl-firmware_label:focus,
+	#mobile-firmware_label:focus {
+		outline: rgb(229, 151, 0) auto 1px;
+	}
+    </style>
+    <body id="Body">
+	<input type="hidden" name="RequestVerifyToken" id="RequestVerifyToken" value="FAKE0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000">
+    <div class="spdMenuHeight" id="_myNavMenu">
+    <script nonce="cdide4o6gf" type="text/javascript">
+    // render navigation menu
+     document.getElementById('_myNavMenu').innerHTML = genUI_nav();
+    </script>
+    <div class="col-xl g-0 mainContent" id="_myHeadline">
+        <script nonce="cdide4o6gf" type="text/javascript">
+        // render headline with search bar
+        document.getElementById('_myHeadline').innerHTML = genUI_headline();
+        </script>
+        <!-- Implement your page content here: Start -->
+        <div class="fx_pc" id="_fx_pc">
+		<div class="row me-0 ms-0 mt-4 justify-content-between">
+			<div class="col-xxl bg-white me-xxl-4 fxCardViewBorder">
+				<table class="table table-borderless">
+					<thead>
+						<tr>
+							<th class="cardViewTitle" colspan="2" data-i18n="softUp_details" scope="row">Software Details</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="cardViewTr">
+							<td class="w-25 cardViewTd" data-i18n="softUp_softVer">Current Software Version</td>
+							<td class="w-25 cardViewText" id="xxl-software_version"></td>
+						</tr>
+					</tbody>
+				</table>
+				<br><br>
+				<button class="inCard_SaveBtn" id="xxl-check_update_btn" data-i18n="softUp_checkUP">Check for Update</button>
+			</div>
+			<div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+					<thead>
+						<tr>
+							<th colspan="2" class="cardViewTitle" data-i18n="softUp_title" scope="row">Software Upgrade</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="cardViewTr">
+							<td class="cardViewTd" data-i18n="softUp_selectSoft">Select New Software</td>
+							<td class="cardViewTd">
+								<div class="cardViewSelect" id="xxl-input_sw_card_div">
+									<input class="cardViewInputTextWithLabel" id="xxl-input_upgrade_sw" value="" disabled data-i18n-aria-label="softUp_selectSoft"></input>
+									<label id="xxl-firmware_label">
+										<img src="/images/ic_upload.svg" data-i18n-img-alt="softUp_upload_alt">
+									</label>
+									<input id="xxl-firmware" name="fupgrade.bin" class="file" type="file" data-i18n-aria-label="softUp_selectFile">
+								</div>
+								<label class="cardViewInputErrorText" id="xxl-firmware_error"></label>
+							</td>
+						</tr>
+						<tr class="cardViewTr">
+							<td colspan="2" class="cardViewTd" id="xxl-upgrade_info">
+								<label class="cardViewNoteInfo" data-i18n="softUp_selectSoft_des">Note: Do not turn off your device during software update.</label>
+							</td>
+						</tr>
+					</tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xxl-sw_upgrdebtn" data-i18n="softUp_update">Update</button>
+			</div>
+		</div>
+        </div>
+<!-- Implement xl-1200 content here: start -->
+        <div class="fx_pc_xl" id="_fx_pc_xl">
+        <div class="row me-0 ms-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" data-i18n="softUp_details" scope="row">Software Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="cardViewTr">
+					<td class="w-50 cardViewTd" data-i18n="softUp_softVer">Current Software Version</td>
+					<td class="w-50 cardViewText" id="xl-software_version"></td>
+                  </tr>
+                </tbody>
+                </table>
+                <button class="inCard_SaveBtn" id="xl-check_update_btn" data-i18n="softUp_checkUP">Check for Update</button>
+            </div>
+        </div>
+        <div class="row me-0 ms-0 mt-4 justify-content-between">
+            <div class="col-xxl bg-white mt-xxl-0 fxCardViewBorder">
+                <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th colspan="2" class="cardViewTitle" data-i18n="softUp_title" scope="row">Software Upgrade</th>
+                  </tr>
+                </thead>
+                <tbody>
+					<tr class="cardViewTr">
+						<td class="cardViewTd" data-i18n="softUp_selectSoft">Select New Software</td>
+						<td class="cardViewTd">
+							<div class="cardViewSelect" id="xl-input_sw_card_div">
+								<input class="cardViewInputTextWithLabel" id="xl-input_upgrade_sw" value="" disabled data-i18n-aria-label="softUp_selectSoft"></input>
+								<label id="xl-firmware_label">
+									<img src="/images/ic_upload.svg" data-i18n-img-alt="softUp_upload_alt">
+								</label>
+								<input id="xl-firmware" name="fupgrade.bin" class="file" type="file" data-i18n-aria-label="softUp_selectFile">
+							</div>
+							<label class="cardViewInputErrorText" id="xl-firmware_error"></label>
+						</td>
+					</tr>
+					<tr class="cardViewTr">
+						<td colspan="2" class="cardViewTd" id="xl-upgrade_info">
+							<label class="cardViewNoteInfo" data-i18n="softUp_selectSoft_des">Note: Do not turn off your device during software update.</label>
+						</td>
+					</tr>
+                </tbody>
+                </table>
+				<button class="inCard_SaveBtn" id="xl-sw_upgrdebtn" data-i18n="softUp_update">Update</button>
+            </div>
+        </div>
+        </div>
+<!-- Implement xl-1200 content here: end -->
+<!-- Implement mobile content here: Start -->
+        <div class="fx_mobile" id="_fx_mobile">
+        <div class="row ms-0 me-0 mt-2 justify-content-between">
+            <div class="col-xxl bg-white me-xxl-4 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseSD-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseSD">
+                        <span data-i18n="softUp_details">Software Details</span>
+                        <img id="collapseSD-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseSD" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+                              <tr class="cardViewTr">
+                                <td class="cardViewTd" data-i18n="softUp_softVer">Current Software Version</td>
+                              </tr>
+							  <tr class="cardViewTr">
+								<td class="cardViewText" id="mobile-software_version"></td>
+                              </tr>
+                            </tbody>
+                            </table>
+                            <button class="inCard_SaveBtn" id="mobile-check_update_btn" data-i18n="softUp_checkUP">Check for Update</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl bg-white mt-4 mt-xxl-0 fxCardViewBorder mobile_cardView">
+                <div class="card">
+                    <div class="card-header" id="collapseSU-header">
+                        <a class="btn" data-bs-toggle="collapse" href="#collapseSU">
+                        <span data-i18n="softUp_title">Software Upgrade</span>
+                        <img id="collapseSU-img" src="/images/iconOpenDown.svg" data-i18n-img-alt="">
+                        </a>
+                    </div>
+                    <div id="collapseSU" class="collapse">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                            <thead>
+                            </thead>
+                            <tbody>
+								<tr class="cardViewTr">
+									<td class="cardViewTd" data-i18n="softUp_selectSoft">Select New Software</td>
+								</tr>
+								  <tr class="cardViewTr">
+									<td class="cardViewTd">
+										<div class="cardViewSelect" id="mobile-input_sw_card_div">
+												<input class="cardViewInputTextWithLabel" id="mobile-input_upgrade_sw" value="" disabled data-i18n-aria-label="softUp_selectSoft"></input>
+												<label id="mobile-firmware_label">
+													<img src="/images/ic_upload.svg" data-i18n-img-alt="softUp_upload_alt">
+												</label>
+												<input class="cardViewInputSubInput" id="mobile-firmware" name="fupgrade.bin" class="file" type="file" data-i18n-aria-label="softUp_selectFile">
+										</div>
+										<label class="cardViewInputErrorText" id="mobile-firmware_error"></label>
+									</td>
+								  </tr>
+								<tr class="cardViewTr">
+									<td colspan="2" class="cardViewTd" id="mobile-upgrade_info">
+										<label class="cardViewNoteInfo" data-i18n="softUp_selectSoft_des">Note: Do not turn off your device during software update.</label>
+									</td>
+								</tr>
+                            </tbody>
+                            </table>
+							<button class="inCard_SaveBtn" id="mobile-sw_upgrdebtn" data-i18n="softUp_update">Update</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+<!-- Implement mobile content here: end -->
+        <!-- Implement your page content here: End -->
+    </div>    
+    </div>
+	<div class="modal fade dialog_modal" id="_upgrade_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="softUp_dialog_Instructions">Software Upgrade Instructions</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" id="_upgrade_modal_info" data-i18n="softUp_dialog_des1">Instructions</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des2">&bull; New software package will improve the stability of your device.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des3">&bull; Do not close the browser or unplug the device while upgrade is in progress.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des4">&bull; Device will restart after successful upgrade.</div>
+                    </div>
+					<button class="inModal_Btn" id="upgradeRouter_btn" data-i18n="softUp_dialog_btn">Upgrade</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_upgrade_modal_acs" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="softUp_dialog_Instructions">Software Upgrade Instructions</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" id="_upgrade_modal_acs_info" data-i18n="softUp_dialog_des1">Instructions</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des2">&bull; New software package will improve the stability of your device.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des3">&bull; Do not close the browser or unplug the device while upgrade is in progress.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des4">&bull; Device will restart after successful upgrade.</div>
+                    </div>
+					<button class="inModal_Btn" id="upgradeRouter_acs_btn" data-i18n="softUp_dialog_btn">Upgrade</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="_upgrade_progress" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" data-i18n="softUp_dialog_process">Upgrade Process</label>
+					<button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" id="_upgrade_progress_info" data-i18n="softUp_dialog_des1">Instructions</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des2">&bull; New software package will improve the stability of your device.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des3">&bull; Do not close the browser or unplug the device while upgrade is in progress.</div>
+                    </div>
+					<div class="d-sm-flex flex-wrap flex-sm-nowrap">
+                        <div class="p-2 align-items-center flex-fill inModalTitle" data-i18n="softUp_dialog_des4">&bull; Device will restart after successful upgrade.</div>
+                    </div>
+					<br>
+					<!-- <div class="progress"> -->
+						<!-- <div id="UpgradeProgressPercent" class="progress-bar" role="progressbar"></div> -->
+					<!-- </div> -->
+					<!-- <label id="PERCENT" class="">0%</label> -->
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade loadingModal" id="_loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <div><img id="_loading_img1" class="d-inline" src="/images/ic_loadingBall_css.svg" data-i18n-img-alt="loadingIcon"></img></div>
+                        <div class="loadingModal_text" id="_modal_text">Saving settings, please wait.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="modal fade dialog_modal" id="_dialog_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header"></label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="_dialog_modal_text"></label>
+                    <br><br>
+					<label class="dialog_modal_warning" id="_dialog_modal_warning"></label>
+					<button class="inModal_Btn" id="toggle_dialog_modal_btn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="check_upgrade_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header">Software Version Status</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="check_upgrade_modal_text"></label>
+					<br><br>
+					<label class="dialog_modal_text" id="check_upgrade_modal_text_1"></label>
+					<button class="inModal_Btn" id="toggle_upgradeRouter_acs_btn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade dialog_modal" id="cancel_upgrade_modal" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<label class="modal-title dialog_modal_header" id="_dialog_modal_header" data-i18n="softUp_dialog_status">Software Version Status</label>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+				</div>
+				<div class="modal-body text-center">
+					<label class="dialog_modal_text" id="cancel_upgrade_modal_text"></label>
+					<br><br>
+					<label class="dialog_modal_text" id="cancel_upgrade_modal_text_1"></label>
+					<button class="inModal_Btn" id="cancel_update_btn" data-i18n="ok">Ok</button>
+				</div>
+			</div>
+		</div>
+	</div>
+    </body>
+<script nonce="cdide4o6gf">
+    var inited = 0;
+    i18next.on('loaded', function(loaded) {
+        if(inited == 0){
+            //console.log("loaded: "+ JSON.stringify(loaded));
+            bodyLoad();
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_upgrade_modal");
+            set_EAA_ToItem("_upgrade_modal_acs");
+            set_EAA_ToItem("_upgrade_progress");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("check_upgrade_modal");
+            set_EAA_ToItem("cancel_upgrade_modal");
+        }
+        inited++;
+    });
+    i18next.on('languageChanged', function(lng) {
+        if(inited > 0){
+            console.log("languageChanged: "+ JSON.stringify(lng));
+            document.getElementById("_mainContentTitle").innerHTML = i18next.t('menu_SoftUp');
+            document.getElementById(platform + "-input_upgrade_sw").value = i18next.t('softUp_browse');
+            set_EAA_ToItem("_fx_pc");
+            set_EAA_ToItem("_fx_pc_xl");
+            set_EAA_ToItem("_fx_mobile");
+            set_EAA_ToItem("_upgrade_modal");
+            set_EAA_ToItem("_upgrade_modal_acs");
+            set_EAA_ToItem("_upgrade_progress");
+            set_EAA_ToItem("_loadingModal");
+            set_EAA_ToItem("_dialog_modal");
+            set_EAA_ToItem("check_upgrade_modal");
+            set_EAA_ToItem("cancel_upgrade_modal");
+        }
+    });
+</script>
+</html>

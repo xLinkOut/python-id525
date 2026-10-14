@@ -1,0 +1,21 @@
+{
+  "scenario": "account_data_limit_refused_1000",
+  "page": "adm-user",
+  "endpoint": "data_usage_save",
+  "ui_ref": "adm-user.html:541",
+  "call": "account.set_data_limit",
+  "inputs": {
+    "value": 1000,
+    "unit": "MB"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "adm-user",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "The valid volume range is 1MB - 999MB / 1GB - 999GB",
+  "notes": "",
+  "fixture_sha256": "751f40ffb32c25bf496da1c8b26a943134a775934f53dd2caa13e223e9cb4382"
+}

@@ -1,0 +1,21 @@
+{
+  "scenario": "ipfilter_add_refused_v4_as_v6",
+  "page": "fw-ipfilter",
+  "endpoint": "ipfilter_add",
+  "ui_ref": "fw-ipfilter.html:315",
+  "call": "ip_filter.add_rule",
+  "inputs": {
+    "ip": "192.0.2.1",
+    "ip_type": "IPv6"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "fw-ipfilter",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "387f47e9685d940d5be541fa63dec39be3b8a12fce6c12e45ecd4af56bcd93ee"
+}
