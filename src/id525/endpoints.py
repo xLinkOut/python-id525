@@ -397,7 +397,7 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.VOIP_APPLY: EndpointInfo("voip-settings", _W, _CAPT, "voip-settings.html:1", "VoIP / SIP"),
     _E.FIREWALL_LEVEL: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:137", "Firewall level"),
     _E.VPN_PASSTHROUGH: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:149", "VPN passthrough"),
-    _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _STATIC, "fw-ddns.html:68", "DDNS settings"),
+    _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _LIVE, "fw-ddns.html:68", "DDNS settings"),
     _E.DDNS_SET: EndpointInfo(
         "fw-ddns", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ddns.html:334", "Set DDNS"
     ),
@@ -451,27 +451,28 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
 _P = Page
 
 PAGES: Final[dict[Page, PageInfo]] = {
-    _P.NET_STATUS: PageInfo("Network status", _STATIC),
+    # user trace, 2026-10-14; its SIM PIN vars may be blank
+    _P.NET_STATUS: PageInfo("Network status", _LIVE),
     _P.CELLULAR_STATUS: PageInfo("Cellular status", _LIVE),
     _P.CLIENT_STATUS: PageInfo("Connected clients", Status.NO_DATA),  # = client_status_retrieve
     _P.UTILIZATION: PageInfo("Utilization", _LIVE),
     _P.ABOUT: PageInfo("About", _LIVE),
-    _P.ACCOUNT: PageInfo("Account & data usage", _STATIC),
-    _P.SOFTWARE: PageInfo("Software update", _STATIC),
+    _P.ACCOUNT: PageInfo("Account & data usage", _LIVE),  # user trace, 2026-10-14
+    _P.SOFTWARE: PageInfo("Software update", _LIVE),  # user trace, 2026-10-14; all fields empty
     _P.SMS: PageInfo("SMS", Status.NO_DATA),  # messages come from req_smsReload
     _P.BACKUP: PageInfo("Backup & reboot", Status.NO_DATA),  # only a UI feature flag
-    _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),
+    _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _LIVE),  # user trace, 2026-10-14
     _P.LAN_SETTINGS: PageInfo("LAN settings", _LIVE),  # user trace, 2026-10-14
     _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _LIVE),  # user trace, 2026-10-14
-    _P.VOIP_SETTINGS: PageInfo("VoIP settings", _STATIC),
-    _P.FIREWALL: PageInfo("Firewall", _STATIC),
-    _P.DDNS: PageInfo("Dynamic DNS", _STATIC),
-    _P.IP_FILTER: PageInfo("IP filter", _STATIC),
-    _P.MAC_FILTER: PageInfo("MAC filter", _STATIC),
-    _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _STATIC),
-    _P.URL_FILTER: PageInfo("URL filter", _STATIC),
+    _P.VOIP_SETTINGS: PageInfo("VoIP settings", _LIVE),  # user trace, 2026-10-14
+    _P.FIREWALL: PageInfo("Firewall", _LIVE),  # user trace, 2026-10-14
+    _P.DDNS: PageInfo("Dynamic DNS", _LIVE),  # user trace, 2026-10-14
+    _P.IP_FILTER: PageInfo("IP filter", _LIVE),  # user trace, 2026-10-14; no rules
+    _P.MAC_FILTER: PageInfo("MAC filter", _LIVE),  # user trace, 2026-10-14; no rules
+    _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _LIVE),  # 2026-10-14; no rules
+    _P.URL_FILTER: PageInfo("URL filter", _LIVE),  # user trace, 2026-10-14; no rules
     _P.DIAGNOSTICS: PageInfo("Self diagnostics", _STATIC),
-    _P.PING: PageInfo("Ping", _STATIC),
+    _P.PING: PageInfo("Ping", _LIVE),  # user trace, 2026-10-14
     _P.TRACEROUTE: PageInfo("Traceroute", _STATIC),
 }
 

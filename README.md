@@ -35,10 +35,10 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 12 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 25 |
 | 🔵 ui-captured | byte-identical to the router UI, captured offline | 43 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
-| 🔹 static | implemented from the UI code, not captured | 15 |
+| 🔹 static | implemented from the UI code, not captured | 2 |
 | ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
 | ▫️ dead code | never called by the UI | 7 |
@@ -52,7 +52,7 @@ so it is always current.
 | Session (shared UI script) | Log in | `login_req` | session | 🟦 live-verified | `ensure_session()` |
 | Session (shared UI script) | Log out | `logout_req` | session | 🟦 live-verified | `logout()` |
 | Session (shared UI script) | Session state | `login_query` | session | 🟦 live-verified | `ensure_session()` |
-| Network status | Page data | `net-status.html` | read | 🔹 static | `status.get_sim_pin_status()` |
+| Network status | Page data | `net-status.html` | read | 🟦 live-verified | `status.get_sim_pin_status()` |
 | Network status | Status | `net_status_retrieve` | read | 🟦 live-verified | `get_network_status()` |
 | Network status | Enter PIN | `pin_enter` | write | 🟧 stub-policy | `cellular.enter_pin()` |
 | Network status | Enter PUK | `puk_enter` | write | 🟧 stub-policy | `cellular.enter_puk()` |
@@ -62,7 +62,7 @@ so it is always current.
 | Connected clients | LAN clients | `client_status_retrieve` | read | 🟦 live-verified | `get_clients()` |
 | Utilization | Page data | `util-status.html` | read | 🟦 live-verified | `get_utilization()` |
 | About | Page data | `help-about.html` | read | 🟦 live-verified | `get_device_info()` |
-| Cellular settings | Page data | `cellular-settings.html` | read | 🔹 static | `cellular.add_apn()` |
+| Cellular settings | Page data | `cellular-settings.html` | read | 🟦 live-verified | `cellular.add_apn()` |
 | Cellular settings | Network mode | `req_CellularModeSelection` | write | 🔵 ui-captured | `cellular.set_network_mode()` |
 | Cellular settings | Change PIN | `req_ChangePIN` | write | 🟧 stub-policy | `cellular.change_pin()` |
 | Cellular settings | PIN lock | `req_PINLockSave` | write | 🟧 stub-policy | `cellular.set_pin_lock()` |
@@ -88,36 +88,36 @@ so it is always current.
 | Wi-Fi settings | WPS state | `req_wpsCheckScan` | action | 🔵 ui-captured | `wifi.start_wps()` |
 | Wi-Fi settings | Stop WPS | `req_wpsStopScan` | action | 🔵 ui-captured | `wifi.stop_wps()` |
 | Wi-Fi settings | Mesh (commented out) | `req_meshRouterSetting` | write | ▫️ dead-code |  |
-| VoIP settings | Page data | `voip-settings.html` | read | 🔹 static | `voip.get_settings()` |
+| VoIP settings | Page data | `voip-settings.html` | read | 🟦 live-verified | `voip.get_settings()` |
 | VoIP settings | VoIP / SIP | `voip_apply` | write | 🔵 ui-captured | `voip.update()` |
-| Firewall | Page data | `fw-adv.html` | read | 🔹 static | `firewall.get_settings()` |
+| Firewall | Page data | `fw-adv.html` | read | 🟦 live-verified | `firewall.get_settings()` |
 | Firewall | Firewall level | `fw_adv_apply` | write | 🔵 ui-captured | `firewall.set_level()` |
 | Firewall | VPN passthrough | `fw_adv_vpn_apply` | write | 🔵 ui-captured | `firewall.set_vpn_passthrough()` |
-| Dynamic DNS | Page data | `fw-ddns.html` | read | 🔹 static | `ddns.get_settings()` |
-| Dynamic DNS | DDNS settings | `get_ddns_config` | read | 🔹 static | `ddns.get_settings()` |
+| Dynamic DNS | Page data | `fw-ddns.html` | read | 🟦 live-verified | `ddns.get_settings()` |
+| Dynamic DNS | DDNS settings | `get_ddns_config` | read | 🟦 live-verified | `ddns.get_settings()` |
 | Dynamic DNS | Set DDNS | `set_ddns_config` | write | 🔷 ui-captured-synthetic | `ddns.set_settings()` |
-| IP filter | Page data | `fw-ipfilter.html` | read | 🔹 static | `ip_filter.add_rule()` |
+| IP filter | Page data | `fw-ipfilter.html` | read | 🟦 live-verified | `ip_filter.add_rule()` |
 | IP filter | Add IP rule | `ipfilter_add` | write | 🔵 ui-captured | `ip_filter.add_rule()` |
 | IP filter | Edit IP rule | `ipfilter_edit` | write | 🔷 ui-captured-synthetic | `ip_filter.edit_rule()` |
 | IP filter | IP filter | `ipfilter_save` | write | 🔵 ui-captured | `ip_filter.delete_rule()` |
-| MAC filter | Page data | `fw-macfilter.html` | read | 🔹 static | `mac_filter.add_connected_client()` |
+| MAC filter | Page data | `fw-macfilter.html` | read | 🟦 live-verified | `mac_filter.add_connected_client()` |
 | MAC filter | Add MAC | `macfilter_add` | write | 🔵 ui-captured | `mac_filter.add_connected_client()` |
 | MAC filter | Edit MAC | `macfilter_edit` | write | 🔷 ui-captured-synthetic | `mac_filter.modify_rule()` |
 | MAC filter | Delete MAC | `macfilter_delete` | write | 🔷 ui-captured-synthetic | `mac_filter.delete_rule()` |
 | MAC filter | MAC filter | `macfilter_save` | write | 🔵 ui-captured | `mac_filter.disable()` |
 | MAC filter | Rename client (UI code broken) | `set_host_name` | write | ▫️ dead-code |  |
-| Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | 🔹 static | `port_forwarding.add_rule()` |
+| Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | 🟦 live-verified | `port_forwarding.add_rule()` |
 | Port forwarding & DMZ | DMZ | `dmz_save` | write | 🔵 ui-captured | `port_forwarding.disable_dmz()` |
 | Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | 🔵 ui-captured | `port_forwarding.disable()` |
 | Port forwarding & DMZ | Add forward | `portforward_add` | write | 🔵 ui-captured | `port_forwarding.add_rule()` |
 | Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🔷 ui-captured-synthetic | `port_forwarding.modify_rule()` |
 | Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🔷 ui-captured-synthetic | `port_forwarding.delete_rule()` |
-| URL filter | Page data | `fw-urlfilter.html` | read | 🔹 static | `url_filter.add_url()` |
+| URL filter | Page data | `fw-urlfilter.html` | read | 🟦 live-verified | `url_filter.add_url()` |
 | URL filter | URL filter on/off | `urlfilter_status_save` | write | 🔵 ui-captured | `url_filter.set_filter()` |
 | URL filter | Add URL | `urlfilter_add_save` | write | 🔵 ui-captured | `url_filter.add_url()` |
 | URL filter | Edit URL | `urlfilter_edit` | write | 🔷 ui-captured-synthetic | `url_filter.edit_url()` |
 | URL filter | Delete URL | `urlfilter_delete_save` | write | 🔷 ui-captured-synthetic | `url_filter.delete_url()` |
-| Account & data usage | Page data | `adm-user.html` | read | 🔹 static | `account.change_password()` |
+| Account & data usage | Page data | `adm-user.html` | read | 🟦 live-verified | `account.change_password()` |
 | Account & data usage | Change admin password | `set_account_management` | destructive | 🔵 ui-captured | `account.change_password()` |
 | Account & data usage | Session timeout | `set_device_management` | write | 🔵 ui-captured | `account.set_session_timeout()` |
 | Account & data usage | Reset data usage | `reset_data` | destructive | 🔵 ui-captured | `account.reset_data_usage()` |
@@ -130,7 +130,7 @@ so it is always current.
 | SMS | Mark SMS read | `req_smsUpdateStatus` | write | 🔷 ui-captured-synthetic | `sms.mark_read()` |
 | SMS | Delete SMS | `req_smsDelete` | write | 🔷 ui-captured-synthetic | `sms.delete_conversations()` |
 | SMS | Send SMS | `req_smsCompose` | action | 🔵 ui-captured | `sms.send()` |
-| Software update | Page data | `adm-sw.html` | read | 🔹 static | `software.get_info()` |
+| Software update | Page data | `adm-sw.html` | read | 🟦 live-verified | `software.get_info()` |
 | Software update | Ask the operator for firmware (UI button disabled) | `acs_check_update` | action | 🔵 ui-captured | `software.check_for_update()` |
 | Software update | Firmware check progress | `acs_check_update_status` | action | 🔵 ui-captured | `software.check_for_update()` |
 | Software update | Install operator firmware | `acs_update_confirm` | destructive | 🟧 stub-unsafe | `software.install_operator_update()` |
@@ -144,7 +144,7 @@ so it is always current.
 | Self diagnostics | Page data | `self-diag.html` | read | 🔹 static | `diagnostics.run_self_test()` |
 | Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | 🔵 ui-captured | `diagnostics.check_connections()` |
 | Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🔵 ui-captured | `diagnostics.run_self_test()` |
-| Ping | Page data | `self-ping.html` | read | 🔹 static | `diagnostics.get_ping_defaults()` |
+| Ping | Page data | `self-ping.html` | read | 🟦 live-verified | `diagnostics.get_ping_defaults()` |
 | Ping | Ping | `req_pingTest` | action | 🔵 ui-captured | `diagnostics.ping()` |
 | Traceroute | Page data | `self-tracert.html` | read | 🔹 static | `diagnostics.traceroute()` |
 | Traceroute | Traceroute | `req_traceRouteTest` | action | 🔵 ui-captured | `diagnostics.traceroute()` |

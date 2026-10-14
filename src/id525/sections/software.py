@@ -23,7 +23,12 @@ ACS_MAX_POLLS = 20
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SoftwareInfo:
-    """Firmware state as shown by the ``adm-sw`` page."""
+    """Firmware state as shown by the ``adm-sw`` page.
+
+    On ``ID525_REL_1.0.09.17`` the router leaves every field of this page
+    empty (seen live and in every dump), so all values are ``None``: the
+    firmware version is read from the About page (``get_device_info()``).
+    """
 
     version: str | None
     build_date: str | None

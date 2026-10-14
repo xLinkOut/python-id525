@@ -22,7 +22,12 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SimPinStatus:
-    """SIM PIN protection state (``net-status`` page)."""
+    """SIM PIN protection state (``net-status`` page).
+
+    The router does not always fill these fields in (seen live): each value
+    is ``None`` when the page leaves it blank. ``cellular.get_settings()``
+    reliably reports ``pin_enabled`` and ``pin_retries`` (no PUK count).
+    """
 
     pin_enabled: bool | None
     """Whether the SIM asks for a PIN at power-on."""
