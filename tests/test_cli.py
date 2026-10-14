@@ -87,6 +87,29 @@ def test_quick_reads_still_parse() -> None:
     assert args.commands == ["status", "clients"]
 
 
+@pytest.mark.parametrize(
+    ("argv", "path"),
+    [
+        (["sms", "mark-read", "--phone-number", "123"], "sms.mark_read"),
+        (["--host", "h", "status", "get-sim-pin-status"], "status.get_sim_pin_status"),
+    ],
+)
+def test_section_commands_win_over_quick_reads_of_the_same_name(argv: list[str], path: str) -> None:
+    assert parse_args(argv).operation.path == path
+
+
+def test_every_section_command_reaches_its_own_parser(capsys: pytest.CaptureFixture[str]) -> None:
+    for section, commands in cli_operations().items():
+        for command in commands:
+            with pytest.raises(SystemExit):
+                parse_args([section, command, "--help"])
+            assert f"usage: id525 {section} {command}" in capsys.readouterr().out
+
+
+def test_quick_reads_named_like_sections_still_parse() -> None:
+    assert parse_args(["sms", "status"]).commands == ["sms", "status"]
+
+
 def test_every_implemented_operation_is_reachable_from_the_cli() -> None:
     session_plumbing = {"login", "logout", "ensure_session", "keep_alive"}
     quick = {f.__name__ for f in COMMANDS.values()}

@@ -224,9 +224,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         elif not arg.startswith("-"):
             positional.append(arg)
     known = {*COMMANDS, "all"}
-    first = next((a for a in positional if a in known | set(cli_operations())), None)
-    if first in known:
-        return build_read_parser().parse_args(argv)
+    sections = cli_operations()
+    # "status" and "sms" are both quick reads and sections: a section command after them wins
+    for i, arg in enumerate(positional):
+        if arg in sections and i + 1 < len(positional) and positional[i + 1] in sections[arg]:
+            return build_parser().parse_args(argv)
+        if arg in known:
+            return build_read_parser().parse_args(argv)
     return build_parser().parse_args(argv)
 
 
