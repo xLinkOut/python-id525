@@ -343,3 +343,13 @@ async def test_unknown_firmware_is_neither_tested_nor_untested(
     router.page_html["help-about"] = about
     client = await make_client()
     assert (await client.get_device_info()).firmware_tested is None
+
+
+async def test_firmware_check_can_be_turned_off(
+    make_client: ClientFactory, router: FakeRouter, caplog: pytest.LogCaptureFixture
+) -> None:
+    about = load_fixture("help-about.html").replace("ID525_REL_1.0.09.17", "ID525_REL_9.9.99.99")
+    router.page_html["help-about"] = about
+    client = await make_client(check_firmware=False)
+    assert (await client.get_device_info()).firmware_tested is False  # still reported
+    assert "never tested" not in caplog.text

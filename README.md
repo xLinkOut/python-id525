@@ -172,7 +172,10 @@ The router is usually a production device, so:
   (`id525.const.TESTED_FIRMWARE`). On any other firmware `get_device_info()`
   logs a warning (once per client) and `DeviceInfo.firmware_tested` is
   `False`; the CLI reads the firmware before every change and prints the
-  warning on stderr. Nothing is blocked.
+  warning on stderr. Nothing is blocked. To turn the check off:
+  `Id525Client(..., check_firmware=False)`, or in the CLI
+  `--skip-firmware-check` / `ID525_SKIP_FIRMWARE_CHECK=1` (environment or
+  `--env-file`).
 
 ## Installation
 

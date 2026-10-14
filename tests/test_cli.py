@@ -12,6 +12,7 @@ from id525 import Id525AuthenticationError, Id525ConfirmationRequiredError, Id52
 from id525.cli import (
     COMMANDS,
     build_parser,
+    check_firmware,
     cli_operations,
     load_env_file,
     main,
@@ -245,3 +246,35 @@ async def test_untested_firmware_is_reported_on_stderr(
     assert exit_code == 0
     err = capsys.readouterr().err
     assert ("warning: Firmware ID525_REL_9.9.99.99 was never tested" in err) is untested
+
+
+@pytest.mark.usefixtures("credentials")
+@pytest.mark.parametrize("how", ["flag", "environment", "env-file"])
+async def test_firmware_check_can_be_skipped(
+    server: TestServer,
+    router: FakeRouter,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    how: str,
+) -> None:
+    _untested_firmware(router)
+    argv = ["--scheme", "http", "--host", f"{server.host}:{server.port}", "--write"]
+    if how == "flag":
+        argv.append("--skip-firmware-check")
+    elif how == "environment":
+        monkeypatch.setenv("ID525_SKIP_FIRMWARE_CHECK", "1")
+    else:
+        env_file = tmp_path / ".env"
+        env_file.write_text("ID525_SKIP_FIRMWARE_CHECK=true\n")
+        argv += ["--env-file", str(env_file)]
+    assert await asyncio.to_thread(main, [*argv, "wifi", "set-wps", "--disabled"]) == 0
+    assert "page:help-about" not in router.calls
+    assert "warning" not in capsys.readouterr().err
+
+
+def test_firmware_check_zero_keeps_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ID525_SKIP_FIRMWARE_CHECK", "0")
+    assert check_firmware(parse_args(["status"])) is True
+    monkeypatch.setenv("ID525_SKIP_FIRMWARE_CHECK", "1")
+    assert check_firmware(parse_args(["status"])) is False

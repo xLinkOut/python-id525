@@ -151,6 +151,7 @@ class Id525Client:
         auto_relogin: bool = True,
         read_only: bool = True,
         tracer: Tracer | None = None,
+        check_firmware: bool = True,
     ) -> None:
         """Initialise the client.
 
@@ -171,6 +172,8 @@ class Id525Client:
                 writes, destructive operations). Pass ``False`` to enable them.
             tracer: receives one event per HTTP exchange (exact request bytes,
                 raw answer, timing, errors), e.g. a :class:`~id525.trace.TraceRecorder`.
+            check_firmware: warn when the router's firmware is not in
+                :data:`~id525.const.TESTED_FIRMWARE` (see :meth:`get_device_info`).
 
         """
         self._base_url = f"{scheme}://{host}"
@@ -188,7 +191,7 @@ class Id525Client:
         self._auth_failed = False
         self._read_only = read_only
         self._tracer = tracer
-        self._firmware_warned = False
+        self._firmware_warned = not check_firmware
         self.account = AccountApi(self)
         """Admin account, session timeout, data usage (``adm-user`` page)."""
         self.cellular = CellularApi(self)
@@ -445,7 +448,8 @@ class Id525Client:
     async def get_device_info(self) -> DeviceInfo:
         """Return model, versions and identifiers (IMEI, IMSI, ...).
 
-        Logs a warning (once per client) if the firmware is not in
+        Logs a warning (once per client, unless created with
+        ``check_firmware=False``) if the firmware is not in
         :data:`~id525.const.TESTED_FIRMWARE`.
         """
         info = parse_about_page(await self._page(Page.ABOUT))

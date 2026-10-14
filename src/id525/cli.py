@@ -174,6 +174,12 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--trace-file", type=Path, help="where to save the trace (implies --trace)")
     parser.add_argument(
+        "--skip-firmware-check",
+        action="store_true",
+        help="don't warn about an untested firmware nor read it before changes"
+        " (or ID525_SKIP_FIRMWARE_CHECK=1, also in --env-file)",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="print the library debug log to stderr"
     )
 
@@ -250,12 +256,31 @@ def credentials(args: argparse.Namespace) -> tuple[str, str]:
     return username, password
 
 
+def check_firmware(args: argparse.Namespace) -> bool:
+    """Return False if the firmware check is turned off.
+
+    By ``--skip-firmware-check`` or ``ID525_SKIP_FIRMWARE_CHECK`` (environment
+    first, then the ``--env-file``; any value but ``0`` turns it off).
+    """
+    if args.skip_firmware_check:
+        return False
+    file_env = load_env_file(args.env_file) if args.env_file else {}
+    value = os.environ.get("ID525_SKIP_FIRMWARE_CHECK", file_env.get("ID525_SKIP_FIRMWARE_CHECK"))
+    return value in (None, "", "0")
+
+
 def _client(
     args: argparse.Namespace, *, read_only: bool, tracer: TraceRecorder | None = None
 ) -> Id525Client:
     username, password = credentials(args)
     return Id525Client(
-        args.host, username, password, scheme=args.scheme, read_only=read_only, tracer=tracer
+        args.host,
+        username,
+        password,
+        scheme=args.scheme,
+        read_only=read_only,
+        tracer=tracer,
+        check_firmware=check_firmware(args),
     )
 
 
@@ -286,7 +311,7 @@ async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> 
         client.check_allowed(endpoint, confirmed=kwargs.get("confirm") is True)
     _require_password(args)
     async with client:
-        if any(endpoint.info.kind.mutating for endpoint in op.endpoints):
+        if check_firmware(args) and any(endpoint.info.kind.mutating for endpoint in op.endpoints):
             await client.get_device_info()  # warns on an untested firmware before writing
         section = getattr(client, op.section or "")  # CLI operations always have a section
         method = getattr(section, op.name)
