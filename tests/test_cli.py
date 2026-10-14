@@ -116,6 +116,13 @@ async def test_section_read(server: TestServer, router: FakeRouter) -> None:
 
 
 @pytest.mark.usefixtures("credentials")
+async def test_multi_word_sections_are_hyphenated(server: TestServer) -> None:
+    assert all("_" not in name for name in cli_operations())
+    result = await run(cli_args(server, "port-forwarding", "get-settings"))
+    assert "rules" in result
+
+
+@pytest.mark.usefixtures("credentials")
 async def test_write_needs_the_write_flag(server: TestServer, router: FakeRouter) -> None:
     argv = ["lan", "delete-dhcp-reservation", "--index", "7"]
     with pytest.raises(Id525ReadOnlyError):
@@ -173,7 +180,7 @@ def test_boolean_defaults_follow_the_api() -> None:
     assert parse_args(["cellular", "add-apn", "--apn", "x", "--disabled"]).enabled is False
     unset = parse_args(["wifi", "update-network", "--interface", "5G_Main"])
     assert (unset.enabled, unset.hidden) == (None, None)  # left unchanged
-    rule = ["port_forwarding", "add-rule", "--wan-port", "80", "--lan-ip", "192.168.224.9"]
+    rule = ["port-forwarding", "add-rule", "--wan-port", "80", "--lan-ip", "192.168.224.9"]
     assert parse_args([*rule, "--lan-port", "80"]).disabled is False
     assert parse_args([*rule, "--lan-port", "80", "--disabled"]).disabled is True
 

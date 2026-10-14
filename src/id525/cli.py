@@ -95,7 +95,8 @@ def cli_operations() -> dict[str, dict[str, Operation]]:
     found: dict[str, dict[str, Operation]] = {}
     for op in operations():
         if op.section is not None and op.implemented:
-            found.setdefault(op.section, {})[op.name.replace("_", "-")] = op
+            section = op.section.replace("_", "-")
+            found.setdefault(section, {})[op.name.replace("_", "-")] = op
     return found
 
 
@@ -280,7 +281,8 @@ async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> 
         client.check_allowed(endpoint, confirmed=kwargs.get("confirm") is True)
     _require_password(args)
     async with client:
-        method = getattr(getattr(client, args.section), op.name)
+        section = getattr(client, op.section or "")  # CLI operations always have a section
+        method = getattr(section, op.name)
         result = await method(**kwargs)
     return {"ok": True} if result is None else to_jsonable(result)
 
