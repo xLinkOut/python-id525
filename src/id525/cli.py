@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import dataclasses
 import enum
 import inspect
@@ -44,7 +45,7 @@ from .operations import Operation, operations
 from .trace import TraceRecorder
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Iterator
 
 COMMANDS: dict[str, Callable[[Id525Client], Awaitable[Any]]] = {
     "status": Id525Client.get_network_status,
@@ -285,6 +286,8 @@ async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> 
         client.check_allowed(endpoint, confirmed=kwargs.get("confirm") is True)
     _require_password(args)
     async with client:
+        if any(endpoint.info.kind.mutating for endpoint in op.endpoints):
+            await client.get_device_info()  # warns on an untested firmware before writing
         section = getattr(client, op.section or "")  # CLI operations always have a section
         method = getattr(section, op.name)
         result = await method(**kwargs)
@@ -370,12 +373,36 @@ def main(argv: list[str] | None = None) -> int:
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
     tracer = TraceRecorder() if args.trace or args.trace_file else None
+    with _library_log(verbose=args.verbose, tracer=tracer):
+        return _main(args, argv, tracer)
+
+
+@contextlib.contextmanager
+def _library_log(*, verbose: bool, tracer: TraceRecorder | None) -> Iterator[None]:
+    """Route the library log to the trace and its warnings (untested firmware) to stderr."""
     library_log = logging.getLogger("id525")
-    handler = _TraceLogHandler(tracer) if tracer is not None else None
     previous_level = library_log.level
-    if handler is not None:
-        library_log.addHandler(handler)
+    handlers: list[logging.Handler] = []
+    if not verbose:  # with -v, basicConfig already prints everything
+        stderr = logging.StreamHandler(sys.stderr)
+        stderr.setLevel(logging.WARNING)
+        stderr.setFormatter(logging.Formatter("warning: %(message)s"))
+        handlers.append(stderr)
+    if tracer is not None:
+        handlers.append(_TraceLogHandler(tracer))
         library_log.setLevel(logging.DEBUG)
+    for handler in handlers:
+        library_log.addHandler(handler)
+    try:
+        yield
+    finally:
+        for handler in handlers:
+            library_log.removeHandler(handler)
+        library_log.setLevel(previous_level)
+
+
+def _main(args: argparse.Namespace, argv: list[str], tracer: TraceRecorder | None) -> int:
+    """Run the parsed command and print its result; the trace is written even on errors."""
     try:
         if tracer is not None:
             tracer.record(
@@ -402,9 +429,6 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=False))  # noqa: T201
         return 0
     finally:
-        if handler is not None:
-            library_log.removeHandler(handler)
-            library_log.setLevel(previous_level)
         if tracer is not None:
             path = tracer.write(args.trace_file or default_trace_path(args))
             print(f"trace: {path}", file=sys.stderr)  # noqa: T201

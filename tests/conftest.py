@@ -66,6 +66,8 @@ class FakeRouter:
     a list answered in turn (the last one repeats), as in the capture goldens."""
     page_fixtures: dict[str, str] = field(default_factory=dict)
     """Page name -> fixture name to serve (e.g. a synthetic variant)."""
+    page_html: dict[str, str] = field(default_factory=dict)
+    """Page name -> HTML to serve instead of any fixture."""
     delay: dict[str, float] = field(default_factory=dict)
     """Seconds to wait before answering an endpoint (slow operations)."""
     drop: set[str] = field(default_factory=set)
@@ -138,7 +140,8 @@ class FakeRouter:
             return resp
         self._rotate(session)  # the real router invalidates the token on page loads
         fixture = self.page_fixtures.get(name, name)
-        return web.Response(text=load_fixture(f"{fixture}.html"), content_type="text/html")
+        html = self.page_html.get(name) or load_fixture(f"{fixture}.html")
+        return web.Response(text=html, content_type="text/html")
 
     async def api(self, request: web.Request) -> web.Response:
         name = request.match_info["name"]

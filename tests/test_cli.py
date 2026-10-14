@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any
@@ -213,3 +214,34 @@ async def test_set_wps_disabled_reaches_the_router(server: TestServer, router: F
     assert await run(cli_args(server, "--write", "wifi", "set-wps", "--disabled")) == {"ok": True}
     sent = [json.loads(body) for name, body in router.bodies if name in MUTATING]
     assert len(sent) == 1
+
+
+def _untested_firmware(router: FakeRouter) -> None:
+    about = load_fixture("help-about.html").replace("ID525_REL_1.0.09.17", "ID525_REL_9.9.99.99")
+    router.page_html["help-about"] = about
+
+
+@pytest.mark.usefixtures("credentials")
+async def test_writes_check_the_firmware_first(server: TestServer, router: FakeRouter) -> None:
+    await run(cli_args(server, "--write", "wifi", "set-wps", "--disabled"))
+    assert router.calls.index("page:help-about") < router.calls.index("req_wpsSetting")
+
+
+@pytest.mark.usefixtures("credentials")
+async def test_reads_do_not_check_the_firmware(server: TestServer, router: FakeRouter) -> None:
+    await run(cli_args(server, "lan", "get-settings"))
+    assert "page:help-about" not in router.calls
+
+
+@pytest.mark.usefixtures("credentials")
+@pytest.mark.parametrize("untested", [False, True])
+async def test_untested_firmware_is_reported_on_stderr(
+    server: TestServer, router: FakeRouter, capsys: pytest.CaptureFixture[str], untested: bool
+) -> None:
+    if untested:
+        _untested_firmware(router)
+    argv = ["--scheme", "http", "--host", f"{server.host}:{server.port}", "--write"]
+    exit_code = await asyncio.to_thread(main, [*argv, "wifi", "set-wps", "--disabled"])
+    assert exit_code == 0
+    err = capsys.readouterr().err
+    assert ("warning: Firmware ID525_REL_9.9.99.99 was never tested" in err) is untested

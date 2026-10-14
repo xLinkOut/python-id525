@@ -19,7 +19,7 @@ from id525 import (
 )
 from id525.endpoints import Page
 
-from .conftest import PASSWORD, USERNAME, ClientFactory, FakeRouter
+from .conftest import PASSWORD, USERNAME, ClientFactory, FakeRouter, load_fixture
 
 
 async def test_read_everything(make_client: ClientFactory, router: FakeRouter) -> None:
@@ -313,3 +313,33 @@ async def test_external_session_is_not_closed(server: TestServer) -> None:
         await client.get_network_status()
         await client.close()
         assert not http.closed
+
+
+async def test_tested_firmware_is_not_reported(
+    make_client: ClientFactory, caplog: pytest.LogCaptureFixture
+) -> None:
+    client = await make_client()
+    assert (await client.get_device_info()).firmware_tested is True
+    assert "never tested" not in caplog.text
+
+
+async def test_untested_firmware_is_reported_once(
+    make_client: ClientFactory, router: FakeRouter, caplog: pytest.LogCaptureFixture
+) -> None:
+    about = load_fixture("help-about.html").replace("ID525_REL_1.0.09.17", "ID525_REL_9.9.99.99")
+    router.page_html["help-about"] = about
+    client = await make_client()
+    for _ in range(2):
+        assert (await client.get_device_info()).firmware_tested is False
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert "ID525_REL_9.9.99.99" in warnings[0].getMessage()
+
+
+async def test_unknown_firmware_is_neither_tested_nor_untested(
+    make_client: ClientFactory, router: FakeRouter
+) -> None:
+    about = load_fixture("help-about.html").replace("ID525_REL_1.0.09.17", "")
+    router.page_html["help-about"] = about
+    client = await make_client()
+    assert (await client.get_device_info()).firmware_tested is None

@@ -168,6 +168,11 @@ The router is usually a production device, so:
 - Write requests are byte-for-byte what the router's own web UI sends: each one
   is checked against a capture of the UI code (see *Development*). Inputs the
   UI would refuse are refused with `Id525ValidationError`.
+- Everything was verified on firmware `ID525_REL_1.0.09.17`
+  (`id525.const.TESTED_FIRMWARE`). On any other firmware `get_device_info()`
+  logs a warning (once per client) and `DeviceInfo.firmware_tested` is
+  `False`; the CLI reads the firmware before every change and prints the
+  warning on stderr. Nothing is blocked.
 
 ## Installation
 

@@ -11,6 +11,10 @@ DEFAULT_HOST: Final = "192.168.224.1"
 DEFAULT_USERNAME: Final = "admin"
 DEFAULT_TIMEOUT: Final = 15.0
 
+# Firmware every fixture, UI capture and live finding comes from. Another
+# firmware may change pages, request bodies or answers: the client warns.
+TESTED_FIRMWARE: Final = frozenset({"ID525_REL_1.0.09.17"})
+
 SESSION_COOKIE: Final = "QSESSIONID"
 TOKEN_FIELD: Final = "RequestVerifyToken"
 

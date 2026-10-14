@@ -38,6 +38,7 @@ from .const import (
     ERROR_LOGIN_REFUSED,
     ERROR_TOKEN_NOT_INIT,
     SESSION_COOKIE,
+    TESTED_FIRMWARE,
     TOKEN_FIELD,
 )
 from .endpoints import Endpoint, Kind, Page, uses
@@ -187,6 +188,7 @@ class Id525Client:
         self._auth_failed = False
         self._read_only = read_only
         self._tracer = tracer
+        self._firmware_warned = False
         self.account = AccountApi(self)
         """Admin account, session timeout, data usage (``adm-user`` page)."""
         self.cellular = CellularApi(self)
@@ -441,8 +443,21 @@ class Id525Client:
 
     @uses(Page.ABOUT)
     async def get_device_info(self) -> DeviceInfo:
-        """Return model, versions and identifiers (IMEI, IMSI, ...)."""
-        return parse_about_page(await self._page(Page.ABOUT))
+        """Return model, versions and identifiers (IMEI, IMSI, ...).
+
+        Logs a warning (once per client) if the firmware is not in
+        :data:`~id525.const.TESTED_FIRMWARE`.
+        """
+        info = parse_about_page(await self._page(Page.ABOUT))
+        if info.firmware_tested is False and not self._firmware_warned:
+            self._firmware_warned = True
+            _LOGGER.warning(
+                "Firmware %s was never tested with this library (tested: %s): "
+                "pages, requests and answers may differ, check writes carefully",
+                info.software_version,
+                ", ".join(sorted(TESTED_FIRMWARE)),
+            )
+        return info
 
     def check_allowed(self, endpoint: Endpoint, *, confirmed: bool = False) -> None:
         """Raise if calling ``endpoint`` is not allowed; never touches the network.

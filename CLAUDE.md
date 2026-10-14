@@ -46,6 +46,9 @@ before touching writes.
   sent (`@uses`, `check_allowed`, `_post`); `tests/test_safety.py` guards this.
 - If a behaviour can't be derived offline, it stays a stub raising
   `NotImplementedError`.
+- `const.TESTED_FIRMWARE` lists the firmware the fixtures, goldens and live
+  findings come from. Add a version only when user traces on it confirm the
+  behaviour; a different firmware means re-checking pages and bodies.
 - Unsupported by the user's decision: factory reset, firmware flashing,
   config backup/restore, SIM PIN/PUK. Keep them unsupported unless the user
   says otherwise. Reboot is supported.

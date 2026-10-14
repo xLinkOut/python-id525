@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
 from typing import TYPE_CHECKING, Any, Self
 
+from .const import TESTED_FIRMWARE
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from datetime import date, datetime, timedelta
@@ -215,6 +217,13 @@ class DeviceInfo:
     phone_number: str | None
     apns: tuple[str, ...]
     mac: str | None
+
+    @property
+    def firmware_tested(self) -> bool | None:
+        """Return True if this library was verified on the router's firmware (None: unknown)."""
+        if self.software_version is None:
+            return None
+        return self.software_version in TESTED_FIRMWARE
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
