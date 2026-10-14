@@ -1,0 +1,25 @@
+{
+  "scenario": "wifi_wps_disable",
+  "page": "wifi-settings",
+  "endpoint": "req_wpsSetting",
+  "ui_ref": "wifi-settings.html:1432",
+  "call": "wifi.set_wps",
+  "inputs": {
+    "enabled": false
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "wifi-settings",
+  "synthetic": false,
+  "requests": [
+    {
+      "endpoint": "req_wpsSetting",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"wpsStatus\":false}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "",
+  "fixture_sha256": "da32988c25fd38280ee2d197e8633394556ee2d13d110991b27825ff6c215885"
+}

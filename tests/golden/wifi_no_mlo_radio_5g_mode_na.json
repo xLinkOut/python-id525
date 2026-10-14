@@ -1,0 +1,27 @@
+{
+  "scenario": "wifi_no_mlo_radio_5g_mode_na",
+  "page": "wifi-settings",
+  "endpoint": "req_wifiSetting",
+  "ui_ref": "wifi-settings.html:1386",
+  "call": "wifi.update_radio",
+  "inputs": {
+    "band": "5G",
+    "mode": "11na",
+    "channel": 100
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": false,
+  "fixture": "synthetic/wifi-settings-no-mlo",
+  "synthetic": true,
+  "requests": [
+    {
+      "endpoint": "req_wifiSetting",
+      "body": "{\"RequestVerifyToken\":\"<TOKEN>\",\"meshCtrlEnabled\":0,\"mloEnabled\":0,\"Bandwidth2G\":0,\"WiFiMode2G\":\"11beg\",\"Channel2G\":0,\"Bandwidth5G\":1,\"WiFiMode5G\":\"11na\",\"Channel5G\":100,\"SSID_Settings_2\":[{\"SSID_Enable\":1,\"SSID\":\"TestNet-24\",\"MaxDevices\":64,\"SSID_Hidden\":\"0\",\"Security_Mode\":\"WPA2-PSK\",\"Cypher\":\"CCMP\",\"KeyPassphrase\":\"TestPass0002\",\"WPS_Enable\":\"0\",\"Instance\":0}],\"SSID_Settings_2_guest\":[{\"SSID_Enable\":0,\"SSID\":\"TestWiFi03\",\"MaxDevices\":32,\"SSID_Hidden\":\"0\",\"Security_Mode\":\"WPA2-PSK\",\"Cypher\":\"CCMP\",\"KeyPassphrase\":\"TestPass0003\",\"WPS_Enable\":\"0\",\"Instance\":1}],\"SSID_Settings_5\":[{\"SSID_Enable\":1,\"SSID\":\"TestNet-24\",\"MaxDevices\":64,\"SSID_Hidden\":\"0\",\"Security_Mode\":\"WPA2-PSK\",\"Cypher\":\"CCMP\",\"KeyPassphrase\":\"TestPass0002\",\"WPS_Enable\":\"0\",\"Instance\":2}],\"SSID_Settings_5_guest\":[{\"SSID_Enable\":0,\"SSID\":\"TestWiFi03\",\"MaxDevices\":32,\"SSID_Hidden\":\"0\",\"Security_Mode\":\"WPA2-PSK\",\"Cypher\":\"CCMP\",\"KeyPassphrase\":\"TestPass0003\",\"WPS_Enable\":\"0\",\"Instance\":3}]}"
+    }
+  ],
+  "other_calls": [],
+  "ui_message": "",
+  "notes": "802.11n/a forces 40 MHz",
+  "fixture_sha256": "732c00644860011878c143feec96dade3cea44ff2c64f3993b4efbadac695217"
+}

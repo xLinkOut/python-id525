@@ -382,15 +382,15 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.DHCP_RESERVATION_DELETE: EndpointInfo(
         "lan-settings", _W, _CAPT, "lan-settings.html:880", "Delete DHCP reservation"
     ),
-    _E.WIFI_SETTING: EndpointInfo("wifi-settings", _W, _TODO, "wifi-settings.html:1386", "Wi-Fi"),
-    _E.WPS_SETTING: EndpointInfo("wifi-settings", _W, _TODO, "wifi-settings.html:1432", "WPS"),
-    _E.WPS_START: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1462", "Start WPS"),
-    _E.WPS_CHECK: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1506", "WPS state"),
-    _E.WPS_STOP: EndpointInfo("wifi-settings", _A, _TODO, "wifi-settings.html:1530", "Stop WPS"),
+    _E.WIFI_SETTING: EndpointInfo("wifi-settings", _W, _CAPT, "wifi-settings.html:1386", "Wi-Fi"),
+    _E.WPS_SETTING: EndpointInfo("wifi-settings", _W, _CAPT, "wifi-settings.html:1432", "WPS"),
+    _E.WPS_START: EndpointInfo("wifi-settings", _A, _CAPT, "wifi-settings.html:1462", "Start WPS"),
+    _E.WPS_CHECK: EndpointInfo("wifi-settings", _A, _CAPT, "wifi-settings.html:1506", "WPS state"),
+    _E.WPS_STOP: EndpointInfo("wifi-settings", _A, _CAPT, "wifi-settings.html:1530", "Stop WPS"),
     _E.MESH_SETTING: EndpointInfo(
         "wifi-settings", _W, _DEAD, "wifi-settings.html:1388", "Mesh (commented out)"
     ),
-    _E.VOIP_APPLY: EndpointInfo("voip-settings", _W, _TODO, "voip-settings.html:1", "VoIP / SIP"),
+    _E.VOIP_APPLY: EndpointInfo("voip-settings", _W, _CAPT, "voip-settings.html:1", "VoIP / SIP"),
     _E.FIREWALL_LEVEL: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:137", "Firewall level"),
     _E.VPN_PASSTHROUGH: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:149", "VPN passthrough"),
     _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _STATIC, "fw-ddns.html:68", "DDNS settings"),
@@ -458,8 +458,8 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.BACKUP: PageInfo("Backup & reboot", _TODO),
     _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),
     _P.LAN_SETTINGS: PageInfo("LAN settings", _STATIC),
-    _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _TODO),
-    _P.VOIP_SETTINGS: PageInfo("VoIP settings", _TODO),
+    _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _STATIC),
+    _P.VOIP_SETTINGS: PageInfo("VoIP settings", _STATIC),
     _P.FIREWALL: PageInfo("Firewall", _STATIC),
     _P.DDNS: PageInfo("Dynamic DNS", _STATIC),
     _P.IP_FILTER: PageInfo("IP filter", _STATIC),

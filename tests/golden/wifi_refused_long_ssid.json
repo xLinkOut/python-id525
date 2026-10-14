@@ -1,0 +1,21 @@
+{
+  "scenario": "wifi_refused_long_ssid",
+  "page": "wifi-settings",
+  "endpoint": "req_wifiSetting",
+  "ui_ref": "wifi-settings.html:1386",
+  "call": "wifi.update_network",
+  "inputs": {
+    "interface": "5G_Main",
+    "ssid": "sssssssssssssssssssssssssssssssss"
+  },
+  "call_kwargs": {},
+  "answers": {},
+  "refused": true,
+  "fixture": "wifi-settings",
+  "synthetic": false,
+  "requests": [],
+  "other_calls": [],
+  "ui_message": "Please input valid 2.4G_Main's SSID value.(Maximum 32 characters)",
+  "notes": "",
+  "fixture_sha256": "da32988c25fd38280ee2d197e8633394556ee2d13d110991b27825ff6c215885"
+}
