@@ -75,6 +75,7 @@ from .sections import (
     PortForwardingApi,
     SmsApi,
     SoftwareApi,
+    StatusApi,
     SystemApi,
     UrlFilterApi,
     VoipApi,
@@ -202,6 +203,8 @@ class Id525Client:
         """SMS management (``adm-sms`` page)."""
         self.software = SoftwareApi(self)
         """Firmware update (``adm-sw`` page)."""
+        self.status = StatusApi(self)
+        """SIM PIN state from the ``net-status`` page."""
         self.system = SystemApi(self)
         """Reboot, backup and reset (``adm-backup`` page)."""
         self.url_filter = UrlFilterApi(self)

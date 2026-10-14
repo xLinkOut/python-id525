@@ -36,12 +36,13 @@ so it is always current.
 | Status | Meaning | Count |
 |---|---|---:|
 | 🟦 live-verified | observed on a real router (read-only probes) | 10 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 4 |
-| 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 0 |
-| 🔹 static | implemented from the UI code, not captured | 1 |
-| ⬜ planned | not implemented yet | 72 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 43 |
+| 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
+| 🔹 static | implemented from the UI code, not captured | 17 |
+| ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
-| ▫️ dead code | never called by the UI | 3 |
+| ▫️ dead code | never called by the UI | 7 |
+| ◽ no data | page holds no data beyond what an endpoint returns | 3 |
 
 <details><summary>Every page and endpoint</summary>
 
@@ -51,102 +52,102 @@ so it is always current.
 | Session (shared UI script) | Log in | `login_req` | session | 🟦 live-verified | `ensure_session()` |
 | Session (shared UI script) | Log out | `logout_req` | session | 🟦 live-verified | `logout()` |
 | Session (shared UI script) | Session state | `login_query` | session | 🟦 live-verified | `ensure_session()` |
-| Network status | Page data | `net-status.html` | read | ⬜ planned |  |
+| Network status | Page data | `net-status.html` | read | 🔹 static | `status.get_sim_pin_status()` |
 | Network status | Status | `net_status_retrieve` | read | 🟦 live-verified | `get_network_status()` |
 | Network status | Enter PIN | `pin_enter` | write | 🟧 stub-policy | `cellular.enter_pin()` |
 | Network status | Enter PUK | `puk_enter` | write | 🟧 stub-policy | `cellular.enter_puk()` |
 | Network status | Reset data counters (never called) | `data_status` | write | ▫️ dead-code |  |
 | Cellular status | Page data | `cellular-status.html` | read | 🟦 live-verified | `get_cellular_info()` |
-| Connected clients | Page data | `client-status.html` | read | ⬜ planned |  |
+| Connected clients | Page data | `client-status.html` | read | ◽ no-data |  |
 | Connected clients | LAN clients | `client_status_retrieve` | read | 🟦 live-verified | `get_clients()` |
 | Utilization | Page data | `util-status.html` | read | 🟦 live-verified | `get_utilization()` |
 | About | Page data | `help-about.html` | read | 🟦 live-verified | `get_device_info()` |
-| Cellular settings | Page data | `cellular-settings.html` | read | ⬜ planned |  |
-| Cellular settings | Network mode | `req_CellularModeSelection` | write | ⬜ planned |  |
+| Cellular settings | Page data | `cellular-settings.html` | read | 🔹 static | `cellular.add_apn()` |
+| Cellular settings | Network mode | `req_CellularModeSelection` | write | 🔵 ui-captured | `cellular.set_network_mode()` |
 | Cellular settings | Change PIN | `req_ChangePIN` | write | 🟧 stub-policy | `cellular.change_pin()` |
 | Cellular settings | PIN lock | `req_PINLockSave` | write | 🟧 stub-policy | `cellular.set_pin_lock()` |
-| Cellular settings | Roaming | `req_ChangeRoaming` | write | ⬜ planned |  |
-| Cellular settings | Router / bridge mode | `req_LanOperationModeSave` | destructive | ⬜ planned |  |
-| Cellular settings | Select operator | `req_RegistingOperators` | write | ⬜ planned |  |
-| Cellular settings | Scan operators | `req_SearchOperators` | action | ⬜ planned |  |
-| Cellular settings | Add APN | `req_addUserApn` | write | ⬜ planned |  |
-| Cellular settings | Edit APN | `req_editUserApn` | write | ⬜ planned |  |
-| Cellular settings | Delete APN | `req_deleteUserApn` | write | ⬜ planned |  |
-| Cellular settings | Select default APN | `req_defaultApnSave` | write | ⬜ planned |  |
-| Cellular settings | Reset APNs | `req_defaultApnReset` | destructive | ⬜ planned |  |
+| Cellular settings | Roaming | `req_ChangeRoaming` | write | 🔵 ui-captured | `cellular.disable_roaming()` |
+| Cellular settings | Router / bridge mode | `req_LanOperationModeSave` | destructive | 🔵 ui-captured | `cellular.set_operation_mode()` |
+| Cellular settings | Select operator | `req_RegistingOperators` | write | 🔵 ui-captured | `cellular.register_operator()` |
+| Cellular settings | Scan operators | `req_SearchOperators` | action | 🔵 ui-captured | `cellular.register_operator()` |
+| Cellular settings | Add APN | `req_addUserApn` | write | 🔵 ui-captured | `cellular.add_apn()` |
+| Cellular settings | Edit APN | `req_editUserApn` | write | 🔵 ui-captured | `cellular.edit_apn()` |
+| Cellular settings | Delete APN | `req_deleteUserApn` | write | 🔵 ui-captured | `cellular.delete_apn()` |
+| Cellular settings | Select default APN | `req_defaultApnSave` | write | 🔵 ui-captured | `cellular.set_default_apn()` |
+| Cellular settings | Reset APNs (button unbound) | `req_defaultApnReset` | destructive | ▫️ dead-code |  |
 | LAN settings | Page data | `lan-settings.html` | read | 🔹 static | `lan.add_dhcp_reservation()` |
-| LAN settings | LAN / DHCP | `req_LanInternetProtoSave` | destructive | ⬜ planned |  |
-| LAN settings | Ethernet WAN port | `req_ethWanEnabled` | destructive | ⬜ planned |  |
+| LAN settings | LAN / DHCP | `req_LanInternetProtoSave` | destructive | 🔵 ui-captured | `lan.update_settings()` |
+| LAN settings | Ethernet WAN port | `req_ethWanEnabled` | destructive | 🔵 ui-captured | `lan.set_ethernet_port_role()` |
 | LAN settings | Add DHCP reservation | `req_LanStaticAddrAdd` | write | 🔵 ui-captured | `lan.add_dhcp_reservation()` |
 | LAN settings | Edit DHCP reservation | `req_LanStaticAddrModify` | write | 🔵 ui-captured | `lan.modify_dhcp_reservation()` |
 | LAN settings | Delete DHCP reservation | `req_LanStaticAddrDelete` | write | 🔵 ui-captured | `lan.delete_dhcp_reservation()` |
-| Wi-Fi settings | Page data | `wifi-settings.html` | read | ⬜ planned |  |
-| Wi-Fi settings | Wi-Fi | `req_wifiSetting` | write | ⬜ planned |  |
-| Wi-Fi settings | WPS | `req_wpsSetting` | write | ⬜ planned |  |
-| Wi-Fi settings | Start WPS | `req_wpsStartScan` | action | ⬜ planned |  |
-| Wi-Fi settings | WPS state | `req_wpsCheckScan` | action | ⬜ planned |  |
-| Wi-Fi settings | Stop WPS | `req_wpsStopScan` | action | ⬜ planned |  |
+| Wi-Fi settings | Page data | `wifi-settings.html` | read | 🔹 static | `wifi.get_settings()` |
+| Wi-Fi settings | Wi-Fi | `req_wifiSetting` | write | 🔵 ui-captured | `wifi.set_mlo()` |
+| Wi-Fi settings | WPS | `req_wpsSetting` | write | 🔵 ui-captured | `wifi.set_mlo()` |
+| Wi-Fi settings | Start WPS | `req_wpsStartScan` | action | 🔵 ui-captured | `wifi.start_wps()` |
+| Wi-Fi settings | WPS state | `req_wpsCheckScan` | action | 🔵 ui-captured | `wifi.start_wps()` |
+| Wi-Fi settings | Stop WPS | `req_wpsStopScan` | action | 🔵 ui-captured | `wifi.stop_wps()` |
 | Wi-Fi settings | Mesh (commented out) | `req_meshRouterSetting` | write | ▫️ dead-code |  |
-| VoIP settings | Page data | `voip-settings.html` | read | ⬜ planned |  |
-| VoIP settings | VoIP / SIP | `voip_apply` | write | ⬜ planned |  |
-| Firewall | Page data | `fw-adv.html` | read | ⬜ planned |  |
-| Firewall | Firewall level | `fw_adv_apply` | write | ⬜ planned |  |
-| Firewall | VPN passthrough | `fw_adv_vpn_apply` | write | ⬜ planned |  |
-| Dynamic DNS | Page data | `fw-ddns.html` | read | ⬜ planned |  |
-| Dynamic DNS | DDNS settings | `get_ddns_config` | read | ⬜ planned |  |
-| Dynamic DNS | Set DDNS | `set_ddns_config` | write | ⬜ planned |  |
-| IP filter | Page data | `fw-ipfilter.html` | read | ⬜ planned |  |
-| IP filter | Add IP rule | `ipfilter_add` | write | ⬜ planned |  |
-| IP filter | Edit IP rule | `ipfilter_edit` | write | ⬜ planned |  |
-| IP filter | IP filter | `ipfilter_save` | write | ⬜ planned |  |
-| MAC filter | Page data | `fw-macfilter.html` | read | ⬜ planned |  |
-| MAC filter | Add MAC | `macfilter_add` | write | ⬜ planned |  |
-| MAC filter | Edit MAC | `macfilter_edit` | write | ⬜ planned |  |
-| MAC filter | Delete MAC | `macfilter_delete` | write | ⬜ planned |  |
-| MAC filter | MAC filter | `macfilter_save` | write | ⬜ planned |  |
-| MAC filter | Rename client | `set_host_name` | write | ⬜ planned |  |
-| Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | ⬜ planned |  |
-| Port forwarding & DMZ | DMZ | `dmz_save` | write | ⬜ planned |  |
-| Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | ⬜ planned |  |
-| Port forwarding & DMZ | Add forward | `portforward_add` | write | ⬜ planned |  |
-| Port forwarding & DMZ | Edit forward | `portforward_edit` | write | ⬜ planned |  |
-| Port forwarding & DMZ | Delete forward | `portforward_delete` | write | ⬜ planned |  |
-| URL filter | Page data | `fw-urlfilter.html` | read | ⬜ planned |  |
-| URL filter | URL filter on/off | `urlfilter_status_save` | write | ⬜ planned |  |
-| URL filter | Add URL | `urlfilter_add_save` | write | ⬜ planned |  |
-| URL filter | Edit URL | `urlfilter_edit` | write | ⬜ planned |  |
-| URL filter | Delete URL | `urlfilter_delete_save` | write | ⬜ planned |  |
-| Account & data usage | Page data | `adm-user.html` | read | ⬜ planned |  |
-| Account & data usage | Change admin password | `set_account_management` | destructive | ⬜ planned |  |
-| Account & data usage | Session timeout | `set_device_management` | write | ⬜ planned |  |
-| Account & data usage | Reset data usage | `reset_data` | destructive | ⬜ planned |  |
-| Account & data usage | Data usage settings | `data_usage_save` | write | ⬜ planned |  |
-| Account & data usage | Battery | `battery_apply` | write | ⬜ planned |  |
-| Account & data usage | Sleep mode | `sleepmode_save` | write | ⬜ planned |  |
+| VoIP settings | Page data | `voip-settings.html` | read | 🔹 static | `voip.get_settings()` |
+| VoIP settings | VoIP / SIP | `voip_apply` | write | 🔵 ui-captured | `voip.update()` |
+| Firewall | Page data | `fw-adv.html` | read | 🔹 static | `firewall.get_settings()` |
+| Firewall | Firewall level | `fw_adv_apply` | write | 🔵 ui-captured | `firewall.set_level()` |
+| Firewall | VPN passthrough | `fw_adv_vpn_apply` | write | 🔵 ui-captured | `firewall.set_vpn_passthrough()` |
+| Dynamic DNS | Page data | `fw-ddns.html` | read | 🔹 static | `ddns.get_settings()` |
+| Dynamic DNS | DDNS settings | `get_ddns_config` | read | 🔹 static | `ddns.get_settings()` |
+| Dynamic DNS | Set DDNS | `set_ddns_config` | write | 🔷 ui-captured-synthetic | `ddns.set_settings()` |
+| IP filter | Page data | `fw-ipfilter.html` | read | 🔹 static | `ip_filter.add_rule()` |
+| IP filter | Add IP rule | `ipfilter_add` | write | 🔵 ui-captured | `ip_filter.add_rule()` |
+| IP filter | Edit IP rule | `ipfilter_edit` | write | 🔷 ui-captured-synthetic | `ip_filter.edit_rule()` |
+| IP filter | IP filter | `ipfilter_save` | write | 🔵 ui-captured | `ip_filter.delete_rule()` |
+| MAC filter | Page data | `fw-macfilter.html` | read | 🔹 static | `mac_filter.add_connected_client()` |
+| MAC filter | Add MAC | `macfilter_add` | write | 🔵 ui-captured | `mac_filter.add_connected_client()` |
+| MAC filter | Edit MAC | `macfilter_edit` | write | 🔷 ui-captured-synthetic | `mac_filter.modify_rule()` |
+| MAC filter | Delete MAC | `macfilter_delete` | write | 🔷 ui-captured-synthetic | `mac_filter.delete_rule()` |
+| MAC filter | MAC filter | `macfilter_save` | write | 🔵 ui-captured | `mac_filter.disable()` |
+| MAC filter | Rename client (UI code broken) | `set_host_name` | write | ▫️ dead-code |  |
+| Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | 🔹 static | `port_forwarding.add_rule()` |
+| Port forwarding & DMZ | DMZ | `dmz_save` | write | 🔵 ui-captured | `port_forwarding.disable_dmz()` |
+| Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | 🔵 ui-captured | `port_forwarding.disable()` |
+| Port forwarding & DMZ | Add forward | `portforward_add` | write | 🔵 ui-captured | `port_forwarding.add_rule()` |
+| Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🔷 ui-captured-synthetic | `port_forwarding.modify_rule()` |
+| Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🔷 ui-captured-synthetic | `port_forwarding.delete_rule()` |
+| URL filter | Page data | `fw-urlfilter.html` | read | 🔹 static | `url_filter.add_url()` |
+| URL filter | URL filter on/off | `urlfilter_status_save` | write | 🔵 ui-captured | `url_filter.set_filter()` |
+| URL filter | Add URL | `urlfilter_add_save` | write | 🔵 ui-captured | `url_filter.add_url()` |
+| URL filter | Edit URL | `urlfilter_edit` | write | 🔷 ui-captured-synthetic | `url_filter.edit_url()` |
+| URL filter | Delete URL | `urlfilter_delete_save` | write | 🔷 ui-captured-synthetic | `url_filter.delete_url()` |
+| Account & data usage | Page data | `adm-user.html` | read | 🔹 static | `account.change_password()` |
+| Account & data usage | Change admin password | `set_account_management` | destructive | 🔵 ui-captured | `account.change_password()` |
+| Account & data usage | Session timeout | `set_device_management` | write | 🔵 ui-captured | `account.set_session_timeout()` |
+| Account & data usage | Reset data usage | `reset_data` | destructive | 🔵 ui-captured | `account.reset_data_usage()` |
+| Account & data usage | Data usage settings | `data_usage_save` | write | 🔵 ui-captured | `account.set_data_limit()` |
+| Account & data usage | Battery (never called) | `battery_apply` | write | ▫️ dead-code |  |
+| Account & data usage | Sleep mode (never called) | `sleepmode_save` | write | ▫️ dead-code |  |
 | Account & data usage | Admin password (never called) | `reload_password` | read | ▫️ dead-code |  |
-| SMS | Page data | `adm-sms.html` | read | ⬜ planned |  |
+| SMS | Page data | `adm-sms.html` | read | ◽ no-data |  |
 | SMS | SMS list | `req_smsReload` | read | 🟦 live-verified | `get_sms()` |
-| SMS | Mark SMS read | `req_smsUpdateStatus` | write | ⬜ planned |  |
-| SMS | Delete SMS | `req_smsDelete` | write | ⬜ planned |  |
-| SMS | Send SMS | `req_smsCompose` | action | ⬜ planned |  |
-| Software update | Page data | `adm-sw.html` | read | ⬜ planned |  |
-| Software update | Ask the operator for firmware | `acs_check_update` | action | ⬜ planned |  |
-| Software update | Firmware check progress | `acs_check_update_status` | action | ⬜ planned |  |
+| SMS | Mark SMS read | `req_smsUpdateStatus` | write | 🔷 ui-captured-synthetic | `sms.mark_read()` |
+| SMS | Delete SMS | `req_smsDelete` | write | 🔷 ui-captured-synthetic | `sms.delete_conversations()` |
+| SMS | Send SMS | `req_smsCompose` | action | 🔵 ui-captured | `sms.send()` |
+| Software update | Page data | `adm-sw.html` | read | 🔹 static | `software.get_info()` |
+| Software update | Ask the operator for firmware (UI button disabled) | `acs_check_update` | action | 🔵 ui-captured | `software.check_for_update()` |
+| Software update | Firmware check progress | `acs_check_update_status` | action | 🔵 ui-captured | `software.check_for_update()` |
 | Software update | Install operator firmware | `acs_update_confirm` | destructive | 🟧 stub-unsafe | `software.install_operator_update()` |
 | Software update | Flash firmware | `do_upgrade` | destructive | 🟧 stub-unsafe | `software.upgrade_firmware()` |
 | Software update | Upload firmware / config file | `upload_file` | destructive | 🟧 stub-unsafe | `software.upgrade_firmware()` |
-| Backup & reboot | Page data | `adm-backup.html` | read | ⬜ planned |  |
+| Backup & reboot | Page data | `adm-backup.html` | read | ◽ no-data |  |
 | Backup & reboot | Reboot | `reboot` | destructive | 🔵 ui-captured | `system.reboot()` |
 | Backup & reboot | Factory reset | `restore_default` | destructive | 🟧 stub-unsafe | `system.factory_reset()` |
 | Backup & reboot | Create config backup (hidden) | `bkupConfig_apply` | action | 🟧 stub-unknown | `system.backup_config()` |
 | Backup & reboot | Restore config backup | `restoreCofig_apply` | destructive | 🟧 stub-unsafe | `system.restore_config()` |
-| Self diagnostics | Page data | `self-diag.html` | read | ⬜ planned |  |
-| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | ⬜ planned |  |
-| Self diagnostics | CPU usage | `req_cpuUsageTest` | action | ⬜ planned |  |
-| Ping | Page data | `self-ping.html` | read | ⬜ planned |  |
-| Ping | Ping | `req_pingTest` | action | ⬜ planned |  |
-| Traceroute | Page data | `self-tracert.html` | read | ⬜ planned |  |
-| Traceroute | Traceroute | `req_traceRouteTest` | action | ⬜ planned |  |
+| Self diagnostics | Page data | `self-diag.html` | read | 🔹 static | `diagnostics.run_self_test()` |
+| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | 🔵 ui-captured | `diagnostics.check_connections()` |
+| Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🔵 ui-captured | `diagnostics.run_self_test()` |
+| Ping | Page data | `self-ping.html` | read | 🔹 static | `diagnostics.get_ping_defaults()` |
+| Ping | Ping | `req_pingTest` | action | 🔵 ui-captured | `diagnostics.ping()` |
+| Traceroute | Page data | `self-tracert.html` | read | 🔹 static | `diagnostics.traceroute()` |
+| Traceroute | Traceroute | `req_traceRouteTest` | action | 🔵 ui-captured | `diagnostics.traceroute()` |
 
 </details>
 <!-- coverage:end -->

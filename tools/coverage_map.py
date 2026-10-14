@@ -61,6 +61,7 @@ LEGEND: tuple[tuple[str, tuple[Status, ...], str], ...] = (
         "deliberately not implemented: raises NotImplementedError",
     ),
     ("dead code", (Status.DEAD_CODE,), "never called by the UI"),
+    ("no data", (Status.NO_DATA,), "page holds no data beyond what an endpoint returns"),
 )
 
 STATUS_ICON = {
@@ -73,6 +74,7 @@ STATUS_ICON = {
     Status.STUB_POLICY: "🟧",
     Status.STUB_UNKNOWN: "🟧",
     Status.DEAD_CODE: "▫️",
+    Status.NO_DATA: "◽",
 }
 
 
@@ -105,6 +107,7 @@ LIGHT = Theme(
         "planned": "#f0efec",
         "unsupported": "#eb6834",
         "dead code": "",
+        "no data": "",
     },
 )
 DARK = Theme(
@@ -122,6 +125,7 @@ DARK = Theme(
         "planned": "#2c2c2a",
         "unsupported": "#d95926",
         "dead code": "",
+        "no data": "",
     },
 )
 
@@ -224,6 +228,17 @@ def text_on(fill: str, theme: Theme) -> str:
     return max(("#0b0b0b", "#ffffff"), key=lambda ink: _contrast(fill, ink))
 
 
+def outline(label: str, theme: Theme) -> str:
+    """Stroke of a legend entry: outline-only entries differ by dash pattern."""
+    if label == "dead code":
+        return f'stroke="{theme.hairline}" stroke-width="1.5" stroke-dasharray="4 3"'
+    if label == "no data":
+        return f'stroke="{theme.hairline}" stroke-width="1.5" stroke-dasharray="1 3"'
+    if label == "planned":
+        return f'stroke="{theme.hairline}" stroke-width="1"'
+    return ""
+
+
 def _fit(text: str, max_chars: int) -> str:
     return text if len(text) <= max_chars else text[: max_chars - 1] + "…"
 
@@ -266,13 +281,7 @@ def svg(theme: Theme) -> str:
     x: float = PAD
     for label, _, _ in LEGEND:
         fill = theme.fills[label]
-        stroke = (
-            f'stroke="{theme.hairline}" stroke-dasharray="3 2"'
-            if not fill
-            else f'stroke="{theme.hairline}"'
-            if label == "planned"
-            else ""
-        )
+        stroke = outline(label, theme)
         parts.append(
             f'<rect x="{x}" y="{y}" width="14" height="14" rx="3" '
             f'fill="{fill or "none"}" {stroke}/>'
@@ -299,14 +308,7 @@ def svg(theme: Theme) -> str:
                 y += CELL_H + GAP
             cx = PAD + LABEL_W + (i % PER_ROW) * (CELL_W + GAP)
             fill = theme.fills[legend_label(cell.status)]
-            label_of = legend_label(cell.status)
-            stroke = (
-                f'stroke="{theme.hairline}" stroke-width="1.5" stroke-dasharray="4 3"'
-                if not fill
-                else f'stroke="{theme.hairline}" stroke-width="1"'
-                if label_of == "planned"
-                else ""
-            )
+            stroke = outline(legend_label(cell.status), theme)
             tooltip = f"{cell.title} ({cell.detail}): {cell.status}, {cell.kind}" + (
                 f" → client.{cell.method}" if cell.method else ""
             )

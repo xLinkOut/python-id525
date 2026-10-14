@@ -45,7 +45,7 @@ Bootstrap and i18next are replaced by small shims (`tools/uicapture/shims`).
 ## Golden format
 
 `requests` is the ordered list of every *mutating* request (actions, writes,
-destructive) the flow sent; reads and session plumbing are listed in
-`other_calls` for information only. The client, given `inputs` (+
+destructive) the flow sent; reads and session plumbing are listed once each in
+`other_calls`, for information only. The client, given `inputs` (+
 `call_kwargs`) and the same `answers` and fixture, must send exactly that list.
 `capture --check` re-captures without writing and fails on any difference.

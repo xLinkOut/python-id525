@@ -71,6 +71,9 @@ class Status(StrEnum):
     """Not implemented: semantics cannot be derived offline."""
     DEAD_CODE = "dead-code"
     """Only referenced by unreachable UI code; not implemented."""
+    NO_DATA = "no-data"
+    """(Pages only) the page embeds no data of its own, or only what an
+    endpoint already returns: there is nothing to parse."""
 
     @property
     def implemented(self) -> bool:
@@ -447,15 +450,15 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
 _P = Page
 
 PAGES: Final[dict[Page, PageInfo]] = {
-    _P.NET_STATUS: PageInfo("Network status", _TODO),
+    _P.NET_STATUS: PageInfo("Network status", _STATIC),
     _P.CELLULAR_STATUS: PageInfo("Cellular status", _LIVE),
-    _P.CLIENT_STATUS: PageInfo("Connected clients", _TODO),
+    _P.CLIENT_STATUS: PageInfo("Connected clients", Status.NO_DATA),  # = client_status_retrieve
     _P.UTILIZATION: PageInfo("Utilization", _LIVE),
     _P.ABOUT: PageInfo("About", _LIVE),
     _P.ACCOUNT: PageInfo("Account & data usage", _STATIC),
     _P.SOFTWARE: PageInfo("Software update", _STATIC),
-    _P.SMS: PageInfo("SMS", _TODO),
-    _P.BACKUP: PageInfo("Backup & reboot", _TODO),
+    _P.SMS: PageInfo("SMS", Status.NO_DATA),  # messages come from req_smsReload
+    _P.BACKUP: PageInfo("Backup & reboot", Status.NO_DATA),  # only a UI feature flag
     _P.CELLULAR_SETTINGS: PageInfo("Cellular settings", _STATIC),
     _P.LAN_SETTINGS: PageInfo("LAN settings", _STATIC),
     _P.WIFI_SETTINGS: PageInfo("Wi-Fi settings", _STATIC),

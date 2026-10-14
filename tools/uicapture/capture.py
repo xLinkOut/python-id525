@@ -81,8 +81,8 @@ def classify(recorded: list[Recorded]) -> tuple[list[Recorded], list[str]]:
             raise CaptureError(msg) from None
         if kind.mutating:
             mutating.append(request)
-        elif kind is not Kind.SESSION:
-            other.append(request.endpoint)
+        elif kind is not Kind.SESSION and request.endpoint not in other:
+            other.append(request.endpoint)  # polls (e.g. SMS at 1 Hz): once, in order
     return mutating, other
 
 
@@ -104,11 +104,12 @@ async def collect(mock: MockRouter, mark: int, *, refused: bool) -> list[Recorde
     if refused:
         await asyncio.sleep(REFUSE_WAIT)
         return mock.requests[mark:]
-    seen, last_change = mark, None
+    # Only mutating requests count as activity: background polls never stop.
+    seen, last_change = 0, None
     while time.monotonic() - started < MAX_FLOW:
         mutating, _ = classify(mock.requests[mark:])
-        if len(mock.requests) != seen:
-            seen, last_change = len(mock.requests), time.monotonic()
+        if len(mutating) != seen:
+            seen, last_change = len(mutating), time.monotonic()
         if mutating and last_change is not None and time.monotonic() - last_change >= SETTLE:
             break
         if not mutating and time.monotonic() - started > FIRST_SEND_TIMEOUT:
