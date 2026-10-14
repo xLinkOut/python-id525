@@ -204,8 +204,8 @@ def test_boolean_defaults_follow_the_api() -> None:
     unset = parse_args(["wifi", "update-network", "--interface", "5G_Main"])
     assert (unset.enabled, unset.hidden) == (None, None)  # left unchanged
     rule = ["port-forwarding", "add-rule", "--wan-port", "80", "--lan-ip", "192.168.224.9"]
-    assert parse_args([*rule, "--lan-port", "80"]).disabled is False
-    assert parse_args([*rule, "--lan-port", "80", "--disabled"]).disabled is True
+    assert parse_args([*rule, "--lan-port", "80"]).enabled is True
+    assert parse_args([*rule, "--lan-port", "80", "--disabled"]).enabled is False
 
 
 @pytest.mark.usefixtures("credentials")

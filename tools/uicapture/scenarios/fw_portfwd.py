@@ -67,7 +67,7 @@ async def add_rule(page: BrowserPage, inputs: dict[str, Any]) -> None:
     await set_value(page, "PortBegin", str(inputs["wan_port"]))
     await set_value(page, "lanipAddr", inputs["lan_ip"])
     await set_value(page, "LANPortBegin", str(inputs["lan_port"]))
-    await _set_checked(page, "StatusCheckBox", checked=not inputs.get("disabled", False))
+    await _set_checked(page, "StatusCheckBox", checked=inputs.get("enabled", True))
     await click(page, "add_pf_btn")
 
 
@@ -185,7 +185,7 @@ SCENARIOS = [
             "lan_ip": "192.168.224.71",
             "lan_port": 6000,
             "protocol": "both",
-            "disabled": True,
+            "enabled": False,
         },
         add_rule,
     ),

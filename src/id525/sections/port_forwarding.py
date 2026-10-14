@@ -203,7 +203,7 @@ class PortForwardingApi(Section):
         *,
         wan_port_end: int = 0,
         protocol: PortForwardProtocol | str = PortForwardProtocol.BOTH,
-        disabled: bool = False,
+        enabled: bool = True,
     ) -> None:
         """Forward WAN port ``wan_port`` (to ``wan_port_end`` if non-zero) to ``lan_ip:lan_port``.
 
@@ -228,7 +228,7 @@ class PortForwardingApi(Section):
                 "private_port": lan_port,
                 "ipAddr": lan_ip,
                 "protocol": proto.wire,
-                "isEnabled": 0 if disabled else 1,
+                "isEnabled": 1 if enabled else 0,
             }
 
         await self._client._command(Endpoint.PORTFWD_ADD, body)

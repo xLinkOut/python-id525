@@ -10,7 +10,7 @@
     "lan_ip": "192.168.224.71",
     "lan_port": 6000,
     "protocol": "both",
-    "disabled": true
+    "enabled": false
   },
   "call_kwargs": {},
   "answers": {},
