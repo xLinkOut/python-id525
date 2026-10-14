@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, Any, Literal, Self
 
 import aiohttp
@@ -95,6 +96,7 @@ if TYPE_CHECKING:
         SmsInbox,
         Utilization,
     )
+    from .trace import Tracer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -147,6 +149,7 @@ class Id525Client:
         request_timeout: float = DEFAULT_TIMEOUT,
         auto_relogin: bool = True,
         read_only: bool = True,
+        tracer: Tracer | None = None,
     ) -> None:
         """Initialise the client.
 
@@ -165,6 +168,8 @@ class Id525Client:
                 after a rejected login.
             read_only: refuse every call that would change the router (actions,
                 writes, destructive operations). Pass ``False`` to enable them.
+            tracer: receives one event per HTTP exchange (exact request bytes,
+                raw answer, timing, errors), e.g. a :class:`~id525.trace.TraceRecorder`.
 
         """
         self._base_url = f"{scheme}://{host}"
@@ -181,6 +186,7 @@ class Id525Client:
         self._logged_in = False
         self._auth_failed = False
         self._read_only = read_only
+        self._tracer = tracer
         self.account = AccountApi(self)
         """Admin account, session timeout, data usage (``adm-user`` page)."""
         self.cellular = CellularApi(self)
@@ -575,21 +581,27 @@ class Id525Client:
         return cookie.value if cookie is not None and cookie.value else None
 
     async def _get_text(self, path: str) -> tuple[str, str | None]:
+        headers = self._headers()
+        exchange = _Exchange(self._tracer, "GET", path, headers)
         try:
             async with self._http().get(
                 self._base_url + path,
-                headers=self._headers(),
+                headers=headers,
                 ssl=self._ssl,
                 timeout=self._timeout,
                 allow_redirects=False,
             ) as resp:
-                resp.raise_for_status()
                 raw = await resp.read()
+                text = raw.decode("utf-8", errors="replace")
+                exchange.answer(resp, text)
+                resp.raise_for_status()
                 session_id = self._session_cookie(resp)
         except (aiohttp.ClientError, TimeoutError) as err:
+            exchange.failed(err)
             msg = f"GET {path} failed: {err}"
             raise Id525ConnectionError(msg) from err
-        return raw.decode("utf-8", errors="replace"), session_id
+        exchange.done()
+        return text, session_id
 
     async def _post(
         self,
@@ -602,11 +614,14 @@ class Id525Client:
     ) -> dict[str, Any]:
         """POST to an endpoint, rotate the token, detect session/token errors."""
         self.check_allowed(endpoint, confirmed=confirmed)
+        data_bytes = encode_body(body)
+        headers = self._headers({"Content-Type": "application/json"})
+        exchange = _Exchange(self._tracer, "POST", endpoint.path, headers, data_bytes)
         try:
             async with self._http().post(
                 self._base_url + endpoint.path,
-                data=encode_body(body),
-                headers=self._headers({"Content-Type": "application/json"}),
+                data=data_bytes,
+                headers=headers,
                 ssl=self._ssl,
                 timeout=(
                     self._timeout
@@ -615,12 +630,15 @@ class Id525Client:
                 ),
                 allow_redirects=False,
             ) as resp:
-                resp.raise_for_status()
                 text = await resp.text(errors="replace")
+                exchange.answer(resp, text)
+                resp.raise_for_status()
                 session_id = self._session_cookie(resp)
         except (aiohttp.ClientError, TimeoutError) as err:
+            exchange.failed(err)
             msg = f"POST {endpoint.path} failed: {err}"
             raise Id525ConnectionError(msg) from err
+        exchange.done()
 
         try:
             data = json.loads(text)
@@ -645,3 +663,44 @@ class Id525Client:
                 self._token = None
             raise _InvalidTokenError
         return data
+
+
+class _Exchange:
+    """Trace one HTTP exchange (no-op without a tracer)."""
+
+    def __init__(
+        self,
+        tracer: Tracer | None,
+        method: str,
+        path: str,
+        headers: dict[str, str],
+        body: bytes | None = None,
+    ) -> None:
+        self._tracer = tracer
+        self._start = time.monotonic()
+        self._data: dict[str, Any] = {
+            "method": method,
+            "path": path,
+            "request_headers": headers,
+            "request_body": None if body is None else body.decode("utf-8", errors="replace"),
+        }
+
+    def answer(self, resp: aiohttp.ClientResponse, text: str) -> None:
+        self._data["status"] = resp.status
+        self._data["response_headers"] = {
+            k: v for k, v in resp.headers.items() if k.lower() in _TRACED_HEADERS
+        }
+        self._data["response_body"] = text
+
+    def failed(self, err: BaseException) -> None:
+        self._data["error"] = f"{type(err).__name__}: {err}"
+        self.done()
+
+    def done(self) -> None:
+        if self._tracer is not None:
+            self._data["ms"] = round((time.monotonic() - self._start) * 1000, 1)
+            self._tracer.record("http", **self._data)
+            self._tracer = None  # once
+
+
+_TRACED_HEADERS = {"content-type", "content-length", "location", "set-cookie", "server"}

@@ -222,6 +222,27 @@ id525 --write system reboot --confirm
 id525 --help            # lists every section; id525 <section> --help its operations
 ```
 
+#### Reporting a problem
+
+Add `--trace` (or set `ID525_TRACE=1`) to save a trace of the run: the command,
+every HTTP request exactly as sent, every raw answer (also non-JSON and HTTP
+errors), timings, the library debug log, and the result or full traceback. It
+is written even when the command fails, to `~/.cache/id525/traces/` (or
+`--trace-file PATH`), and its path is printed on stderr. `-v` prints the debug
+log live.
+
+```bash
+id525 --trace lan get-settings
+# trace: ~/.cache/id525/traces/20261014T101500Z-lan-get-settings.jsonl
+```
+
+Traces are redacted: passwords, CSRF tokens and session cookies, and identity
+values (IMEI/IMSI/ICCID, serials, phone numbers, SMS texts, cell ids, MACs,
+SSIDs, device names, public addresses), are replaced by stable pseudonyms
+(`TOKEN-3` is the same token everywhere). Redaction is best effort: read the
+file before you publish it. From Python, pass `tracer=TraceRecorder()`
+(`id525.trace`) to the client.
+
 ## Things to know about the router
 
 These behaviours were verified on firmware `ID525_REL_1.0.09.17` and are

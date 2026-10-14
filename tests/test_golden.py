@@ -19,6 +19,7 @@ import pytest
 
 from id525 import Id525ValidationError
 from id525.endpoints import Endpoint, Status
+from id525.trace import TraceRecorder
 
 from .conftest import FIXTURES, MUTATING, ClientFactory, FakeRouter
 
@@ -56,7 +57,8 @@ async def test_client_matches_ui(
     )
     router.answers = copy.deepcopy(golden["answers"])
     router.page_fixtures = {golden["page"]: golden["fixture"]}
-    client = await make_client(read_only=False)
+    tracer = TraceRecorder(redact=False)  # tracing must not change a byte
+    client = await make_client(read_only=False, tracer=tracer)
     method = resolve(client, golden["call"])
     args = {**golden["inputs"], **golden["call_kwargs"]}
 
@@ -73,6 +75,12 @@ async def test_client_matches_ui(
         if name in MUTATING
     ]
     assert sent == golden["requests"]
+    traced = [
+        (e["path"].removeprefix("/cgi-bin/cgi/").removesuffix(".cgi"), e["request_body"])
+        for e in tracer.events
+        if e["method"] == "POST"
+    ]
+    assert traced == [(name, body.decode()) for name, body in router.bodies]
 
 
 def test_every_scenario_has_a_golden() -> None:
