@@ -35,10 +35,10 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 26 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 42 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 29 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 40 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
-| 🔹 static | implemented from the UI code, not captured | 2 |
+| 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
 | ▫️ dead code | never called by the UI | 7 |
@@ -141,11 +141,11 @@ so it is always current.
 | Backup & reboot | Factory reset | `restore_default` | destructive | 🟧 stub-unsafe | `system.factory_reset()` |
 | Backup & reboot | Create config backup (hidden) | `bkupConfig_apply` | action | 🟧 stub-unknown | `system.backup_config()` |
 | Backup & reboot | Restore config backup | `restoreCofig_apply` | destructive | 🟧 stub-unsafe | `system.restore_config()` |
-| Self diagnostics | Page data | `self-diag.html` | read | 🔹 static | `diagnostics.run_self_test()` |
+| Self diagnostics | Page data | `self-diag.html` | read | 🟦 live-verified | `diagnostics.run_self_test()` |
 | Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | 🟦 live-verified | `diagnostics.check_connections()` |
-| Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🔵 ui-captured | `diagnostics.run_self_test()` |
+| Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🟦 live-verified | `diagnostics.run_self_test()` |
 | Ping | Page data | `self-ping.html` | read | 🟦 live-verified | `diagnostics.get_ping_defaults()` |
-| Ping | Ping | `req_pingTest` | action | 🔵 ui-captured | `diagnostics.ping()` |
+| Ping | Ping | `req_pingTest` | action | 🟦 live-verified | `diagnostics.ping()` |
 | Traceroute | Page data | `self-tracert.html` | read | 🔹 static | `diagnostics.traceroute()` |
 | Traceroute | Traceroute | `req_traceRouteTest` | action | 🔵 ui-captured | `diagnostics.traceroute()` |
 

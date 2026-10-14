@@ -443,8 +443,8 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.DIAG_CONNECTED: EndpointInfo(  # user trace, 2026-10-14
         "self-diag", _A, _LIVE, "self-diag.html:221", "Interfaces connected"
     ),
-    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _CAPT, "self-diag.html:276", "CPU usage"),
-    _E.PING: EndpointInfo("self-ping", _A, _CAPT, "self-ping.html:166", "Ping"),
+    _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _LIVE, "self-diag.html:276", "CPU usage"),
+    _E.PING: EndpointInfo("self-ping", _A, _LIVE, "self-ping.html:166", "Ping"),  # user trace
     _E.TRACEROUTE: EndpointInfo("self-tracert", _A, _CAPT, "self-tracert.html:182", "Traceroute"),
 }
 
@@ -471,7 +471,7 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.MAC_FILTER: PageInfo("MAC filter", _LIVE),  # user trace, 2026-10-14; no rules
     _P.PORT_FORWARDING: PageInfo("Port forwarding & DMZ", _LIVE),  # 2026-10-14; no rules
     _P.URL_FILTER: PageInfo("URL filter", _LIVE),  # user trace, 2026-10-14; no rules
-    _P.DIAGNOSTICS: PageInfo("Self diagnostics", _STATIC),
+    _P.DIAGNOSTICS: PageInfo("Self diagnostics", _LIVE),  # user trace, 2026-10-14
     _P.PING: PageInfo("Ping", _LIVE),  # user trace, 2026-10-14
     _P.TRACEROUTE: PageInfo("Traceroute", _STATIC),
 }
