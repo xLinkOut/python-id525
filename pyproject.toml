@@ -1,7 +1,7 @@
 [project]
 name = "id525"
-version = "0.1.0"
-description = "Async, read-only Python client for the General Mobile ID525 5G FWA router web API"
+version = "0.2.0"
+description = "Async Python client and CLI for the General Mobile ID525 5G FWA router web API (read-only by default, writes opt-in)"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
