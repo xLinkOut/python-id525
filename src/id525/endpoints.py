@@ -440,8 +440,8 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.URLFILTER_DELETE: EndpointInfo(
         "fw-urlfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-urlfilter.html:520", "Delete URL"
     ),
-    _E.DIAG_CONNECTED: EndpointInfo(
-        "self-diag", _A, _CAPT, "self-diag.html:221", "Interfaces connected"
+    _E.DIAG_CONNECTED: EndpointInfo(  # user trace, 2026-10-14
+        "self-diag", _A, _LIVE, "self-diag.html:221", "Interfaces connected"
     ),
     _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _CAPT, "self-diag.html:276", "CPU usage"),
     _E.PING: EndpointInfo("self-ping", _A, _CAPT, "self-ping.html:166", "Ping"),

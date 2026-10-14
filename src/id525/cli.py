@@ -118,20 +118,43 @@ def negative_flag(name: str) -> str:
     return "--no-" + name.replace("_", "-")
 
 
+OPERATION_DEST = "op_"
+"""Prefix of the parsed operation arguments, so they never overwrite a global
+option (``diagnostics ping --host`` once replaced the router address)."""
+
+RENAMED_FLAGS = {"host": "--target"}
+"""Operation parameters whose flag would read like a global option."""
+
+
+def operation_flag(name: str) -> str:
+    """Return the CLI flag of an operation parameter."""
+    return RENAMED_FLAGS.get(name, f"--{name.replace('_', '-')}")
+
+
+def operation_kwargs(args: argparse.Namespace, op: Operation) -> dict[str, Any]:
+    """Return the keyword arguments of ``op`` parsed from the command line."""
+    return {
+        name: getattr(args, OPERATION_DEST + name)
+        for name in inspect.signature(op.function).parameters
+        if name != "self"
+    }
+
+
 def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
     hints = typing.get_type_hints(op.function)
-    for name, param in inspect.signature(op.function).parameters.items():
-        if name == "self":
+    for param_name, param in inspect.signature(op.function).parameters.items():
+        if param_name == "self":
             continue
-        flag = f"--{name.replace('_', '-')}"
-        kind = _base_type(hints.get(name, str))
+        flag = operation_flag(param_name)
+        name = OPERATION_DEST + param_name
+        kind = _base_type(hints.get(param_name, str))
         required = param.default is inspect.Parameter.empty
-        if kind is bool and name == "confirm":
+        if kind is bool and param_name == "confirm":
             parser.add_argument(flag, dest=name, action="store_true")
         elif kind is bool:  # always an explicit pair: --enabled / --disabled
             group = parser.add_mutually_exclusive_group(required=required)
             group.add_argument(flag, dest=name, action="store_true")
-            group.add_argument(negative_flag(name), dest=name, action="store_false")
+            group.add_argument(negative_flag(param_name), dest=name, action="store_false")
             parser.set_defaults(**{name: None if required else param.default})
         elif isinstance(kind, type) and issubclass(kind, enum.Enum):
             parser.add_argument(
@@ -299,11 +322,7 @@ async def run(args: argparse.Namespace, tracer: TraceRecorder | None = None) -> 
         async with _client(args, read_only=True, tracer=tracer) as client:
             return {name: to_jsonable(await COMMANDS[name](client)) for name in names}
     op: Operation = args.operation
-    kwargs = {
-        name: getattr(args, name)
-        for name in inspect.signature(op.function).parameters
-        if name != "self"
-    }
+    kwargs = operation_kwargs(args, op)
     if tracer is not None:
         tracer.record("call", operation=op.path, kwargs=to_jsonable(kwargs))
     client = _client(args, read_only=not args.write, tracer=tracer)

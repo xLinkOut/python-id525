@@ -35,8 +35,8 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 25 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 43 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 26 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 42 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
 | 🔹 static | implemented from the UI code, not captured | 2 |
 | ⬜ planned | not implemented yet | 0 |
@@ -142,7 +142,7 @@ so it is always current.
 | Backup & reboot | Create config backup (hidden) | `bkupConfig_apply` | action | 🟧 stub-unknown | `system.backup_config()` |
 | Backup & reboot | Restore config backup | `restoreCofig_apply` | destructive | 🟧 stub-unsafe | `system.restore_config()` |
 | Self diagnostics | Page data | `self-diag.html` | read | 🔹 static | `diagnostics.run_self_test()` |
-| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | 🔵 ui-captured | `diagnostics.check_connections()` |
+| Self diagnostics | Interfaces connected | `req_DiagnosticConnectedTest` | action | 🟦 live-verified | `diagnostics.check_connections()` |
 | Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🔵 ui-captured | `diagnostics.run_self_test()` |
 | Ping | Page data | `self-ping.html` | read | 🟦 live-verified | `diagnostics.get_ping_defaults()` |
 | Ping | Ping | `req_pingTest` | action | 🔵 ui-captured | `diagnostics.ping()` |

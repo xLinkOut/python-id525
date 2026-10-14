@@ -226,7 +226,11 @@ class Id525Client:
         """Wi-Fi radios, SSIDs and WPS (``wifi-settings`` page)."""
 
     async def __aenter__(self) -> Self:
-        await self.login()
+        try:
+            await self.login()
+        except BaseException:
+            await self.close()  # __aexit__ doesn't run: release the HTTP session
+            raise
         return self
 
     async def __aexit__(

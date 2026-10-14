@@ -90,7 +90,10 @@ def test_every_scenario_has_a_golden() -> None:
 
 
 def test_capture_status_claims_are_backed_by_goldens() -> None:
-    """``ui-captured[-synthetic]`` are claims: each needs goldens that send it."""
+    """``ui-captured[-synthetic]`` are claims: each needs goldens that send it.
+
+    A captured endpoint later seen on the router becomes ``live-verified``.
+    """
     real: set[str] = set()
     synthetic: set[str] = set()
     for path in GOLDENS:
@@ -99,8 +102,9 @@ def test_capture_status_claims_are_backed_by_goldens() -> None:
         (synthetic if golden["synthetic"] else real).update(sent)
     claimed = {e.value for e in Endpoint if e.info.status is Status.UI_CAPTURED}
     claimed_synthetic = {e.value for e in Endpoint if e.info.status is Status.UI_CAPTURED_SYNTHETIC}
-    assert claimed == real
-    assert claimed_synthetic == synthetic - real
+    live = {e.value for e in Endpoint if e.info.status is Status.LIVE_VERIFIED}  # a stronger claim
+    assert claimed == real - live
+    assert claimed_synthetic == synthetic - real - live
 
 
 def test_synthetic_fixtures_are_up_to_date() -> None:

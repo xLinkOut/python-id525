@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 from pathlib import Path
@@ -17,6 +18,7 @@ from id525.cli import (
     load_env_file,
     main,
     negative_flag,
+    operation_kwargs,
     parse_args,
     run,
     to_jsonable,
@@ -122,6 +124,11 @@ def test_every_implemented_operation_is_reachable_from_the_cli() -> None:
         assert op.path in via_sections or (op.section is None and op.name in quick), op.path
 
 
+def op_kwargs(argv: list[str]) -> dict[str, Any]:
+    args = parse_args(argv)
+    return operation_kwargs(args, args.operation)
+
+
 def cli_args(server: TestServer, *argv: str) -> Any:
     return parse_args(["--scheme", "http", "--host", f"{server.host}:{server.port}", *argv])
 
@@ -167,8 +174,8 @@ async def test_destructive_needs_confirm(server: TestServer, router: FakeRouter)
 
 
 def test_optional_arguments_default_to_none() -> None:
-    args = parse_args(["lan", "modify-dhcp-reservation", "--index", "1", "--ip", "192.168.224.30"])
-    assert (args.index, args.ip, args.name, args.mac) == (1, "192.168.224.30", None, None)
+    kw = op_kwargs(["lan", "modify-dhcp-reservation", "--index", "1", "--ip", "192.168.224.30"])
+    assert kw == {"index": 1, "ip": "192.168.224.30", "name": None, "mac": None}
 
 
 def test_read_only_error_suggests_the_flag(capsys: pytest.CaptureFixture[str]) -> None:
@@ -194,20 +201,20 @@ def test_required_booleans_must_be_explicit(capsys: pytest.CaptureFixture[str]) 
     with pytest.raises(SystemExit):
         parse_args(["wifi", "set-wps"])
     assert "--enabled --disabled is required" in capsys.readouterr().err
-    assert parse_args(["wifi", "set-wps", "--disabled"]).enabled is False
-    assert parse_args(["wifi", "set-wps", "--enabled"]).enabled is True
+    assert op_kwargs(["wifi", "set-wps", "--disabled"])["enabled"] is False
+    assert op_kwargs(["wifi", "set-wps", "--enabled"])["enabled"] is True
     with pytest.raises(SystemExit):
         parse_args(["wifi", "set-wps", "--enabled", "--disabled"])
 
 
 def test_boolean_defaults_follow_the_api() -> None:
-    assert parse_args(["cellular", "add-apn", "--apn", "x"]).enabled is True
-    assert parse_args(["cellular", "add-apn", "--apn", "x", "--disabled"]).enabled is False
-    unset = parse_args(["wifi", "update-network", "--interface", "5G_Main"])
-    assert (unset.enabled, unset.hidden) == (None, None)  # left unchanged
+    assert op_kwargs(["cellular", "add-apn", "--apn", "x"])["enabled"] is True
+    assert op_kwargs(["cellular", "add-apn", "--apn", "x", "--disabled"])["enabled"] is False
+    unset = op_kwargs(["wifi", "update-network", "--interface", "5G_Main"])
+    assert (unset["enabled"], unset["hidden"]) == (None, None)  # left unchanged
     rule = ["port-forwarding", "add-rule", "--wan-port", "80", "--lan-ip", "192.168.224.9"]
-    assert parse_args([*rule, "--lan-port", "80"]).enabled is True
-    assert parse_args([*rule, "--lan-port", "80", "--disabled"]).enabled is False
+    assert op_kwargs([*rule, "--lan-port", "80"])["enabled"] is True
+    assert op_kwargs([*rule, "--lan-port", "80", "--disabled"])["enabled"] is False
 
 
 @pytest.mark.usefixtures("credentials")
@@ -278,3 +285,43 @@ def test_firmware_check_zero_keeps_it(monkeypatch: pytest.MonkeyPatch) -> None:
     assert check_firmware(parse_args(["status"])) is True
     monkeypatch.setenv("ID525_SKIP_FIRMWARE_CHECK", "1")
     assert check_firmware(parse_args(["status"])) is False
+
+
+def test_operation_options_never_overwrite_global_ones() -> None:
+    # Regression: "diagnostics ping --host 1.1.1.1" once replaced the router address.
+    args = parse_args(["--host", "192.0.2.1", "diagnostics", "ping", "--target", "1.1.1.1"])
+    assert args.host == "192.0.2.1"
+    assert operation_kwargs(args, args.operation)["host"] == "1.1.1.1"
+    global_flags = {f for action in build_parser()._actions for f in action.option_strings}
+    clashing = {
+        flag
+        for section, commands in cli_operations().items()
+        for command in commands
+        for flag in _command_flags(section, command)
+        if flag in global_flags and flag not in ("-h", "--help")
+    }
+    assert clashing == set()
+
+
+def _command_flags(section: str, command: str) -> set[str]:
+    sections = next(a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction))
+    commands = next(
+        a for a in sections.choices[section]._actions if isinstance(a, argparse._SubParsersAction)
+    )
+    return {f for action in commands.choices[command]._actions for f in action.option_strings}
+
+
+@pytest.mark.parametrize("command", ["ping", "traceroute"])
+def test_ping_host_flag_is_rejected(command: str, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        parse_args(["diagnostics", command, "--host", "1.1.1.1"])
+    assert "unrecognized arguments: --host" in capsys.readouterr().err
+
+
+@pytest.mark.usefixtures("credentials")
+async def test_ping_target_goes_to_the_router(server: TestServer, router: FakeRouter) -> None:
+    argv = ["--write", "diagnostics", "ping", "--target", "1.1.1.1", "--count", "1"]
+    await run(cli_args(server, *argv, "--interval", "0"))
+    sent = [json.loads(body) for name, body in router.bodies if name == "req_pingTest"]
+    assert sent
+    assert all("1.1.1.1" in json.dumps(body) for body in sent)
