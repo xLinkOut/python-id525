@@ -35,8 +35,8 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 43 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 33 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 44 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 32 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 3 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
@@ -147,7 +147,7 @@ so it is always current.
 | Ping | Page data | `self-ping.html` | read | 🟦 live-verified | `diagnostics.get_ping_defaults()` |
 | Ping | Ping | `req_pingTest` | action | 🟦 live-verified | `diagnostics.ping()` |
 | Traceroute | Page data | `self-tracert.html` | read | 🔹 static | `diagnostics.traceroute()` |
-| Traceroute | Traceroute | `req_traceRouteTest` | action | 🔵 ui-captured | `diagnostics.traceroute()` |
+| Traceroute | Traceroute | `req_traceRouteTest` | action | 🟦 live-verified | `diagnostics.traceroute()` |
 
 </details>
 <!-- coverage:end -->

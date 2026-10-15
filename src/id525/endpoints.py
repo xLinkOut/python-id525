@@ -457,7 +457,9 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     ),
     _E.CPU_USAGE_TEST: EndpointInfo("self-diag", _A, _LIVE, "self-diag.html:276", "CPU usage"),
     _E.PING: EndpointInfo("self-ping", _A, _LIVE, "self-ping.html:166", "Ping"),  # user trace
-    _E.TRACEROUTE: EndpointInfo("self-tracert", _A, _CAPT, "self-tracert.html:182", "Traceroute"),
+    _E.TRACEROUTE: EndpointInfo(  # user, HA action 2026-10-15: traceRouteID echoed, 12 hops
+        "self-tracert", _A, _LIVE, "self-tracert.html:182", "Traceroute"
+    ),
 }
 
 _P = Page
