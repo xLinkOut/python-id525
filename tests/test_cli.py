@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestServer
 from id525 import Id525AuthenticationError, Id525ConfirmationRequiredError, Id525ReadOnlyError
 from id525.cli import (
     COMMANDS,
+    OPERATION_DEST,
     build_parser,
     check_firmware,
     cli_operations,
@@ -316,6 +317,14 @@ def test_ping_host_flag_is_rejected(command: str, capsys: pytest.CaptureFixture[
     with pytest.raises(SystemExit):
         parse_args(["diagnostics", command, "--host", "1.1.1.1"])
     assert "unrecognized arguments: --host" in capsys.readouterr().err
+
+
+def test_help_hides_the_operation_prefix(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        parse_args(["diagnostics", "ping", "--help"])
+    out = capsys.readouterr().out
+    assert "--target TARGET" in out
+    assert OPERATION_DEST.upper() not in out
 
 
 @pytest.mark.usefixtures("credentials")

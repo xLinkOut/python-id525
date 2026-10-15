@@ -170,6 +170,7 @@ def _add_arguments(parser: argparse.ArgumentParser, op: Operation) -> None:
                 flag,
                 dest=name,
                 type=kind if kind in (int, float, str) else str,
+                metavar=flag.removeprefix("--").replace("-", "_").upper(),
                 required=required,
                 default=None if required else param.default,
             )
