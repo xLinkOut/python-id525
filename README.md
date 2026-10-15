@@ -35,8 +35,8 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 31 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 38 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 32 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 37 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
@@ -99,7 +99,7 @@ so it is always current.
 | IP filter | Page data | `fw-ipfilter.html` | read | 🟦 live-verified | `ip_filter.add_rule()` |
 | IP filter | Add IP rule | `ipfilter_add` | write | 🔵 ui-captured | `ip_filter.add_rule()` |
 | IP filter | Edit IP rule | `ipfilter_edit` | write | 🔷 ui-captured-synthetic | `ip_filter.edit_rule()` |
-| IP filter | IP filter | `ipfilter_save` | write | 🔵 ui-captured | `ip_filter.delete_rule()` |
+| IP filter | IP filter | `ipfilter_save` | write | 🟦 live-verified | `ip_filter.delete_rule()` |
 | MAC filter | Page data | `fw-macfilter.html` | read | 🟦 live-verified | `mac_filter.add_connected_client()` |
 | MAC filter | Add MAC | `macfilter_add` | write | 🔵 ui-captured | `mac_filter.add_connected_client()` |
 | MAC filter | Edit MAC | `macfilter_edit` | write | 🔷 ui-captured-synthetic | `mac_filter.modify_rule()` |

@@ -407,7 +407,9 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.IPFILTER_EDIT: EndpointInfo(
         "fw-ipfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ipfilter.html:490", "Edit IP rule"
     ),
-    _E.IPFILTER_SAVE: EndpointInfo("fw-ipfilter", _W, _CAPT, "fw-ipfilter.html:511", "IP filter"),
+    _E.IPFILTER_SAVE: EndpointInfo(  # user trace 2026-10-15, no-op re-save
+        "fw-ipfilter", _W, _LIVE, "fw-ipfilter.html:511", "IP filter"
+    ),
     _E.MACFILTER_ADD: EndpointInfo("fw-macfilter", _W, _CAPT, "fw-macfilter.html:389", "Add MAC"),
     _E.MACFILTER_EDIT: EndpointInfo(
         "fw-macfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-macfilter.html:712", "Edit MAC"
