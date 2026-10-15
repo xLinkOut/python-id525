@@ -62,6 +62,18 @@ def test_identity_values_in_pages_and_nested_json() -> None:
     assert "+000000000001" in out  # digits keep their length (parsers still work)
 
 
+def test_rule_descriptions_are_redacted() -> None:
+    # MAC filter / port forwarding rule names are user-chosen device names.
+    page = (
+        'var tmp = "[{&quot;instance&quot;:1,&quot;description&quot;:&quot;Anna-Phone&quot;,'
+        '&quot;macAddress&quot;:&quot;aa:bb:cc:dd:ee:ff&quot;}]";'
+    )
+    body = '{"edit_instance":1,"desc":"Anna-Phone","clientMac":"aa:bb:cc:dd:ee:ff"}'
+    out = "\n".join(redact(page, body))
+    assert "Anna" not in out
+    assert out.count("NAME-1") == 2
+
+
 def test_patterns_without_keys() -> None:
     out = redact(
         "mac AA-BB-CC-11-22-33 imei 358000000000017 wan 93.184.216.34 lan 192.168.224.7 "

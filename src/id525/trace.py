@@ -83,7 +83,7 @@ _KEY_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
             r"ddns_(host_name|user_name)|ddns_(hostname|login)|_?fqdn|domainname|"
             r"sip_domain|username|usr|user|input_username|account|"
             r"(voip|sip)_\w*(proxy|server|registrar|domain)\w*|outbound_proxy|proxy_server|"
-            r"name",
+            r"name|desc|description",
             re.I,
         ),
     ),
