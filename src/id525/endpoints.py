@@ -396,7 +396,9 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     ),
     _E.VOIP_APPLY: EndpointInfo("voip-settings", _W, _CAPT, "voip-settings.html:1", "VoIP / SIP"),
     _E.FIREWALL_LEVEL: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:137", "Firewall level"),
-    _E.VPN_PASSTHROUGH: EndpointInfo("fw-adv", _W, _CAPT, "fw-adv.html:149", "VPN passthrough"),
+    _E.VPN_PASSTHROUGH: EndpointInfo(  # user trace 2026-10-15, no-op re-save
+        "fw-adv", _W, _LIVE, "fw-adv.html:149", "VPN passthrough"
+    ),
     _E.DDNS_GET: EndpointInfo("fw-ddns", _R, _LIVE, "fw-ddns.html:68", "DDNS settings"),
     _E.DDNS_SET: EndpointInfo(
         "fw-ddns", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ddns.html:334", "Set DDNS"

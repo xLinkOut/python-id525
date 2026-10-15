@@ -35,8 +35,8 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 29 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 40 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 30 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 39 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
@@ -92,7 +92,7 @@ so it is always current.
 | VoIP settings | VoIP / SIP | `voip_apply` | write | 🔵 ui-captured | `voip.update()` |
 | Firewall | Page data | `fw-adv.html` | read | 🟦 live-verified | `firewall.get_settings()` |
 | Firewall | Firewall level | `fw_adv_apply` | write | 🔵 ui-captured | `firewall.set_level()` |
-| Firewall | VPN passthrough | `fw_adv_vpn_apply` | write | 🔵 ui-captured | `firewall.set_vpn_passthrough()` |
+| Firewall | VPN passthrough | `fw_adv_vpn_apply` | write | 🟦 live-verified | `firewall.set_vpn_passthrough()` |
 | Dynamic DNS | Page data | `fw-ddns.html` | read | 🟦 live-verified | `ddns.get_settings()` |
 | Dynamic DNS | DDNS settings | `get_ddns_config` | read | 🟦 live-verified | `ddns.get_settings()` |
 | Dynamic DNS | Set DDNS | `set_ddns_config` | write | 🔷 ui-captured-synthetic | `ddns.set_settings()` |
