@@ -403,19 +403,23 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.DDNS_SET: EndpointInfo(
         "fw-ddns", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ddns.html:334", "Set DDNS"
     ),
-    _E.IPFILTER_ADD: EndpointInfo("fw-ipfilter", _W, _CAPT, "fw-ipfilter.html:315", "Add IP rule"),
-    _E.IPFILTER_EDIT: EndpointInfo(
-        "fw-ipfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-ipfilter.html:490", "Edit IP rule"
+    _E.IPFILTER_ADD: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-ipfilter", _W, _LIVE, "fw-ipfilter.html:315", "Add IP rule"
+    ),
+    _E.IPFILTER_EDIT: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-ipfilter", _W, _LIVE, "fw-ipfilter.html:490", "Edit IP rule"
     ),
     _E.IPFILTER_SAVE: EndpointInfo(  # user trace 2026-10-15, no-op re-save
         "fw-ipfilter", _W, _LIVE, "fw-ipfilter.html:511", "IP filter"
     ),
-    _E.MACFILTER_ADD: EndpointInfo("fw-macfilter", _W, _CAPT, "fw-macfilter.html:389", "Add MAC"),
-    _E.MACFILTER_EDIT: EndpointInfo(
-        "fw-macfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-macfilter.html:712", "Edit MAC"
+    _E.MACFILTER_ADD: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-macfilter", _W, _LIVE, "fw-macfilter.html:389", "Add MAC"
     ),
-    _E.MACFILTER_DELETE: EndpointInfo(
-        "fw-macfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-macfilter.html:734", "Delete MAC"
+    _E.MACFILTER_EDIT: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-macfilter", _W, _LIVE, "fw-macfilter.html:712", "Edit MAC"
+    ),
+    _E.MACFILTER_DELETE: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-macfilter", _W, _LIVE, "fw-macfilter.html:734", "Delete MAC"
     ),
     _E.MACFILTER_SAVE: EndpointInfo(
         "fw-macfilter", _W, _CAPT, "fw-macfilter.html:463", "MAC filter"
@@ -427,12 +431,14 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.PORTFWD_STATUS: EndpointInfo(
         "fw-portfwd", _W, _CAPT, "fw-portfwd.html:295", "Port forwarding on/off"
     ),
-    _E.PORTFWD_ADD: EndpointInfo("fw-portfwd", _W, _CAPT, "fw-portfwd.html:531", "Add forward"),
-    _E.PORTFWD_EDIT: EndpointInfo(
-        "fw-portfwd", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-portfwd.html:741", "Edit forward"
+    _E.PORTFWD_ADD: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-portfwd", _W, _LIVE, "fw-portfwd.html:531", "Add forward"
     ),
-    _E.PORTFWD_DELETE: EndpointInfo(
-        "fw-portfwd", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-portfwd.html:1036", "Delete forward"
+    _E.PORTFWD_EDIT: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-portfwd", _W, _LIVE, "fw-portfwd.html:741", "Edit forward"
+    ),
+    _E.PORTFWD_DELETE: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-portfwd", _W, _LIVE, "fw-portfwd.html:1036", "Delete forward"
     ),
     _E.URLFILTER_STATUS: EndpointInfo(  # user trace 2026-10-15, no-op re-save
         "fw-urlfilter", _W, _LIVE, "fw-urlfilter.html:397", "URL filter on/off"
@@ -440,11 +446,11 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.URLFILTER_ADD: EndpointInfo(  # user trace 2026-10-15
         "fw-urlfilter", _W, _LIVE, "fw-urlfilter.html:477", "Add URL"
     ),
-    _E.URLFILTER_EDIT: EndpointInfo(
-        "fw-urlfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-urlfilter.html:311", "Edit URL"
+    _E.URLFILTER_EDIT: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-urlfilter", _W, _LIVE, "fw-urlfilter.html:311", "Edit URL"
     ),
-    _E.URLFILTER_DELETE: EndpointInfo(
-        "fw-urlfilter", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-urlfilter.html:520", "Delete URL"
+    _E.URLFILTER_DELETE: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
+        "fw-urlfilter", _W, _LIVE, "fw-urlfilter.html:520", "Delete URL"
     ),
     _E.DIAG_CONNECTED: EndpointInfo(  # user trace, 2026-10-14
         "self-diag", _A, _LIVE, "self-diag.html:221", "Interfaces connected"

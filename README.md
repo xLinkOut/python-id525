@@ -35,9 +35,9 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 33 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 36 |
-| 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 43 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 33 |
+| 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 3 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
@@ -97,26 +97,26 @@ so it is always current.
 | Dynamic DNS | DDNS settings | `get_ddns_config` | read | 🟦 live-verified | `ddns.get_settings()` |
 | Dynamic DNS | Set DDNS | `set_ddns_config` | write | 🔷 ui-captured-synthetic | `ddns.set_settings()` |
 | IP filter | Page data | `fw-ipfilter.html` | read | 🟦 live-verified | `ip_filter.add_rule()` |
-| IP filter | Add IP rule | `ipfilter_add` | write | 🔵 ui-captured | `ip_filter.add_rule()` |
-| IP filter | Edit IP rule | `ipfilter_edit` | write | 🔷 ui-captured-synthetic | `ip_filter.edit_rule()` |
+| IP filter | Add IP rule | `ipfilter_add` | write | 🟦 live-verified | `ip_filter.add_rule()` |
+| IP filter | Edit IP rule | `ipfilter_edit` | write | 🟦 live-verified | `ip_filter.edit_rule()` |
 | IP filter | IP filter | `ipfilter_save` | write | 🟦 live-verified | `ip_filter.delete_rule()` |
 | MAC filter | Page data | `fw-macfilter.html` | read | 🟦 live-verified | `mac_filter.add_connected_client()` |
-| MAC filter | Add MAC | `macfilter_add` | write | 🔵 ui-captured | `mac_filter.add_connected_client()` |
-| MAC filter | Edit MAC | `macfilter_edit` | write | 🔷 ui-captured-synthetic | `mac_filter.modify_rule()` |
-| MAC filter | Delete MAC | `macfilter_delete` | write | 🔷 ui-captured-synthetic | `mac_filter.delete_rule()` |
+| MAC filter | Add MAC | `macfilter_add` | write | 🟦 live-verified | `mac_filter.add_connected_client()` |
+| MAC filter | Edit MAC | `macfilter_edit` | write | 🟦 live-verified | `mac_filter.modify_rule()` |
+| MAC filter | Delete MAC | `macfilter_delete` | write | 🟦 live-verified | `mac_filter.delete_rule()` |
 | MAC filter | MAC filter | `macfilter_save` | write | 🔵 ui-captured | `mac_filter.disable()` |
 | MAC filter | Rename client (UI code broken) | `set_host_name` | write | ▫️ dead-code |  |
 | Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | 🟦 live-verified | `port_forwarding.add_rule()` |
 | Port forwarding & DMZ | DMZ | `dmz_save` | write | 🔵 ui-captured | `port_forwarding.disable_dmz()` |
 | Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | 🔵 ui-captured | `port_forwarding.disable()` |
-| Port forwarding & DMZ | Add forward | `portforward_add` | write | 🔵 ui-captured | `port_forwarding.add_rule()` |
-| Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🔷 ui-captured-synthetic | `port_forwarding.modify_rule()` |
-| Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🔷 ui-captured-synthetic | `port_forwarding.delete_rule()` |
+| Port forwarding & DMZ | Add forward | `portforward_add` | write | 🟦 live-verified | `port_forwarding.add_rule()` |
+| Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🟦 live-verified | `port_forwarding.modify_rule()` |
+| Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🟦 live-verified | `port_forwarding.delete_rule()` |
 | URL filter | Page data | `fw-urlfilter.html` | read | 🟦 live-verified | `url_filter.add_url()` |
 | URL filter | URL filter on/off | `urlfilter_status_save` | write | 🟦 live-verified | `url_filter.set_filter()` |
 | URL filter | Add URL | `urlfilter_add_save` | write | 🟦 live-verified | `url_filter.add_url()` |
-| URL filter | Edit URL | `urlfilter_edit` | write | 🔷 ui-captured-synthetic | `url_filter.edit_url()` |
-| URL filter | Delete URL | `urlfilter_delete_save` | write | 🔷 ui-captured-synthetic | `url_filter.delete_url()` |
+| URL filter | Edit URL | `urlfilter_edit` | write | 🟦 live-verified | `url_filter.edit_url()` |
+| URL filter | Delete URL | `urlfilter_delete_save` | write | 🟦 live-verified | `url_filter.delete_url()` |
 | Account & data usage | Page data | `adm-user.html` | read | 🟦 live-verified | `account.change_password()` |
 | Account & data usage | Change admin password | `set_account_management` | destructive | 🔵 ui-captured | `account.change_password()` |
 | Account & data usage | Session timeout | `set_device_management` | write | 🔵 ui-captured | `account.set_session_timeout()` |
