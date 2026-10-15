@@ -432,8 +432,8 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.PORTFWD_DELETE: EndpointInfo(
         "fw-portfwd", _W, Status.UI_CAPTURED_SYNTHETIC, "fw-portfwd.html:1036", "Delete forward"
     ),
-    _E.URLFILTER_STATUS: EndpointInfo(
-        "fw-urlfilter", _W, _CAPT, "fw-urlfilter.html:397", "URL filter on/off"
+    _E.URLFILTER_STATUS: EndpointInfo(  # user trace 2026-10-15, no-op re-save
+        "fw-urlfilter", _W, _LIVE, "fw-urlfilter.html:397", "URL filter on/off"
     ),
     _E.URLFILTER_ADD: EndpointInfo("fw-urlfilter", _W, _CAPT, "fw-urlfilter.html:477", "Add URL"),
     _E.URLFILTER_EDIT: EndpointInfo(

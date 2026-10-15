@@ -35,8 +35,8 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 30 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 39 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 31 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 38 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 10 |
 | 🔹 static | implemented from the UI code, not captured | 1 |
 | ⬜ planned | not implemented yet | 0 |
@@ -113,7 +113,7 @@ so it is always current.
 | Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🔷 ui-captured-synthetic | `port_forwarding.modify_rule()` |
 | Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🔷 ui-captured-synthetic | `port_forwarding.delete_rule()` |
 | URL filter | Page data | `fw-urlfilter.html` | read | 🟦 live-verified | `url_filter.add_url()` |
-| URL filter | URL filter on/off | `urlfilter_status_save` | write | 🔵 ui-captured | `url_filter.set_filter()` |
+| URL filter | URL filter on/off | `urlfilter_status_save` | write | 🟦 live-verified | `url_filter.set_filter()` |
 | URL filter | Add URL | `urlfilter_add_save` | write | 🔵 ui-captured | `url_filter.add_url()` |
 | URL filter | Edit URL | `urlfilter_edit` | write | 🔷 ui-captured-synthetic | `url_filter.edit_url()` |
 | URL filter | Delete URL | `urlfilter_delete_save` | write | 🔷 ui-captured-synthetic | `url_filter.delete_url()` |
