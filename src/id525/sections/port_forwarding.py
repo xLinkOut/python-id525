@@ -175,7 +175,12 @@ class PortForwardingApi(Section):
 
     @uses(Page.PORT_FORWARDING, Endpoint.DMZ_SAVE)
     async def disable_dmz(self) -> None:
-        """Turn the DMZ off (the host address is kept)."""
+        """Turn the DMZ off (the host address is kept).
+
+        Like the UI, this sends the current host back. If no DMZ host was ever
+        set, the router refuses that (``Id525CommandError``, "Invalid
+        Static_IP"; seen live) although the DMZ is already off.
+        """
         await self._dmz(enabled=False, ip=None)
 
     async def _status(self, *, enabled: bool) -> None:

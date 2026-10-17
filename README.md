@@ -35,10 +35,10 @@ so it is always current.
 
 | Status | Meaning | Count |
 |---|---|---:|
-| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 44 |
-| 🔵 ui-captured | byte-identical to the router UI, captured offline | 32 |
+| 🟦 live-verified | observed on a real router (read-only probes, user traces) | 48 |
+| 🔵 ui-captured | byte-identical to the router UI, captured offline | 29 |
 | 🔷 ui-captured* | as ui-captured, from invented page data (the real dump had no rows) | 3 |
-| 🔹 static | implemented from the UI code, not captured | 1 |
+| 🔹 static | implemented from the UI code, not captured | 0 |
 | ⬜ planned | not implemented yet | 0 |
 | 🟧 unsupported | deliberately not implemented: raises NotImplementedError | 10 |
 | ▫️ dead code | never called by the UI | 7 |
@@ -104,11 +104,11 @@ so it is always current.
 | MAC filter | Add MAC | `macfilter_add` | write | 🟦 live-verified | `mac_filter.add_connected_client()` |
 | MAC filter | Edit MAC | `macfilter_edit` | write | 🟦 live-verified | `mac_filter.modify_rule()` |
 | MAC filter | Delete MAC | `macfilter_delete` | write | 🟦 live-verified | `mac_filter.delete_rule()` |
-| MAC filter | MAC filter | `macfilter_save` | write | 🔵 ui-captured | `mac_filter.disable()` |
+| MAC filter | MAC filter | `macfilter_save` | write | 🟦 live-verified | `mac_filter.disable()` |
 | MAC filter | Rename client (UI code broken) | `set_host_name` | write | ▫️ dead-code |  |
 | Port forwarding & DMZ | Page data | `fw-portfwd.html` | read | 🟦 live-verified | `port_forwarding.add_rule()` |
 | Port forwarding & DMZ | DMZ | `dmz_save` | write | 🔵 ui-captured | `port_forwarding.disable_dmz()` |
-| Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | 🔵 ui-captured | `port_forwarding.disable()` |
+| Port forwarding & DMZ | Port forwarding on/off | `set_portforward_status` | write | 🟦 live-verified | `port_forwarding.disable()` |
 | Port forwarding & DMZ | Add forward | `portforward_add` | write | 🟦 live-verified | `port_forwarding.add_rule()` |
 | Port forwarding & DMZ | Edit forward | `portforward_edit` | write | 🟦 live-verified | `port_forwarding.modify_rule()` |
 | Port forwarding & DMZ | Delete forward | `portforward_delete` | write | 🟦 live-verified | `port_forwarding.delete_rule()` |
@@ -119,7 +119,7 @@ so it is always current.
 | URL filter | Delete URL | `urlfilter_delete_save` | write | 🟦 live-verified | `url_filter.delete_url()` |
 | Account & data usage | Page data | `adm-user.html` | read | 🟦 live-verified | `account.change_password()` |
 | Account & data usage | Change admin password | `set_account_management` | destructive | 🔵 ui-captured | `account.change_password()` |
-| Account & data usage | Session timeout | `set_device_management` | write | 🔵 ui-captured | `account.set_session_timeout()` |
+| Account & data usage | Session timeout | `set_device_management` | write | 🟦 live-verified | `account.set_session_timeout()` |
 | Account & data usage | Reset data usage | `reset_data` | destructive | 🔵 ui-captured | `account.reset_data_usage()` |
 | Account & data usage | Data usage settings | `data_usage_save` | write | 🔵 ui-captured | `account.set_data_limit()` |
 | Account & data usage | Battery (never called) | `battery_apply` | write | ▫️ dead-code |  |
@@ -146,7 +146,7 @@ so it is always current.
 | Self diagnostics | CPU usage | `req_cpuUsageTest` | action | 🟦 live-verified | `diagnostics.run_self_test()` |
 | Ping | Page data | `self-ping.html` | read | 🟦 live-verified | `diagnostics.get_ping_defaults()` |
 | Ping | Ping | `req_pingTest` | action | 🟦 live-verified | `diagnostics.ping()` |
-| Traceroute | Page data | `self-tracert.html` | read | 🔹 static | `diagnostics.traceroute()` |
+| Traceroute | Page data | `self-tracert.html` | read | 🟦 live-verified | `diagnostics.traceroute()` |
 | Traceroute | Traceroute | `req_traceRouteTest` | action | 🟦 live-verified | `diagnostics.traceroute()` |
 
 </details>

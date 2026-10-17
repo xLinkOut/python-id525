@@ -321,8 +321,8 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.SET_ACCOUNT: EndpointInfo(
         "adm-user", _D, _CAPT, "adm-user.html:440", "Change admin password"
     ),
-    _E.SET_DEVICE_MANAGEMENT: EndpointInfo(
-        "adm-user", _W, _CAPT, "adm-user.html:482", "Session timeout"
+    _E.SET_DEVICE_MANAGEMENT: EndpointInfo(  # user trace 2026-10-17, no-op re-save
+        "adm-user", _W, _LIVE, "adm-user.html:482", "Session timeout"
     ),
     _E.RESET_DATA: EndpointInfo("adm-user", _D, _CAPT, "adm-user.html:518", "Reset data usage"),
     _E.DATA_USAGE_SAVE: EndpointInfo(
@@ -421,15 +421,17 @@ ENDPOINTS: Final[dict[Endpoint, EndpointInfo]] = {
     _E.MACFILTER_DELETE: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
         "fw-macfilter", _W, _LIVE, "fw-macfilter.html:734", "Delete MAC"
     ),
-    _E.MACFILTER_SAVE: EndpointInfo(
-        "fw-macfilter", _W, _CAPT, "fw-macfilter.html:463", "MAC filter"
+    _E.MACFILTER_SAVE: EndpointInfo(  # user trace 2026-10-17, no-op re-save
+        "fw-macfilter", _W, _LIVE, "fw-macfilter.html:463", "MAC filter"
     ),
     _E.SET_HOST_NAME: EndpointInfo(
         "fw-macfilter", _W, _DEAD, "fw-macfilter.html:416", "Rename client (UI code broken)"
     ),
+    # user trace 2026-10-17: with no DMZ host ever set, the UI's own body for
+    # "off" (DmzIP "") is refused with "Invalid Static_IP"; success not seen yet
     _E.DMZ_SAVE: EndpointInfo("fw-portfwd", _W, _CAPT, "fw-portfwd.html:280", "DMZ"),
-    _E.PORTFWD_STATUS: EndpointInfo(
-        "fw-portfwd", _W, _CAPT, "fw-portfwd.html:295", "Port forwarding on/off"
+    _E.PORTFWD_STATUS: EndpointInfo(  # user trace 2026-10-17, no-op re-save
+        "fw-portfwd", _W, _LIVE, "fw-portfwd.html:295", "Port forwarding on/off"
     ),
     _E.PORTFWD_ADD: EndpointInfo(  # user trace 2026-10-15, add/edit/delete chain
         "fw-portfwd", _W, _LIVE, "fw-portfwd.html:531", "Add forward"
@@ -487,7 +489,7 @@ PAGES: Final[dict[Page, PageInfo]] = {
     _P.URL_FILTER: PageInfo("URL filter", _LIVE),  # user trace, 2026-10-14; no rules
     _P.DIAGNOSTICS: PageInfo("Self diagnostics", _LIVE),  # user trace, 2026-10-14
     _P.PING: PageInfo("Ping", _LIVE),  # user trace, 2026-10-14
-    _P.TRACEROUTE: PageInfo("Traceroute", _STATIC),
+    _P.TRACEROUTE: PageInfo("Traceroute", _LIVE),  # user trace, 2026-10-17
 }
 
 
